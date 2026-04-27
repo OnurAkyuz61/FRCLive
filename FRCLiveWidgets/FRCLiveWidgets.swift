@@ -116,10 +116,9 @@ struct FRCLiveWidgetsEntryView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 6) {
-                Image("FIRST_Vertical_RGB")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 34, height: 34)
+                Image(systemName: "bolt.shield")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.blue)
                 Text(entry.updatedAt)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
