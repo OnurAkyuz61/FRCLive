@@ -8,11 +8,12 @@ struct OnboardingView: View {
     @State private var tbaKeyInput: String = ""
     @State private var tbaKeyStatusMessage: String?
     @State private var isTBAKeyConfirmed = false
-    @State private var selectedLanguage: AppLanguage = .tr
+    @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @State private var isLoading = false
     @State private var errorMessage: String?
     @FocusState private var isFieldFocused: Bool
     private let maxTeamNumberLength = 5
+    private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     var body: some View {
         NavigationStack {
@@ -21,7 +22,7 @@ struct OnboardingView: View {
                     .padding(.top, 48)
                     .padding(.bottom, 28)
 
-                Text(AppStrings.text(.teamNumberTitle, language: selectedLanguage))
+                Text(L10n.text(.teamNumberTitle, language: appLanguage))
                     .font(.title2.weight(.semibold))
                     .foregroundColor(.black)
                     .multilineTextAlignment(.center)
@@ -51,7 +52,7 @@ struct OnboardingView: View {
                 firstLogoBottomSection
                     .padding(.bottom, 8)
 
-                Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
+                Link(L10n.text(.poweredBy, language: appLanguage), destination: URL(string: "https://onurakyuz.com")!)
                     .font(.footnote)
                     .foregroundColor(.gray)
                     .padding(.bottom, 20)
@@ -94,7 +95,7 @@ struct OnboardingView: View {
     private var inputField: some View {
         HStack {
             TextField(
-                AppStrings.text(.teamNumberPlaceholder, language: selectedLanguage),
+                L10n.text(.teamNumberPlaceholder, language: appLanguage),
                 text: Binding(
                     get: { teamNumberInput },
                     set: { newValue in
@@ -102,7 +103,7 @@ struct OnboardingView: View {
                         teamNumberInput = String(digitsOnly.prefix(maxTeamNumberLength))
                     }
                 ),
-                prompt: Text(AppStrings.text(.teamNumberPlaceholder, language: selectedLanguage))
+                prompt: Text(L10n.text(.teamNumberPlaceholder, language: appLanguage))
                     .foregroundColor(.gray)
             )
             .keyboardType(.numberPad)
@@ -132,7 +133,7 @@ struct OnboardingView: View {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Text(AppStrings.text(.continueButtonText, language: selectedLanguage))
+                    Text(L10n.text(.continueButton, language: appLanguage))
                         .font(.headline.weight(.semibold))
                         .foregroundColor(.white)
                 }
@@ -150,7 +151,7 @@ struct OnboardingView: View {
 
     private var tbaKeySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("TBA API Key")
+            Text(L10n.text(.tbaApiKey, language: appLanguage))
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(.black)
 
@@ -158,11 +159,11 @@ struct OnboardingView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.seal.fill")
                         .foregroundColor(.green)
-                    Text("TBA Key Onaylandı")
+                    Text(L10n.text(.tbaKeyConfirmed, language: appLanguage))
                         .font(.footnote.weight(.semibold))
                         .foregroundColor(.green)
                     Spacer()
-                    Button("Kaldır") {
+                    Button(L10n.text(.remove, language: appLanguage)) {
                         storedTBAKey = ""
                         tbaKeyInput = ""
                         isTBAKeyConfirmed = false
@@ -181,9 +182,9 @@ struct OnboardingView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             } else {
                 TextField(
-                    "TBA key girin",
+                    L10n.text(.enterTbaKey, language: appLanguage),
                     text: $tbaKeyInput,
-                    prompt: Text("TBA key girin").foregroundColor(.gray)
+                    prompt: Text(L10n.text(.enterTbaKey, language: appLanguage)).foregroundColor(.gray)
                 )
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
@@ -198,7 +199,7 @@ struct OnboardingView: View {
                 )
 
                 HStack(spacing: 10) {
-                    Button("Onayla") {
+                    Button(L10n.text(.confirm, language: appLanguage)) {
                         let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !cleaned.isEmpty else { return }
                         storedTBAKey = cleaned
@@ -228,12 +229,12 @@ struct OnboardingView: View {
     private func languageTextButton(language: AppLanguage, label: String) -> some View {
         Button {
             withAnimation(.easeInOut(duration: 0.18)) {
-                selectedLanguage = language
+                appLanguageRaw = language.rawValue
             }
         } label: {
             Text(label)
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(selectedLanguage == language ? .black : .gray)
+                .foregroundColor(appLanguage == language ? .black : .gray)
         }
         .buttonStyle(.plain)
     }
@@ -243,7 +244,7 @@ struct OnboardingView: View {
         let cleaned = teamNumberInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty else { return }
         guard isTBAKeyConfirmed else {
-            errorMessage = "Devam etmek için önce TBA API Key onaylanmalı."
+            errorMessage = L10n.text(.mustConfirmTba, language: appLanguage)
             return
         }
 
@@ -259,36 +260,9 @@ struct OnboardingView: View {
             if let localizedError = error as? LocalizedError, let description = localizedError.errorDescription {
                 errorMessage = description
             } else {
-                errorMessage = "Takım doğrulanamadı. Lütfen bilgileri kontrol edin."
+                errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
             }
         }
-    }
-}
-
-private enum AppLanguage {
-    case tr
-    case en
-}
-
-private enum AppStringKey {
-    case teamNumberTitle
-    case teamNumberPlaceholder
-    case continueButtonText
-}
-
-private struct AppStrings {
-    static func text(_ key: AppStringKey, language: AppLanguage) -> String {
-        let tr: [AppStringKey: String] = [
-            .teamNumberTitle: "FRC Takım Numaranız",
-            .teamNumberPlaceholder: "örn. 6232",
-            .continueButtonText: "Devam Et"
-        ]
-        let en: [AppStringKey: String] = [
-            .teamNumberTitle: "Your FRC Team Number",
-            .teamNumberPlaceholder: "e.g., 6232",
-            .continueButtonText: "Continue"
-        ]
-        return language == .tr ? (tr[key] ?? "") : (en[key] ?? "")
     }
 }
 

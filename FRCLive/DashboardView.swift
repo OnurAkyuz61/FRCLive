@@ -6,6 +6,8 @@ struct DashboardView: View {
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
+    @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
+    private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     var body: some View {
         NavigationStack {
@@ -13,7 +15,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(alignment: .center, spacing: 10) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Takım \(teamNumber)")
+                            Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
                                 .font(.title3.weight(.semibold))
                                 .foregroundColor(.black)
                             Text(teamNickname.isEmpty ? "Overcharge" : teamNickname)
@@ -24,7 +26,7 @@ struct DashboardView: View {
                         TeamAvatarView(avatarURLString: teamAvatarURL, size: 42)
                     }
 
-                    Text(selectedEventName.isEmpty ? "Etkinlik seçilmedi" : selectedEventName)
+                    Text(selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName)
                         .font(.headline)
                         .foregroundColor(.secondary)
 
@@ -37,10 +39,10 @@ struct DashboardView: View {
                 .padding(.bottom, 88)
             }
             .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
-            .navigationTitle("Dashboard")
+            .navigationTitle(L10n.text(.dashboard, language: appLanguage))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Etkinlik Seçimi") {
+                    Button(L10n.text(.eventSelection, language: appLanguage)) {
                         selectedEventCode = ""
                     }
                 }
@@ -50,11 +52,11 @@ struct DashboardView: View {
 
     private var liveMatchCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Next Match")
+            Text(L10n.text(.nextMatch, language: appLanguage))
                 .font(.headline)
                 .foregroundColor(.black)
 
-            Text("Veri yakında Nexus ile güncellenecek")
+            Text(L10n.text(.nextMatchPlaceholder, language: appLanguage))
                 .font(.subheadline)
                 .foregroundColor(.gray)
         }
@@ -82,7 +84,7 @@ struct DashboardView: View {
             Circle()
                 .fill(Color.green)
                 .frame(width: 10, height: 10)
-            Text("Live Activity: Hazır")
+            Text(L10n.text(.liveActivityReady, language: appLanguage))
                 .font(.subheadline.weight(.medium))
                 .foregroundColor(.black)
         }
@@ -100,7 +102,7 @@ struct DashboardView: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
+            Link(L10n.text(.poweredBy, language: appLanguage), destination: URL(string: "https://onurakyuz.com")!)
                 .font(.footnote)
                 .foregroundColor(.secondary)
             Spacer()

@@ -6,11 +6,13 @@ struct EventSelectionView: View {
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
+    @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
 
     @State private var events: [TBAEvent] = []
     @State private var teamName: String = "Overcharge"
     @State private var isLoading = false
     @State private var errorMessage: String?
+    private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     var body: some View {
         NavigationStack {
@@ -21,7 +23,7 @@ struct EventSelectionView: View {
                     if isLoading {
                         VStack(spacing: 10) {
                             ProgressView()
-                            Text("Etkinlikler yükleniyor...")
+                            Text(L10n.text(.loadingEvents, language: appLanguage))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -31,7 +33,7 @@ struct EventSelectionView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.red)
                                 .multilineTextAlignment(.center)
-                            Button("Tekrar Dene") {
+                            Button(L10n.text(.retry, language: appLanguage)) {
                                 Task { await loadEvents() }
                             }
                         }
@@ -72,7 +74,7 @@ struct EventSelectionView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left")
-                            Text("Takım Seçimi")
+                            Text(L10n.text(.teamSelection, language: appLanguage))
                         }
                     }
                     .foregroundColor(.primary)
@@ -92,7 +94,7 @@ struct EventSelectionView: View {
                 .lineLimit(2)
 
             HStack(spacing: 10) {
-                Text("Takım \(teamNumber)")
+                Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
                     .font(.title3)
                     .foregroundColor(.secondary)
 
@@ -105,7 +107,7 @@ struct EventSelectionView: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
+            Link(L10n.text(.poweredBy, language: appLanguage), destination: URL(string: "https://onurakyuz.com")!)
                 .font(.footnote)
                 .foregroundColor(.secondary)
             Spacer()
@@ -137,10 +139,10 @@ struct EventSelectionView: View {
             events = allEvents
             teamAvatarURL = fetchedAvatarURL?.absoluteString ?? ""
             if events.isEmpty {
-                errorMessage = "Bu takım için 2026 etkinliği bulunamadı."
+                errorMessage = L10n.text(.noEventsForYear, language: appLanguage)
             }
         } catch {
-            errorMessage = "Etkinlikler yüklenemedi veya geçersiz takım."
+            errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
         }
     }
 }

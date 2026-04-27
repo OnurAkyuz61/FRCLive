@@ -7,79 +7,70 @@ struct SettingsView: View {
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
+    @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
 
     @State private var infoMessage: String?
+    private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.white.ignoresSafeArea()
+            Form {
+                Section {
+                    Toggle(L10n.text(.liveActivitiesToggle, language: appLanguage), isOn: $liveActivitiesEnabled)
+                        .tint(.blue)
 
-                List {
-                    Section {
-                        glassRow {
-                            Toggle("Canlı Etkinlikleri (Live Activities) Aç", isOn: $liveActivitiesEnabled)
-                                .tint(.blue)
-                        }
-
-                        glassRow {
-                            Toggle("Bildirimleri İzin Ver", isOn: $notificationsEnabled)
-                                .tint(.blue)
-                                .onChange(of: notificationsEnabled) { _, newValue in
-                                    if newValue {
-                                        requestNotificationPermission()
-                                    }
-                                }
-                        }
-
-                        glassRow {
-                            Button("Bildirimi Test Et") {
-                                triggerTestNotification()
+                    Toggle(L10n.text(.notificationsToggle, language: appLanguage), isOn: $notificationsEnabled)
+                        .tint(.blue)
+                        .onChange(of: notificationsEnabled) { _, newValue in
+                            if newValue {
+                                requestNotificationPermission()
                             }
-                            .foregroundColor(.black)
                         }
-                    }
 
-                    Section {
-                        Button("Çıkış Yap", role: .destructive) {
-                            logout()
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .listRowBackground(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.red.opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(Color.red.opacity(0.25), lineWidth: 1)
-                                )
-                        )
+                    Button(L10n.text(.testNotification, language: appLanguage)) {
+                        triggerTestNotification()
                     }
+                    .foregroundColor(.primary)
+                }
 
-                    if let infoMessage {
-                        Section {
-                            Text(infoMessage)
-                                .font(.footnote)
-                                .foregroundColor(.gray)
-                        }
+                Section(L10n.text(.language, language: appLanguage)) {
+                    Picker(L10n.text(.language, language: appLanguage), selection: $appLanguageRaw) {
+                        Text("TR").tag(AppLanguage.tr.rawValue)
+                        Text("EN").tag(AppLanguage.en.rawValue)
                     }
+                    .pickerStyle(.segmented)
+                }
 
-                    Section {
-                        HStack {
-                            Spacer()
-                            Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                        }
+                Section {
+                    Button(L10n.text(.logout, language: appLanguage), role: .destructive) {
+                        logout()
                     }
                 }
-                .scrollContentBackground(.hidden)
-                .listStyle(.insetGrouped)
+
+                if let infoMessage {
+                    Section {
+                        Text(infoMessage)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Section {
+                    HStack {
+                        Spacer()
+                        Link(L10n.text(.poweredBy, language: appLanguage), destination: URL(string: "https://onurakyuz.com")!)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                }
             }
-            .navigationTitle("Settings")
+            .scrollContentBackground(.hidden)
+            .background(Color(UIColor.systemGroupedBackground))
+            .navigationTitle(L10n.text(.settings, language: appLanguage))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Etkinlik Seçimi") {
+                    Button(L10n.text(.eventSelection, language: appLanguage)) {
                         selectedEventCode = ""
                     }
                 }
@@ -87,24 +78,13 @@ struct SettingsView: View {
         }
     }
 
-    private func glassRow<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(.vertical, 4)
-            .listRowBackground(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
-                    )
-            )
-    }
-
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
             DispatchQueue.main.async {
                 notificationsEnabled = granted
-                infoMessage = granted ? "Bildirim izni verildi." : "Bildirim izni verilmedi."
+                infoMessage = granted
+                    ? L10n.text(.notificationPermissionGranted, language: appLanguage)
+                    : L10n.text(.notificationPermissionDenied, language: appLanguage)
             }
         }
     }
@@ -121,9 +101,9 @@ struct SettingsView: View {
         UNUserNotificationCenter.current().add(request) { error in
             DispatchQueue.main.async {
                 if let error {
-                    infoMessage = "Bildirim gönderilemedi: \(error.localizedDescription)"
+                    infoMessage = "\(L10n.text(.testNotificationFailed, language: appLanguage)) \(error.localizedDescription)"
                 } else {
-                    infoMessage = "2 saniye içinde test bildirimi gönderilecek."
+                    infoMessage = L10n.text(.testNotificationSent, language: appLanguage)
                 }
             }
         }

@@ -1,0 +1,126 @@
+import Foundation
+
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case tr
+    case en
+
+    var id: String { rawValue }
+}
+
+enum L10nKey {
+    case teamNumberTitle
+    case teamNumberPlaceholder
+    case continueButton
+    case tbaApiKey
+    case enterTbaKey
+    case confirm
+    case remove
+    case tbaKeyConfirmed
+    case mustConfirmTba
+    case teamValidationFailed
+    case poweredBy
+    case eventSelection
+    case teamSelection
+    case loadingEvents
+    case retry
+    case invalidTeamOrEvents
+    case noEventsForYear
+    case teamPrefix
+    case dashboard
+    case schedule
+    case settings
+    case nextMatch
+    case nextMatchPlaceholder
+    case liveActivityReady
+    case eventNotSelected
+    case liveActivitiesToggle
+    case notificationsToggle
+    case testNotification
+    case logout
+    case language
+    case notificationPermissionGranted
+    case notificationPermissionDenied
+    case testNotificationSent
+    case testNotificationFailed
+}
+
+enum L10n {
+    static func text(_ key: L10nKey, language: AppLanguage) -> String {
+        switch language {
+        case .tr:
+            switch key {
+            case .teamNumberTitle: return "FRC Takım Numaranız"
+            case .teamNumberPlaceholder: return "örn. 6232"
+            case .continueButton: return "Devam Et"
+            case .tbaApiKey: return "TBA API Key"
+            case .enterTbaKey: return "TBA key girin"
+            case .confirm: return "Onayla"
+            case .remove: return "Kaldır"
+            case .tbaKeyConfirmed: return "TBA Key Onaylandı"
+            case .mustConfirmTba: return "Devam etmek için önce TBA API Key onaylanmalı."
+            case .teamValidationFailed: return "Takım doğrulanamadı. Lütfen bilgileri kontrol edin."
+            case .poweredBy: return "Powered by Onur Akyüz"
+            case .eventSelection: return "Etkinlik Seçimi"
+            case .teamSelection: return "Takım Seçimi"
+            case .loadingEvents: return "Etkinlikler yükleniyor..."
+            case .retry: return "Tekrar Dene"
+            case .invalidTeamOrEvents: return "Etkinlikler yüklenemedi veya geçersiz takım."
+            case .noEventsForYear: return "Bu takım için 2026 etkinliği bulunamadı."
+            case .teamPrefix: return "Takım"
+            case .dashboard: return "Dashboard"
+            case .schedule: return "Schedule"
+            case .settings: return "Settings"
+            case .nextMatch: return "Next Match"
+            case .nextMatchPlaceholder: return "Veri yakında Nexus ile güncellenecek"
+            case .liveActivityReady: return "Live Activity: Hazır"
+            case .eventNotSelected: return "Etkinlik seçilmedi"
+            case .liveActivitiesToggle: return "Canlı Etkinlikleri (Live Activities) Aç"
+            case .notificationsToggle: return "Bildirimleri İzin Ver"
+            case .testNotification: return "Bildirimi Test Et"
+            case .logout: return "Çıkış Yap"
+            case .language: return "Dil"
+            case .notificationPermissionGranted: return "Bildirim izni verildi."
+            case .notificationPermissionDenied: return "Bildirim izni verilmedi."
+            case .testNotificationSent: return "2 saniye içinde test bildirimi gönderilecek."
+            case .testNotificationFailed: return "Bildirim gönderilemedi:"
+            }
+        case .en:
+            switch key {
+            case .teamNumberTitle: return "Your FRC Team Number"
+            case .teamNumberPlaceholder: return "e.g., 6232"
+            case .continueButton: return "Continue"
+            case .tbaApiKey: return "TBA API Key"
+            case .enterTbaKey: return "Enter TBA key"
+            case .confirm: return "Confirm"
+            case .remove: return "Remove"
+            case .tbaKeyConfirmed: return "TBA Key Confirmed"
+            case .mustConfirmTba: return "Please confirm TBA API Key before continuing."
+            case .teamValidationFailed: return "Team validation failed. Please check your details."
+            case .poweredBy: return "Powered by Onur Akyüz"
+            case .eventSelection: return "Event Selection"
+            case .teamSelection: return "Team Selection"
+            case .loadingEvents: return "Loading events..."
+            case .retry: return "Retry"
+            case .invalidTeamOrEvents: return "Could not load events or invalid team."
+            case .noEventsForYear: return "No 2026 events were found for this team."
+            case .teamPrefix: return "Team"
+            case .dashboard: return "Dashboard"
+            case .schedule: return "Schedule"
+            case .settings: return "Settings"
+            case .nextMatch: return "Next Match"
+            case .nextMatchPlaceholder: return "Data will be updated from Nexus soon"
+            case .liveActivityReady: return "Live Activity: Ready"
+            case .eventNotSelected: return "No event selected"
+            case .liveActivitiesToggle: return "Enable Live Activities"
+            case .notificationsToggle: return "Allow Notifications"
+            case .testNotification: return "Send Test Notification"
+            case .logout: return "Log Out"
+            case .language: return "Language"
+            case .notificationPermissionGranted: return "Notification permission granted."
+            case .notificationPermissionDenied: return "Notification permission denied."
+            case .testNotificationSent: return "Test notification will arrive in 2 seconds."
+            case .testNotificationFailed: return "Could not send notification:"
+            }
+        }
+    }
+}
