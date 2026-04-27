@@ -4,7 +4,6 @@ struct OnboardingView: View {
     @AppStorage("teamNumber") private var storedTeamNumber: String = ""
     @State private var teamNumberInput: String = ""
     @State private var selectedLanguage: AppLanguage = .tr
-    @State private var navigateToMain = false
     @State private var isLoading = false
     @State private var errorMessage: String?
     @FocusState private var isFieldFocused: Bool
@@ -48,9 +47,6 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 32)
             .background(Color.white.ignoresSafeArea())
-            .navigationDestination(isPresented: $navigateToMain) {
-                MainDashboardView()
-            }
         }
         .onAppear {
             let clamped = String(storedTeamNumber.prefix(maxTeamNumberLength))
@@ -164,9 +160,6 @@ struct OnboardingView: View {
             try await FRCService.shared.validateTeam(teamNumber: cleaned)
             storedTeamNumber = cleaned
             isFieldFocused = false
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                navigateToMain = true
-            }
         } catch {
             errorMessage = error.localizedDescription
         }
