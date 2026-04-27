@@ -1,162 +1,139 @@
 # FRCLive
 
-FRCLive, FRC takımlarının etkinlik ve maç takibini hızlı, okunabilir ve modern bir iOS deneyimiyle sunmak için geliştirilen bir uygulamadır.  
-Uygulama; **The Blue Alliance (TBA)** ve **FRC Nexus** servislerinden gelen verileri birleştirerek takım profili, etkinlik seçimi, maç takvimi, canlı kuyruk durumu, bildirim ve Live Activity akışını tek bir yerde toplar.
+FRCLive; FRC takımlarının etkinlik, maç takvimi ve canlı kuyruk durumunu hızlı takip edebilmesi için geliştirilen modern bir iOS uygulamasıdır.  
+Uygulama, **The Blue Alliance (TBA)** ve **FRC Nexus** servislerini birleştirerek tek akışta kullanılabilir veri sunar.
 
 **GitHub Repo:** [https://github.com/OnurAkyuz61/FRCLive](https://github.com/OnurAkyuz61/FRCLive)
 
-## İçindekiler
+## Uygulama Görselleri
 
-- Proje Özeti
-- Kullanılan Görseller
-- Özellikler
-- Uygulama Akışı
-- Entegrasyonlar (TBA & Nexus)
-- Live Activities ve Widget
-- Kurulum
-- Proje Yapısı
-- Screenshots
-- Katkı ve Lisans
-- İletişim
+### Uygulama İkonu
+
+![FRCLive App Icon](<FRCLive/Assets.xcassets/AppIcon.appiconset/FRC Ö.v-iOS-Default-1024x1024@1x.png>)
+
+### FIRST Logo
+
+![FIRST Logo](<FRCLive/Assets.xcassets/FIRST_Vertical_RGB.imageset/FIRST_Vertical_RGB.png>)
+
+### Güncel Oyun (Onboarding Animasyonu)
+
+![Rebuilt](FRCLive/rebuilt.gif)
 
 ## Proje Özeti
 
-FRCLive’in temel amacı, pit alanında hızlı karar almayı kolaylaştırmaktır:
+FRCLive’in ana hedefi pit ortamında hızlı okunabilir ve net bir deneyim sunmaktır:
 
-- Takım numarası + TBA API Key ile güvenli giriş
-- Takımın 2026 etkinliklerinin listelenmesi
-- Etkinlik bazlı maç takvimi ve takım filtrelemesi
-- Dashboard’da canlı kuyruk / sıradaki maç bilgisi
-- Local notification ve Live Activity desteği
-- TR/EN dil desteği (uygulama genelinde)
-- Demo modu (`99999`) ile görsel test akışı
-
-## Kullanılan Görseller
-
-Bu projede aşağıdaki görseller aktif olarak kullanılır:
-
-- Uygulama ikonu  
-  `FRCLive/Assets.xcassets/AppIcon.appiconset/FRC Ö.v-iOS-Default-1024x1024@1x.png`
-- FIRST logosu  
-  `FRCLive/Assets.xcassets/FIRST_Vertical_RGB.imageset/FIRST_Vertical_RGB.png`
-- Güncel oyun / onboarding animasyonu  
-  `FRCLive/rebuilt.gif`
+- Takım numarası ve TBA API key doğrulama
+- Takım etkinliklerinin listelenmesi
+- Etkinlik seçimi sonrası canlı dashboard akışı
+- Maç takvimi, kuyruk durumu ve bildirim desteği
+- Live Activity ve widget desteği
+- TR/EN dil desteği
+- Demo modu (`99999`) ile ekran testleri
 
 ## Özellikler
 
-### 1) Onboarding
+### Onboarding
 
-- Takım numarası girişi (maksimum 5 hane)
-- TBA API key giriş/onaylama/kaldırma
-- API key onaylanmadan devam etme engeli
-- Yeniden markalanmış onboarding görsel alanı (`rebuilt.gif`)
+- Maksimum 5 hane takım numarası girişi
+- TBA API key onay/kaldırma akışı
+- API key onaylanmadan devam engeli
+- `rebuild.gif` ile görsel onboarding başlığı
 
-### 2) Event Selection
+### Event Selection
 
-- Takım nickname + takım numarası + avatar gösterimi
-- Etkinliklerin modern kart yapısında listelenmesi
-- Geçmiş etkinliklerin “Etkinlik Tamamlandı” etiketiyle pasifleştirilmesi
-- Etkinlik seçimi sonrası ana uygulama sekmelerine geçiş
+- Takım adı (nickname), takım numarası ve avatar
+- Kart tabanlı modern etkinlik listesi
+- Geçmiş etkinlikler için “Etkinlik Tamamlandı” etiketi
+- Uygun etkinlikte ana sekmelere geçiş
 
-### 3) Dashboard
+### Dashboard (Ana Sayfa)
 
-- Takım özeti ve seçili etkinlik başlığı
+- Takım ve etkinlik başlığı
 - Live “Next Match” kartı
 - Kuyruk durumu + tahmini başlama bilgisi
 - “Şu an sahada” satırı
-- Nexus verisi periyodik yenileme (polling)
+- Nexus verisi ile periyodik yenileme
 
-### 4) Schedule
+### Takvim
 
-- Seçili etkinliğin maç listesini TBA’den çekme
-- Takımın dahil olduğu maçları filtreleme
-- Maç takvimi yayınlanmadıysa uygun boş durum mesajı
+- Seçili etkinliğin TBA maç listesi
+- Takıma göre filtreleme
+- Takvim henüz yoksa uygun boş durum mesajı
 
-### 5) Settings
+### Ayarlar
 
-- Canlı Etkinlikler (Live Activities) aç/kapat
-- Bildirim izinleri ve test bildirimi
-- Dil seçimi (TR / EN)
+- Canlı Etkinlikler aç/kapat
+- Bildirim izni ve test bildirimi
+- Dil seçimi (TR/EN)
 - Çıkış yapma
-
-## Uygulama Akışı
-
-1. Onboarding (takım + TBA key doğrulama)
-2. Event Selection (etkinlik seçimi)
-3. MainTabContainer
-   - Ana Sayfa
-   - Takvim
-   - Ayarlar
 
 ## Entegrasyonlar
 
 ### The Blue Alliance (TBA)
 
-- Takım profili (nickname)
+- Takım profili
 - Takım etkinlikleri (2026)
-- Etkinlik maç takvimi (simple matches)
-- Takım medyası (avatar çözümleme)
+- Etkinlik maç listesi (`matches/simple`)
+- Takım medyası/avatar
 
 ### FRC Nexus
 
-- Etkinlik kuyruk durumu
-- Sahadaki güncel maç
+- Canlı kuyruk bilgisi
+- Şu an sahadaki maç
 - Takımın sıradaki maçı
-- Kuyruk statüsü (`Not Called`, `Called to Queue`, `On Field`)
+- Kuyruk statüsü
 
 ## Live Activities ve Widget
 
 - Dashboard canlı verisi geldikçe Live Activity güncellenir
-- Widget target (`FRCLiveWidgets`) üzerinden:
-  - Small / Medium / Large widget desteği
-  - Lock Screen / Dynamic Island Live Activity görünümü
-- App Group ile widget veri paylaşımı desteklenir  
-  (`group.onurakyuz.FRCLive`)
+- `FRCLiveWidgets` target’ı ile small/medium/large widget desteği
+- Lock Screen ve Dynamic Island görünümü
+- App Group ile veri paylaşımı:
+  - `group.onurakyuz.FRCLive`
 
 ## Kurulum
 
-1. Depoyu klonlayın:
+1. Depoyu klonla:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/OnurAkyuz61/FRCLive.git
 cd FRCLive
 ```
 
-2. Projeyi Xcode ile açın:
+2. Xcode ile aç:
 
 ```bash
 open FRCLive.xcodeproj
 ```
 
-3. `Signing & Capabilities` ayarlarını yapın:
-- `FRCLive` ve `FRCLiveWidgetsExtension` için uygun Team seçin
-- Gerekli capability’leri doğrulayın:
-  - App Groups
-  - Live Activities
+3. `Signing & Capabilities` ayarları:
 
-4. Simülatör veya fiziksel cihaz seçip çalıştırın:
+- `FRCLive` target: Team, Live Activities, App Groups
+- `FRCLiveWidgetsExtension` target: Team, App Groups
+- Her iki target için aynı App Group: `group.onurakyuz.FRCLive`
+
+4. Çalıştır:
+
+- Simulator veya gerçek cihaz seç
 - `Cmd + R`
 
 ## Proje Yapısı
 
-- `FRCLive/`  
-  Ana uygulama kaynak kodları (Views, API clients, managers)
-- `FRCLiveWidgets/`  
-  Widget ve Live Activity extension kodları
-- `FRCLive/Assets.xcassets/`  
-  Uygulama görsel varlıkları
-- `Config/`  
-  Local config örnekleri
+- `FRCLive/` → ana uygulama kodları (view, client, manager)
+- `FRCLiveWidgets/` → widget + live activity extension
+- `FRCLive/Assets.xcassets/` → ikon/logo/görsel varlıklar
+- `README.md` → proje dokümantasyonu
 
 ## Screenshots
 
-Ekran görüntüleri bu depoda güncellenmeye devam edecek.  
-Yeni ekran görselleri yakında bu bölüme eklenecektir.
+Bu bölüm düzenli olarak güncellenecektir.  
+Yeni uygulama ekran görüntüleri burada yayınlanacaktır.
 
-## Katkı ve Lisans
+## Lisans
 
-- Lisans: MIT (`LICENSE`)
-- Katkı yapmak için issue/PR açabilirsiniz.
+Bu proje MIT lisansı ile lisanslanmıştır.  
+Detay: `LICENSE`
 
 ## İletişim
 
