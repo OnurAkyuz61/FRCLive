@@ -23,25 +23,45 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
 struct FRCLiveWidgetsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
                     Text("Takım \(context.state.teamNumber)")
                         .font(.subheadline.weight(.semibold))
-                    Spacer()
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Spacer(minLength: 10)
                     Text(context.state.eventName)
-                        .font(.caption)
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
+
                 Text(context.state.nextMatch)
-                    .font(.title2.weight(.bold))
+                    .font(.system(size: 35, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
                 Text(context.state.status)
-                    .font(.subheadline.weight(.medium))
-                Text("Şu an sahada: \(context.state.currentOnField)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                    Text("Şu an sahada: \(context.state.currentOnField)")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
-            .padding(.vertical, 6)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .activityBackgroundTint(Color.blue.opacity(0.12))
             .activitySystemActionForegroundColor(.primary)
 
@@ -68,8 +88,10 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
                         Text(context.state.status)
+                            .lineLimit(1)
                         Spacer()
                         Text("Saha: \(context.state.currentOnField)")
+                            .lineLimit(1)
                     }
                     .font(.subheadline)
                 }
