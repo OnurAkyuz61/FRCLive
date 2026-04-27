@@ -9,72 +9,107 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-struct FRCLiveWidgetsAttributes: ActivityAttributes {
+struct FRCLiveActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
-        var emoji: String
+        var teamNumber: String
+        var eventName: String
+        var nextMatch: String
+        var status: String
+        var currentOnField: String
+        var estimatedStart: String
     }
-
-    // Fixed non-changing properties about your activity go here!
-    var name: String
 }
 
 struct FRCLiveWidgetsLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: FRCLiveWidgetsAttributes.self) { context in
-            // Lock screen/banner UI goes here
-            VStack {
-                Text("Hello \(context.state.emoji)")
+        ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Takım \(context.state.teamNumber)")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text(context.state.eventName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Text(context.state.nextMatch)
+                    .font(.title2.weight(.bold))
+                Text(context.state.status)
+                    .font(.subheadline.weight(.medium))
+                Text("Şu an sahada: \(context.state.currentOnField)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
-            .activityBackgroundTint(Color.cyan)
-            .activitySystemActionForegroundColor(Color.black)
+            .padding(.vertical, 6)
+            .activityBackgroundTint(Color.blue.opacity(0.12))
+            .activitySystemActionForegroundColor(.primary)
 
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI goes here.  Compose the expanded UI through
-                // various regions, like leading/trailing/center/bottom
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("Leading")
+                    VStack(alignment: .leading) {
+                        Text("Takım")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(context.state.teamNumber)
+                            .font(.headline)
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("Trailing")
+                    VStack(alignment: .trailing) {
+                        Text("Sıradaki")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(context.state.nextMatch)
+                            .font(.headline)
+                    }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text("Bottom \(context.state.emoji)")
-                    // more content
+                    HStack {
+                        Text(context.state.status)
+                        Spacer()
+                        Text("Saha: \(context.state.currentOnField)")
+                    }
+                    .font(.subheadline)
                 }
             } compactLeading: {
-                Text("L")
+                Text(context.state.teamNumber)
+                    .font(.caption2.weight(.semibold))
             } compactTrailing: {
-                Text("T \(context.state.emoji)")
+                Text(context.state.nextMatch)
+                    .font(.caption2.weight(.semibold))
             } minimal: {
-                Text(context.state.emoji)
+                Text("FRC")
+                    .font(.caption2.weight(.bold))
             }
-            .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color.red)
+            .widgetURL(URL(string: "frclive://dashboard"))
+            .keylineTint(Color.blue)
         }
     }
 }
 
-extension FRCLiveWidgetsAttributes {
-    fileprivate static var preview: FRCLiveWidgetsAttributes {
-        FRCLiveWidgetsAttributes(name: "World")
+extension FRCLiveActivityAttributes {
+    fileprivate static var preview: FRCLiveActivityAttributes {
+        FRCLiveActivityAttributes()
     }
 }
 
-extension FRCLiveWidgetsAttributes.ContentState {
-    fileprivate static var smiley: FRCLiveWidgetsAttributes.ContentState {
-        FRCLiveWidgetsAttributes.ContentState(emoji: "😀")
-     }
-     
-     fileprivate static var starEyes: FRCLiveWidgetsAttributes.ContentState {
-         FRCLiveWidgetsAttributes.ContentState(emoji: "🤩")
-     }
+extension FRCLiveActivityAttributes.ContentState {
+    fileprivate static var preview: FRCLiveActivityAttributes.ContentState {
+        FRCLiveActivityAttributes.ContentState(
+            teamNumber: "99999",
+            eventName: "Demo Active Regional",
+            nextMatch: "Qual 42",
+            status: "Kuyruğa çağrıldı",
+            currentOnField: "Qual 34",
+            estimatedStart: "10 dk"
+        )
+    }
 }
 
-#Preview("Notification", as: .content, using: FRCLiveWidgetsAttributes.preview) {
+#Preview("Notification", as: .content, using: FRCLiveActivityAttributes.preview) {
    FRCLiveWidgetsLiveActivity()
 } contentStates: {
-    FRCLiveWidgetsAttributes.ContentState.smiley
-    FRCLiveWidgetsAttributes.ContentState.starEyes
+    FRCLiveActivityAttributes.ContentState.preview
 }
