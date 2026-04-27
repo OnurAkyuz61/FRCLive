@@ -5,20 +5,21 @@ struct MainTabContainer: View {
     @State private var selectedTab: Tab = .dashboard
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $selectedTab) {
+        ZStack {
+            switch selectedTab {
+            case .dashboard:
                 DashboardView()
-                    .tag(Tab.dashboard)
-
+            case .schedule:
                 ScheduleView()
-                    .tag(Tab.schedule)
-
+            case .settings:
                 SettingsView()
-                    .tag(Tab.settings)
             }
-            .toolbar(.hidden, for: .tabBar)
-
+        }
+        .safeAreaInset(edge: .bottom) {
             liquidGlassTabBar
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
@@ -29,7 +30,7 @@ struct MainTabContainer: View {
             tabButton(tab: .schedule, icon: "calendar", title: "Schedule")
             tabButton(tab: .settings, icon: "gearshape.fill", title: "Settings")
         }
-        .padding(.horizontal, 22)
+        .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -52,8 +53,6 @@ struct MainTabContainer: View {
                 )
                 .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
         )
-        .padding(.horizontal, 24)
-        .padding(.bottom, 18)
     }
 
     private func tabButton(tab: Tab, icon: String, title: String) -> some View {
