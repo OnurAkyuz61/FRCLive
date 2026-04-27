@@ -1,6 +1,6 @@
 import Foundation
 
-struct TBAEvent: Codable, Identifiable {
+struct TBAEvent: Decodable, Identifiable {
     var id: String { eventCode }
 
     let name: String
@@ -30,7 +30,7 @@ struct TBAEvent: Codable, Identifiable {
     }
 }
 
-struct NexusQueue: Codable {
+struct NexusQueue: Decodable {
     let currentMatch: String
     let estimatedTime: String
     let status: String
