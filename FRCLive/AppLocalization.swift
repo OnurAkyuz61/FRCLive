@@ -53,6 +53,7 @@ enum L10nKey {
     case liveDataError
     case loadingMatches
     case noMatchesForTeam
+    case matchScheduleNotCreated
     case matchLabel
     case redAlliance
     case blueAlliance
@@ -108,6 +109,7 @@ enum L10n {
             case .liveDataError: return "Canlı veri alınamadı."
             case .loadingMatches: return "Maçlar yükleniyor..."
             case .noMatchesForTeam: return "Bu etkinlikte takım için maç bulunamadı."
+            case .matchScheduleNotCreated: return "Maç Takvimi Daha Oluşturulmadı"
             case .matchLabel: return "Maç"
             case .redAlliance: return "Kırmızı"
             case .blueAlliance: return "Mavi"
@@ -159,6 +161,7 @@ enum L10n {
             case .liveDataError: return "Could not fetch live data."
             case .loadingMatches: return "Loading matches..."
             case .noMatchesForTeam: return "No matches found for this team in this event."
+            case .matchScheduleNotCreated: return "Match schedule has not been published yet"
             case .matchLabel: return "Match"
             case .redAlliance: return "Red"
             case .blueAlliance: return "Blue"

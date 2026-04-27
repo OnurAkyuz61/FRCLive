@@ -72,7 +72,7 @@ private struct ScheduleView: View {
                         Image(systemName: "checkmark.circle")
                             .font(.title2)
                             .foregroundColor(.green)
-                        Text(L10n.text(.noMatchesForTeam, language: appLanguage))
+                        Text(L10n.text(.matchScheduleNotCreated, language: appLanguage))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)

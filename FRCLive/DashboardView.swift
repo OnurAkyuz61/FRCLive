@@ -11,6 +11,7 @@ struct DashboardView: View {
     @State private var liveSnapshot: NexusTeamQueueSnapshot?
     @State private var isLoadingLiveData = false
     @State private var liveErrorMessage: String?
+    @State private var isMatchScheduleNotCreated = false
     @State private var pulse = false
 
     var body: some View {
@@ -102,7 +103,11 @@ struct DashboardView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle")
                         .foregroundColor(.green)
-                    Text(L10n.text(.noUpcomingMatch, language: appLanguage))
+                    Text(
+                        isMatchScheduleNotCreated
+                        ? L10n.text(.matchScheduleNotCreated, language: appLanguage)
+                        : L10n.text(.noUpcomingMatch, language: appLanguage)
+                    )
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -204,8 +209,27 @@ struct DashboardView: View {
             )
             liveSnapshot = snapshot
             liveErrorMessage = nil
+            isMatchScheduleNotCreated = false
         } catch {
-            liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
+            do {
+                let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
+                let teamKey = "frc\(team)"
+                let teamMatches = allMatches.filter { match in
+                    match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
+                }
+
+                if allMatches.isEmpty || teamMatches.isEmpty {
+                    isMatchScheduleNotCreated = true
+                    liveErrorMessage = nil
+                    liveSnapshot = nil
+                } else {
+                    isMatchScheduleNotCreated = false
+                    liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
+                }
+            } catch {
+                isMatchScheduleNotCreated = false
+                liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
+            }
         }
     }
 
