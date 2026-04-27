@@ -65,9 +65,13 @@ struct EventSelectionView: View {
         errorMessage = nil
         defer { isLoading = false }
 
-        events = await TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
-        if events.isEmpty {
-            errorMessage = "Bu takım için 2026 etkinliği bulunamadı."
+        do {
+            events = try await TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
+            if events.isEmpty {
+                errorMessage = "Bu takım için 2026 etkinliği bulunamadı."
+            }
+        } catch {
+            errorMessage = "Etkinlikler yüklenemedi veya geçersiz takım."
         }
     }
 }

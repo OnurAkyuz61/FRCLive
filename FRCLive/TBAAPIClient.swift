@@ -1,57 +1,60 @@
 import Foundation
 
+enum TBAAPIClientError: LocalizedError {
+    case invalidRequest
+    case unauthorized
+    case invalidTeam
+    case failedToLoadEvents
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidRequest, .failedToLoadEvents:
+            return "Etkinlikler yüklenemedi veya geçersiz takım."
+        case .unauthorized:
+            return "TBA API anahtarı geçersiz."
+        case .invalidTeam:
+            return "Etkinlikler yüklenemedi veya geçersiz takım."
+        }
+    }
+}
+
 final class TBAAPIClient {
     static let shared = TBAAPIClient()
-    var tbaAuthKey = ""
+    var tbaAuthKey = "wYwgOi4y1OUsPNIaKEXyiBAFLlJcWiMDIte2W3mXa0QOwSzdswgzL6JLwSMSNaxn"
 
     private init() {}
 
-    func fetchTeamEvents2026(teamNumber: String) async -> [TBAEvent] {
+    func fetchTeamEvents2026(teamNumber: String) async throws -> [TBAEvent] {
         let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedKey.isEmpty else {
-            return mockEvents
+            throw TBAAPIClientError.unauthorized
         }
 
         guard let url = URL(string: "https://www.thebluealliance.com/api/v3/team/frc\(teamNumber)/events/2026") else {
-            return mockEvents
+            throw TBAAPIClientError.invalidRequest
         }
 
         var request = URLRequest(url: url)
         request.setValue(cleanedKey, forHTTPHeaderField: "X-TBA-Auth-Key")
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                return mockEvents
-            }
-
-            let decoded = try JSONDecoder().decode([TBAEvent].self, from: data)
-            return decoded.isEmpty ? mockEvents : decoded
-        } catch {
-            return mockEvents
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TBAAPIClientError.failedToLoadEvents
         }
-    }
 
-    private var mockEvents: [TBAEvent] {
-        [
-            TBAEvent(
-                name: "Istanbul Regional",
-                eventCode: "2026istr",
-                date: "2026-03-05",
-                city: "Istanbul"
-            ),
-            TBAEvent(
-                name: "Marmara Regional",
-                eventCode: "2026marm",
-                date: "2026-03-15",
-                city: "Istanbul"
-            ),
-            TBAEvent(
-                name: "FIRST Championship",
-                eventCode: "2026cmp",
-                date: "2026-04-15",
-                city: "Houston"
-            )
-        ]
+        switch httpResponse.statusCode {
+        case 200:
+            do {
+                return try JSONDecoder().decode([TBAEvent].self, from: data)
+            } catch {
+                throw TBAAPIClientError.failedToLoadEvents
+            }
+        case 401, 403:
+            throw TBAAPIClientError.unauthorized
+        case 404:
+            throw TBAAPIClientError.invalidTeam
+        default:
+            throw TBAAPIClientError.failedToLoadEvents
+        }
     }
 }
