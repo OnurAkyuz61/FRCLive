@@ -6,6 +6,7 @@ struct OnboardingView: View {
     @State private var selectedLanguage: AppLanguage = .tr
     @State private var navigateToMain = false
     @FocusState private var isFieldFocused: Bool
+    private let maxTeamNumberLength = 5
 
     var body: some View {
         NavigationStack {
@@ -42,7 +43,11 @@ struct OnboardingView: View {
             }
         }
         .onAppear {
-            teamNumberInput = storedTeamNumber
+            let clamped = String(storedTeamNumber.prefix(maxTeamNumberLength))
+            if storedTeamNumber != clamped {
+                storedTeamNumber = clamped
+            }
+            teamNumberInput = clamped
         }
     }
 
@@ -64,11 +69,12 @@ struct OnboardingView: View {
                 text: Binding(
                     get: { teamNumberInput },
                     set: { newValue in
-                        teamNumberInput = newValue.filter(\.isNumber)
+                        let digitsOnly = newValue.filter(\.isNumber)
+                        teamNumberInput = String(digitsOnly.prefix(maxTeamNumberLength))
                     }
                 ),
                 prompt: Text(AppStrings.text(.teamNumberPlaceholder, language: selectedLanguage))
-                    .foregroundColor(.white.opacity(0.42))
+                    .foregroundColor(.gray)
             )
             .keyboardType(.numberPad)
             .textInputAutocapitalization(.never)
