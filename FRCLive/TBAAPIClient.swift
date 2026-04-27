@@ -162,7 +162,9 @@ final class TBAAPIClient {
 
     func fetchTeamEvents2026(teamNumber: String) async throws -> [TBAEvent] {
         if teamNumber == demoTeamNumber {
+            let today = Self.demoDateFormatter.string(from: Date())
             return [
+                TBAEvent(name: "Demo Active Regional", eventCode: "2026demoactive", date: today, city: "Istanbul"),
                 TBAEvent(name: "Demo Marmara Regional", eventCode: "2026trmr", date: "2026-03-20", city: "Istanbul"),
                 TBAEvent(name: "Demo Bosphorus Regional", eventCode: "2026trbo", date: "2026-03-27", city: "Istanbul"),
                 TBAEvent(name: "Demo Championship", eventCode: "2026cmp", date: "2026-04-18", city: "Houston")
@@ -288,4 +290,13 @@ final class TBAAPIClient {
         ]
         return demoMatches
     }
+
+    private static let demoDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }
