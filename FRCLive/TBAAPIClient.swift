@@ -24,7 +24,12 @@ enum TBAAPIClientError: LocalizedError {
 
 final class TBAAPIClient {
     static let shared = TBAAPIClient()
-    var tbaAuthKey = "wYwgOi4y1OUsPNIaKEXyiBAFLlJcWiMDIte2W3mXa0QOwSzdswgzL6JLwSMSNaxn"
+    static let tbaAuthKeyStorageKey = "tbaAuthKey"
+
+    private var tbaAuthKey: String {
+        let value = UserDefaults.standard.string(forKey: Self.tbaAuthKeyStorageKey) ?? ""
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     private init() {}
 

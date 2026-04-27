@@ -1,8 +1,13 @@
 import SwiftUI
+import WebKit
 
 struct OnboardingView: View {
     @AppStorage("teamNumber") private var storedTeamNumber: String = ""
+    @AppStorage(TBAAPIClient.tbaAuthKeyStorageKey) private var storedTBAKey: String = ""
     @State private var teamNumberInput: String = ""
+    @State private var tbaKeyInput: String = ""
+    @State private var tbaKeyStatusMessage: String?
+    @State private var isTBAKeyConfirmed = false
     @State private var selectedLanguage: AppLanguage = .tr
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -12,7 +17,7 @@ struct OnboardingView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                logoSection
+                rebuiltGifSection
                     .padding(.top, 48)
                     .padding(.bottom, 28)
 
@@ -28,6 +33,9 @@ struct OnboardingView: View {
                 continueButton
                     .padding(.bottom, 20)
 
+                tbaKeySection
+                    .padding(.bottom, 16)
+
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
@@ -39,6 +47,9 @@ struct OnboardingView: View {
                 languageSelector
 
                 Spacer()
+
+                firstLogoBottomSection
+                    .padding(.bottom, 8)
 
                 Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
                     .font(.footnote)
@@ -54,18 +65,30 @@ struct OnboardingView: View {
                 storedTeamNumber = clamped
             }
             teamNumberInput = clamped
+            tbaKeyInput = storedTBAKey
+            if !storedTBAKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                isTBAKeyConfirmed = true
+                tbaKeyStatusMessage = "Onaylandı"
+            }
         }
     }
 
-    private var logoSection: some View {
+    private var rebuiltGifSection: some View {
         VStack(spacing: 10) {
-            // Ensure the "FIRST_Vertical_RGB" image asset exists in Assets.xcassets.
-            Image("FIRST_Vertical_RGB")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 150, height: 150)
+            // Put "rebuilt.gif" under FRCLive/ and ensure it's included in app target.
+            GIFView(gifName: "rebuilt")
+                .frame(width: 230, height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var firstLogoBottomSection: some View {
+        Image("FIRST_Vertical_RGB")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 120, height: 90)
+            .opacity(0.95)
     }
 
     private var inputField: some View {
@@ -123,6 +146,62 @@ struct OnboardingView: View {
         .disabled(teamNumberInput.isEmpty || isLoading)
         .opacity((teamNumberInput.isEmpty || isLoading) ? 0.6 : 1)
         .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty || isLoading)
+    }
+
+    private var tbaKeySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TBA API Key")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.black)
+
+            TextField(
+                "TBA key girin",
+                text: $tbaKeyInput,
+                prompt: Text("TBA key girin").foregroundColor(.gray)
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled(true)
+            .font(.footnote.monospaced())
+            .foregroundColor(.black)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Color.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.gray.opacity(0.7), lineWidth: 1)
+            )
+
+            HStack(spacing: 10) {
+                Button("Onayla") {
+                    let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !cleaned.isEmpty else { return }
+                    storedTBAKey = cleaned
+                    isTBAKeyConfirmed = true
+                    tbaKeyStatusMessage = "Onaylandı"
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(red: 0.09, green: 0.19, blue: 0.36))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                Button("Kaldır") {
+                    storedTBAKey = ""
+                    tbaKeyInput = ""
+                    isTBAKeyConfirmed = false
+                    tbaKeyStatusMessage = "Kaldırıldı"
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.red)
+            }
+
+            if let tbaKeyStatusMessage {
+                Text(tbaKeyStatusMessage)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(isTBAKeyConfirmed ? .green : .secondary)
+            }
+        }
     }
 
     private var languageSelector: some View {
@@ -201,4 +280,32 @@ private struct AppStrings {
 
 #Preview {
     OnboardingView()
+}
+
+private struct GIFView: UIViewRepresentable {
+    let gifName: String
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.isScrollEnabled = false
+        webView.isUserInteractionEnabled = false
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        guard let url = Bundle.main.url(forResource: gifName, withExtension: "gif") else {
+            return
+        }
+        let html = """
+        <html>
+        <head><meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0"/></head>
+        <body style="margin:0; background:transparent; overflow:hidden;">
+            <img src="\(url.lastPathComponent)" style="width:100%; height:100%; object-fit:contain;" />
+        </body>
+        </html>
+        """
+        webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
+    }
 }
