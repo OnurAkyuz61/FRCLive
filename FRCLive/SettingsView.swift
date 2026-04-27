@@ -95,19 +95,51 @@ struct SettingsView: View {
     }
 
     private func triggerTestNotification() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                scheduleTestNotification()
+            case .notDetermined:
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                    DispatchQueue.main.async {
+                        notificationsEnabled = granted
+                    }
+                    if granted {
+                        scheduleTestNotification()
+                    } else {
+                        DispatchQueue.main.async {
+                            infoMessage = L10n.text(.notificationPermissionDenied, language: appLanguage)
+                        }
+                    }
+                }
+            case .denied:
+                DispatchQueue.main.async {
+                    notificationsEnabled = false
+                    infoMessage = L10n.text(.notificationPermissionDenied, language: appLanguage)
+                }
+            @unknown default:
+                DispatchQueue.main.async {
+                    infoMessage = L10n.text(.testNotificationFailed, language: appLanguage)
+                }
+            }
+        }
+    }
+
+    private func scheduleTestNotification() {
         let content = UNMutableNotificationContent()
-        content.title = "FRCLive Test Bildirimi"
-        content.body = "Canlı takip bildirim sistemi çalışıyor."
+        content.title = appLanguage == .tr ? "FRCLive Test Bildirimi" : "FRCLive Test Notification"
+        content.body = appLanguage == .tr ? "Canlı takip bildirim sistemi çalışıyor." : "Live tracking notification system is working."
         content.sound = .default
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: "frclive-test-\(UUID().uuidString)", content: content, trigger: trigger)
 
         UNUserNotificationCenter.current().add(request) { error in
             DispatchQueue.main.async {
                 if let error {
                     infoMessage = "\(L10n.text(.testNotificationFailed, language: appLanguage)) \(error.localizedDescription)"
                 } else {
+                    notificationsEnabled = true
                     infoMessage = L10n.text(.testNotificationSent, language: appLanguage)
                 }
             }

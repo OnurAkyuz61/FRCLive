@@ -9,6 +9,7 @@ import SwiftUI
 
 @main
 struct FRCLiveApp: App {
+    @UIApplicationDelegateAdaptor(NotificationAppDelegate.self) private var notificationAppDelegate
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
 
