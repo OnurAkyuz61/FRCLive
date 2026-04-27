@@ -252,11 +252,15 @@ struct OnboardingView: View {
         defer { isLoading = false }
 
         do {
-            try await FRCService.shared.validateTeam(teamNumber: cleaned)
+            _ = try await TBAAPIClient.shared.fetchTeamProfile(teamNumber: cleaned)
             storedTeamNumber = cleaned
             isFieldFocused = false
         } catch {
-            errorMessage = error.localizedDescription
+            if let localizedError = error as? LocalizedError, let description = localizedError.errorDescription {
+                errorMessage = description
+            } else {
+                errorMessage = "Takım doğrulanamadı. Lütfen bilgileri kontrol edin."
+            }
         }
     }
 }
