@@ -109,9 +109,19 @@ enum NexusAPIClientError: LocalizedError {
 
 final class NexusAPIClient {
     static let shared = NexusAPIClient()
+    private let demoTeamNumber = 99999
     private init() {}
 
     func fetchQueueSnapshot(eventCode: String, teamNumber: Int) async throws -> NexusTeamQueueSnapshot {
+        if teamNumber == demoTeamNumber {
+            return NexusTeamQueueSnapshot(
+                currentMatchOnField: "Qual 34",
+                teamNextMatch: "Qual 42",
+                estimatedStartTime: "10 dk",
+                queuingStatus: .calledToQueue
+            )
+        }
+
         guard let url = URL(string: "https://frc.nexus/api/v1/events/\(eventCode)/queuing") else {
             throw NexusAPIClientError.invalidRequest
         }

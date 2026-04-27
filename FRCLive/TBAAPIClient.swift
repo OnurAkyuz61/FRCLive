@@ -60,6 +60,7 @@ enum TBAAPIClientError: LocalizedError {
 final class TBAAPIClient {
     static let shared = TBAAPIClient()
     static let tbaAuthKeyStorageKey = "tbaAuthKey"
+    private let demoTeamNumber = "99999"
 
     private var tbaAuthKey: String {
         let value = UserDefaults.standard.string(forKey: Self.tbaAuthKeyStorageKey) ?? ""
@@ -69,6 +70,10 @@ final class TBAAPIClient {
     private init() {}
 
     func fetchTeamAvatarURL(teamNumber: String) async throws -> URL? {
+        if teamNumber == demoTeamNumber {
+            return nil
+        }
+
         let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedKey.isEmpty else {
             throw TBAAPIClientError.unauthorized
@@ -118,6 +123,10 @@ final class TBAAPIClient {
     }
 
     func fetchTeamProfile(teamNumber: String) async throws -> TBATeamProfile {
+        if teamNumber == demoTeamNumber {
+            return TBATeamProfile(nickname: "Demo Robotics")
+        }
+
         let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedKey.isEmpty else {
             throw TBAAPIClientError.unauthorized
@@ -152,6 +161,14 @@ final class TBAAPIClient {
     }
 
     func fetchTeamEvents2026(teamNumber: String) async throws -> [TBAEvent] {
+        if teamNumber == demoTeamNumber {
+            return [
+                TBAEvent(name: "Demo Marmara Regional", eventCode: "2026trmr", date: "2026-03-20", city: "Istanbul"),
+                TBAEvent(name: "Demo Bosphorus Regional", eventCode: "2026trbo", date: "2026-03-27", city: "Istanbul"),
+                TBAEvent(name: "Demo Championship", eventCode: "2026cmp", date: "2026-04-18", city: "Houston")
+            ]
+        }
+
         let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedKey.isEmpty else {
             throw TBAAPIClientError.unauthorized
@@ -186,6 +203,10 @@ final class TBAAPIClient {
     }
 
     func fetchEventMatches(eventCode: String) async throws -> [TBASimpleMatch] {
+        if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
+            return demoMatches(for: eventCode)
+        }
+
         let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedKey.isEmpty else {
             throw TBAAPIClientError.unauthorized
@@ -224,5 +245,47 @@ final class TBAAPIClient {
         default:
             throw TBAAPIClientError.failedToLoadEvents
         }
+    }
+
+    private func demoMatches(for eventCode: String) -> [TBASimpleMatch] {
+        let demoMatches: [TBASimpleMatch] = [
+            TBASimpleMatch(
+                key: "\(eventCode)_qm1",
+                compLevel: "qm",
+                matchNumber: 1,
+                setNumber: 1,
+                alliances: TBASimpleAlliances(
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc6415", "frc8154"]),
+                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc4784", "frc8840"])
+                ),
+                time: 1_773_600_000,
+                predictedTime: 1_773_600_000
+            ),
+            TBASimpleMatch(
+                key: "\(eventCode)_qm12",
+                compLevel: "qm",
+                matchNumber: 12,
+                setNumber: 1,
+                alliances: TBASimpleAlliances(
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc7285", "frc7748"]),
+                    blue: TBASimpleAlliance(teamKeys: ["frc10213", "frc2234", "frc5980"])
+                ),
+                time: 1_773_601_200,
+                predictedTime: 1_773_601_260
+            ),
+            TBASimpleMatch(
+                key: "\(eventCode)_qm25",
+                compLevel: "qm",
+                matchNumber: 25,
+                setNumber: 1,
+                alliances: TBASimpleAlliances(
+                    red: TBASimpleAlliance(teamKeys: ["frc6459", "frc5234", "frc4134"]),
+                    blue: TBASimpleAlliance(teamKeys: ["frc99999", "frc8840", "frc3310"])
+                ),
+                time: 1_773_603_000,
+                predictedTime: 1_773_603_200
+            )
+        ]
+        return demoMatches
     }
 }
