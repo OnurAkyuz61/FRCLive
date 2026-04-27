@@ -143,9 +143,9 @@ struct OnboardingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(teamNumberInput.isEmpty || isLoading)
-        .opacity((teamNumberInput.isEmpty || isLoading) ? 0.6 : 1)
-        .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty || isLoading)
+        .disabled(teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed)
+        .opacity((teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed) ? 0.6 : 1)
+        .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed)
     }
 
     private var tbaKeySection: some View {
@@ -230,6 +230,10 @@ struct OnboardingView: View {
     private func validateAndContinue() async {
         let cleaned = teamNumberInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty else { return }
+        guard isTBAKeyConfirmed else {
+            errorMessage = "Devam etmek için önce TBA API Key onaylanmalı."
+            return
+        }
 
         errorMessage = nil
         isLoading = true
@@ -240,13 +244,7 @@ struct OnboardingView: View {
             storedTeamNumber = cleaned
             isFieldFocused = false
         } catch {
-            if let serviceError = error as? FRCServiceError, serviceError == .missingAPIKey {
-                // UI test fallback: allow navigation flow without TBA key.
-                storedTeamNumber = cleaned
-                isFieldFocused = false
-            } else {
-                errorMessage = error.localizedDescription
-            }
+            errorMessage = error.localizedDescription
         }
     }
 }
