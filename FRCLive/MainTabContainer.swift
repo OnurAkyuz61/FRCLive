@@ -57,8 +57,7 @@ struct MainTabContainer: View {
     }
 
     private func tabButton(tab: Tab, icon: String, title: String) -> some View {
-        let isSelected = selectedTab == tab
-        Button {
+        return Button {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
                 selectedTab = tab
             }
@@ -66,20 +65,20 @@ struct MainTabContainer: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 17, weight: .semibold))
-                    .scaleEffect(isSelected ? 1.08 : 1.0)
+                    .scaleEffect(selectedTab == tab ? 1.08 : 1.0)
                 Text(title)
                     .font(.caption2.weight(.medium))
-                    .scaleEffect(isSelected ? 1.03 : 1.0)
+                    .scaleEffect(selectedTab == tab ? 1.03 : 1.0)
             }
-            .foregroundColor(isSelected ? .black : .gray)
+            .foregroundColor(selectedTab == tab ? .black : .gray)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.75) : Color.clear)
+                    .fill(selectedTab == tab ? Color.white.opacity(0.75) : Color.clear)
             )
-            .offset(y: isSelected ? -1 : 0)
-            .animation(.spring(response: 0.30, dampingFraction: 0.86), value: isSelected)
+            .offset(y: selectedTab == tab ? -1 : 0)
+            .animation(.spring(response: 0.30, dampingFraction: 0.86), value: selectedTab == tab)
         }
         .buttonStyle(.plain)
     }
