@@ -8,6 +8,10 @@
 import WidgetKit
 import SwiftUI
 
+private enum WidgetSharedKeys {
+    static let appGroupID = "group.onurakyuz.FRCLive"
+}
+
 struct FRCLiveWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry.preview
@@ -24,10 +28,9 @@ struct FRCLiveWidgetProvider: TimelineProvider {
     }
 
     private func loadEntry() -> SimpleEntry {
-        // If App Group is configured later, switch this to suite defaults.
-        let defaults = UserDefaults.standard
-        let teamNumber = defaults.string(forKey: "teamNumber") ?? "----"
-        let eventName = defaults.string(forKey: "selectedEventName") ?? "Etkinlik seçilmedi"
+        let defaults = UserDefaults(suiteName: WidgetSharedKeys.appGroupID) ?? UserDefaults.standard
+        let teamNumber = defaults.string(forKey: "widget_teamNumber") ?? "----"
+        let eventName = defaults.string(forKey: "widget_eventName") ?? "Etkinlik seçilmedi"
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "Qual 42"
         let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? "Kuyruğa çağrıldı"
         let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? "Az önce"

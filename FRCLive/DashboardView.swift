@@ -55,6 +55,7 @@ struct DashboardView: View {
                 }
             }
             .task {
+                pushWidgetSnapshot()
                 await startLivePolling()
             }
         }
@@ -264,11 +265,12 @@ struct DashboardView: View {
         let nextMatch = snapshot.teamNextMatch ?? L10n.text(.noUpcomingMatch, language: appLanguage)
         let status = statusText(snapshot.queuingStatus)
         let estimated = snapshot.estimatedStartTime ?? "-"
+        let eventName = selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName
 
         if liveActivitiesEnabled {
             await LiveActivityManager.shared.update(
                 teamNumber: teamNumber,
-                eventName: selectedEventName,
+                eventName: eventName,
                 nextMatch: nextMatch,
                 status: status,
                 currentOnField: snapshot.currentMatchOnField,
@@ -289,6 +291,23 @@ struct DashboardView: View {
             teamNumber: teamNumber,
             nextMatch: nextMatch,
             statusText: status
+        )
+
+        pushWidgetSnapshot(
+            nextMatch: nextMatch,
+            queueStatus: status
+        )
+    }
+
+    private func pushWidgetSnapshot(nextMatch: String? = nil, queueStatus: String? = nil) {
+        let updatedAt = appLanguage == .tr ? "Az önce" : "Just now"
+
+        WidgetDataStore.writeSnapshot(
+            teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
+            eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
+            nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "Qual 42"),
+            queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusUnknown, language: appLanguage)),
+            updatedAt: updatedAt
         )
     }
 
