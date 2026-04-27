@@ -38,6 +38,10 @@ final class LiveActivityManager {
             estimatedStart: estimatedStart
         )
 
+        if currentActivity == nil {
+            currentActivity = Activity<FRCLiveActivityAttributes>.activities.first
+        }
+
         if let currentActivity {
             await currentActivity.update(ActivityContent(state: state, staleDate: nil))
         } else {
@@ -47,7 +51,8 @@ final class LiveActivityManager {
                     content: ActivityContent(state: state, staleDate: nil)
                 )
             } catch {
-                // Ignore request failures silently; UI remains functional without Live Activity.
+                // Keep non-fatal, but log for easier diagnostics during development.
+                print("LiveActivity request failed: \(error.localizedDescription)")
             }
         }
     }
