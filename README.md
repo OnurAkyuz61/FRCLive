@@ -1,159 +1,162 @@
 # FRCLive
 
-FRCLive, FRC takımlarının etkinlik takibini hızlandırmak için geliştirilen modern bir iOS uygulamasıdır.  
-Uygulama, **The Blue Alliance (TBA)** ve **FRC Nexus** verilerini birleştirerek takım bilgisi, etkinlik seçimi, maç sırası ve canlı kuyruk durumunu tek bir akışta sunar.
+FRCLive, FRC takımlarının etkinlik ve maç takibini hızlı, okunabilir ve modern bir iOS deneyimiyle sunmak için geliştirilen bir uygulamadır.  
+Uygulama; **The Blue Alliance (TBA)** ve **FRC Nexus** servislerinden gelen verileri birleştirerek takım profili, etkinlik seçimi, maç takvimi, canlı kuyruk durumu, bildirim ve Live Activity akışını tek bir yerde toplar.
 
----
+## İçindekiler
 
-## TR - Türkçe
+- Proje Özeti
+- Kullanılan Görseller
+- Özellikler
+- Uygulama Akışı
+- Entegrasyonlar (TBA & Nexus)
+- Live Activities ve Widget
+- Kurulum
+- Proje Yapısı
+- Screenshots
+- Katkı ve Lisans
+- İletişim
 
-### Uygulama Özeti
+## Proje Özeti
 
-FRCLive; pit ortamında hızlı okunabilir, sade ve iOS-native bir deneyim sunar:
+FRCLive’in temel amacı, pit alanında hızlı karar almayı kolaylaştırmaktır:
 
-- Takım numarası ve TBA API key doğrulaması ile güvenli başlangıç
-- TBA üzerinden takım profili, etkinlikler ve maç listesi
-- FRC Nexus üzerinden canlı kuyruk/maç durumu
-- Dashboard, Schedule ve Settings sekmeleri
-- TR/EN dil desteği
+- Takım numarası + TBA API Key ile güvenli giriş
+- Takımın 2026 etkinliklerinin listelenmesi
+- Etkinlik bazlı maç takvimi ve takım filtrelemesi
+- Dashboard’da canlı kuyruk / sıradaki maç bilgisi
+- Local notification ve Live Activity desteği
+- TR/EN dil desteği (uygulama genelinde)
+- Demo modu (`99999`) ile görsel test akışı
 
-### Görsel Kimlik ve Kullanılan Dosyalar
+## Kullanılan Görseller
 
-Projede aşağıdaki görseller kullanılmaktadır:
+Bu projede aşağıdaki görseller aktif olarak kullanılır:
 
-- App Icon: `FRCLive/Assets.xcassets/AppIcon.appiconset/FRC Ö.v-iOS-Default-1024x1024@1x.png`
-- FIRST Logo: `FRCLive/Assets.xcassets/FIRST_Vertical_RGB.imageset/FIRST_Vertical_RGB.png`
-- Onboarding Animation: `FRCLive/rebuilt.gif`
+- Uygulama ikonu  
+  `FRCLive/Assets.xcassets/AppIcon.appiconset/FRC Ö.v-iOS-Default-1024x1024@1x.png`
+- FIRST logosu  
+  `FRCLive/Assets.xcassets/FIRST_Vertical_RGB.imageset/FIRST_Vertical_RGB.png`
+- Güncel oyun / onboarding animasyonu  
+  `FRCLive/rebuilt.gif`
 
-### Özellikler
+## Özellikler
 
-- **Onboarding**
-  - Takım numarası (max 5 hane) girişi
-  - TBA API key onay/kaldırma akışı
-  - Key onaylanmadan ilerleme engeli
-- **Event Selection**
-  - Takım adı/nickname + avatar gösterimi
-  - 2026 etkinlik kartları (TBA)
-  - Etkinlik seçimi sonrası ana sekme yapısına geçiş
-- **Dashboard**
-  - Takım bilgisi + seçili etkinlik
-  - Canlı “Next Match” kartı
-  - FRC Nexus polling (30 saniyede bir yenileme)
-  - “Şu an sahada” satırı ve kuyruk durum göstergesi
-- **Schedule**
-  - Seçili etkinliğin maç listesini TBA’dan çekme
-  - Takım bazlı filtreleme
-- **Settings**
-  - Live Activities ve bildirim ayarları
-  - Test bildirimi tetikleme
-  - TR/EN dil seçici
-  - Çıkış yapma
+### 1) Onboarding
 
-### Kurulum
+- Takım numarası girişi (maksimum 5 hane)
+- TBA API key giriş/onaylama/kaldırma
+- API key onaylanmadan devam etme engeli
+- Yeniden markalanmış onboarding görsel alanı (`rebuilt.gif`)
+
+### 2) Event Selection
+
+- Takım nickname + takım numarası + avatar gösterimi
+- Etkinliklerin modern kart yapısında listelenmesi
+- Geçmiş etkinliklerin “Etkinlik Tamamlandı” etiketiyle pasifleştirilmesi
+- Etkinlik seçimi sonrası ana uygulama sekmelerine geçiş
+
+### 3) Dashboard
+
+- Takım özeti ve seçili etkinlik başlığı
+- Live “Next Match” kartı
+- Kuyruk durumu + tahmini başlama bilgisi
+- “Şu an sahada” satırı
+- Nexus verisi periyodik yenileme (polling)
+
+### 4) Schedule
+
+- Seçili etkinliğin maç listesini TBA’den çekme
+- Takımın dahil olduğu maçları filtreleme
+- Maç takvimi yayınlanmadıysa uygun boş durum mesajı
+
+### 5) Settings
+
+- Canlı Etkinlikler (Live Activities) aç/kapat
+- Bildirim izinleri ve test bildirimi
+- Dil seçimi (TR / EN)
+- Çıkış yapma
+
+## Uygulama Akışı
+
+1. Onboarding (takım + TBA key doğrulama)
+2. Event Selection (etkinlik seçimi)
+3. MainTabContainer
+   - Ana Sayfa
+   - Takvim
+   - Ayarlar
+
+## Entegrasyonlar
+
+### The Blue Alliance (TBA)
+
+- Takım profili (nickname)
+- Takım etkinlikleri (2026)
+- Etkinlik maç takvimi (simple matches)
+- Takım medyası (avatar çözümleme)
+
+### FRC Nexus
+
+- Etkinlik kuyruk durumu
+- Sahadaki güncel maç
+- Takımın sıradaki maçı
+- Kuyruk statüsü (`Not Called`, `Called to Queue`, `On Field`)
+
+## Live Activities ve Widget
+
+- Dashboard canlı verisi geldikçe Live Activity güncellenir
+- Widget target (`FRCLiveWidgets`) üzerinden:
+  - Small / Medium / Large widget desteği
+  - Lock Screen / Dynamic Island Live Activity görünümü
+- App Group ile widget veri paylaşımı desteklenir  
+  (`group.onurakyuz.FRCLive`)
+
+## Kurulum
 
 1. Depoyu klonlayın:
 
-   ```bash
-   git clone <repository-url>
-   cd FRCLive
-   ```
+```bash
+git clone <repository-url>
+cd FRCLive
+```
 
-2. Xcode ile açın:
+2. Projeyi Xcode ile açın:
 
-   ```bash
-   open FRCLive.xcodeproj
-   ```
+```bash
+open FRCLive.xcodeproj
+```
 
-3. `Signing & Capabilities` altında takım/provisioning ayarlarını yapın.
-4. Simülatör veya fiziksel cihaz seçip `Cmd + R` ile çalıştırın.
+3. `Signing & Capabilities` ayarlarını yapın:
+- `FRCLive` ve `FRCLiveWidgetsExtension` için uygun Team seçin
+- Gerekli capability’leri doğrulayın:
+  - App Groups
+  - Live Activities
 
-### API Notları
+4. Simülatör veya fiziksel cihaz seçip çalıştırın:
+- `Cmd + R`
 
-- TBA key uygulama içinde onboarding ekranında kullanıcı tarafından girilir.
-- TBA key onaylandıktan sonra TBA endpoint’leri aktif olur.
-- Nexus tarafı seçili etkinlik ve takım numarası ile canlı veriyi çeker.
+## Proje Yapısı
 
-### Ekran Görüntüleri
+- `FRCLive/`  
+  Ana uygulama kaynak kodları (Views, API clients, managers)
+- `FRCLiveWidgets/`  
+  Widget ve Live Activity extension kodları
+- `FRCLive/Assets.xcassets/`  
+  Uygulama görsel varlıkları
+- `Config/`  
+  Local config örnekleri
 
-Uygulama ekran görüntüleri çok yakında eklenecek.
+## Screenshots
 
----
+Ekran görüntüleri bu depoda güncellenmeye devam edecek.  
+Yeni ekran görselleri yakında bu bölüme eklenecektir.
 
-## EN - English
+## Katkı ve Lisans
 
-### Overview
+- Lisans: MIT (`LICENSE`)
+- Katkı yapmak için issue/PR açabilirsiniz.
 
-FRCLive is a modern iOS app for FRC teams, designed for fast readability in pit environments:
+## İletişim
 
-- Team number + TBA API key validation flow
-- Team profile, events, and match schedule from TBA
-- Live queuing and match pacing from FRC Nexus
-- Dashboard, Schedule, and Settings tabs
-- TR/EN language support
-
-### Branding Assets Used
-
-The project currently uses the following assets:
-
-- App Icon: `FRCLive/Assets.xcassets/AppIcon.appiconset/FRC Ö.v-iOS-Default-1024x1024@1x.png`
-- FIRST Logo: `FRCLive/Assets.xcassets/FIRST_Vertical_RGB.imageset/FIRST_Vertical_RGB.png`
-- Onboarding Animation: `FRCLive/rebuilt.gif`
-
-### Features
-
-- **Onboarding**
-  - Team number input (max 5 digits)
-  - TBA API key confirm/remove flow
-  - Continue action is blocked until key confirmation
-- **Event Selection**
-  - Team nickname + avatar header
-  - 2026 event cards (from TBA)
-  - Seamless transition to main tab container
-- **Dashboard**
-  - Team/event context at top
-  - Live “Next Match” card
-  - 30-second polling with FRC Nexus
-  - “Currently on field” pace indicator
-- **Schedule**
-  - Match list from selected event (TBA)
-  - Filtered for selected team
-- **Settings**
-  - Live Activities + notification toggles
-  - Test notification action
-  - TR/EN language picker
-  - Logout flow
-
-### Setup
-
-1. Clone the repository:
-
-   ```bash
-   git clone <repository-url>
-   cd FRCLive
-   ```
-
-2. Open the project in Xcode:
-
-   ```bash
-   open FRCLive.xcodeproj
-   ```
-
-3. Configure code signing in `Signing & Capabilities`.
-4. Select a simulator/device and run with `Cmd + R`.
-
-### API Notes
-
-- TBA API key is entered and confirmed by the user on onboarding.
-- TBA-backed endpoints activate after key confirmation.
-- Nexus live data uses the selected event and team number.
-
-### Screenshots
-
-Screenshots will be added soon.
-
----
-
-## Credits
-
-Developed by Onur Akyüz  
-[https://onurakyuz.com](https://onurakyuz.com)
+Geliştirici: **Onur Akyüz**  
+Web: [https://onurakyuz.com](https://onurakyuz.com)
