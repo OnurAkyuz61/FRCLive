@@ -4,6 +4,41 @@ struct TBATeamProfile: Decodable {
     let nickname: String?
 }
 
+struct TBASimpleAlliance: Decodable {
+    let teamKeys: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case teamKeys = "team_keys"
+    }
+}
+
+struct TBASimpleAlliances: Decodable {
+    let red: TBASimpleAlliance
+    let blue: TBASimpleAlliance
+}
+
+struct TBASimpleMatch: Decodable, Identifiable {
+    var id: String { key }
+
+    let key: String
+    let compLevel: String
+    let matchNumber: Int
+    let setNumber: Int
+    let alliances: TBASimpleAlliances
+    let time: Int?
+    let predictedTime: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case key
+        case compLevel = "comp_level"
+        case matchNumber = "match_number"
+        case setNumber = "set_number"
+        case alliances
+        case time
+        case predictedTime = "predicted_time"
+    }
+}
+
 enum TBAAPIClientError: LocalizedError {
     case invalidRequest
     case unauthorized
@@ -138,6 +173,47 @@ final class TBAAPIClient {
         case 200:
             do {
                 return try JSONDecoder().decode([TBAEvent].self, from: data)
+            } catch {
+                throw TBAAPIClientError.failedToLoadEvents
+            }
+        case 401, 403:
+            throw TBAAPIClientError.unauthorized
+        case 404:
+            throw TBAAPIClientError.invalidTeam
+        default:
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+    }
+
+    func fetchEventMatches(eventCode: String) async throws -> [TBASimpleMatch] {
+        let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedKey.isEmpty else {
+            throw TBAAPIClientError.unauthorized
+        }
+
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventCode)/matches/simple") else {
+            throw TBAAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(cleanedKey, forHTTPHeaderField: "X-TBA-Auth-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            do {
+                let matches = try JSONDecoder().decode([TBASimpleMatch].self, from: data)
+                return matches.sorted {
+                    let lhsTime = $0.predictedTime ?? $0.time ?? Int.max
+                    let rhsTime = $1.predictedTime ?? $1.time ?? Int.max
+                    if lhsTime != rhsTime { return lhsTime < rhsTime }
+                    if $0.compLevel != $1.compLevel { return $0.compLevel < $1.compLevel }
+                    return $0.matchNumber < $1.matchNumber
+                }
             } catch {
                 throw TBAAPIClientError.failedToLoadEvents
             }

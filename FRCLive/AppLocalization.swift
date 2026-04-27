@@ -51,6 +51,11 @@ enum L10nKey {
     case queueStatusUnknown
     case estimatedStart
     case liveDataError
+    case loadingMatches
+    case noMatchesForTeam
+    case matchLabel
+    case redAlliance
+    case blueAlliance
 }
 
 enum L10n {
@@ -101,6 +106,11 @@ enum L10n {
             case .queueStatusUnknown: return "Durum bilinmiyor"
             case .estimatedStart: return "Tahmini Başlangıç"
             case .liveDataError: return "Canlı veri alınamadı."
+            case .loadingMatches: return "Maçlar yükleniyor..."
+            case .noMatchesForTeam: return "Bu etkinlikte takım için maç bulunamadı."
+            case .matchLabel: return "Maç"
+            case .redAlliance: return "Kırmızı"
+            case .blueAlliance: return "Mavi"
             }
         case .en:
             switch key {
@@ -147,6 +157,11 @@ enum L10n {
             case .queueStatusUnknown: return "Unknown Status"
             case .estimatedStart: return "Estimated Start"
             case .liveDataError: return "Could not fetch live data."
+            case .loadingMatches: return "Loading matches..."
+            case .noMatchesForTeam: return "No matches found for this team in this event."
+            case .matchLabel: return "Match"
+            case .redAlliance: return "Red"
+            case .blueAlliance: return "Blue"
             }
         }
     }
