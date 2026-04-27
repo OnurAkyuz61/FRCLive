@@ -3,6 +3,8 @@
 FRCLive, FRC takımlarının etkinlik ve maç takibini hızlı, okunabilir ve modern bir iOS deneyimiyle sunmak için geliştirilen bir uygulamadır.  
 Uygulama; **The Blue Alliance (TBA)** ve **FRC Nexus** servislerinden gelen verileri birleştirerek takım profili, etkinlik seçimi, maç takvimi, canlı kuyruk durumu, bildirim ve Live Activity akışını tek bir yerde toplar.
 
+**GitHub Repo:** [https://github.com/OnurAkyuz61/FRCLive](https://github.com/OnurAkyuz61/FRCLive)
+
 ## İçindekiler
 
 - Proje Özeti
