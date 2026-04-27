@@ -42,12 +42,13 @@ private struct NexusQueuingResponse: Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        currentMatchOnField = try container.decodeIfPresent(String.self, forKey: .currentMatchOnField)
-            ?? container.decodeIfPresent(String.self, forKey: .currentMatch)
-        entries =
-            (try container.decodeIfPresent([NexusQueueEntry].self, forKey: .entries))
-            ?? (try container.decodeIfPresent([NexusQueueEntry].self, forKey: .queue))
-            ?? []
+        let matchOnFieldPrimary = try container.decodeIfPresent(String.self, forKey: .currentMatchOnField)
+        let matchOnFieldFallback = try container.decodeIfPresent(String.self, forKey: .currentMatch)
+        currentMatchOnField = matchOnFieldPrimary ?? matchOnFieldFallback
+
+        let directEntries = try container.decodeIfPresent([NexusQueueEntry].self, forKey: .entries)
+        let queueEntries = try container.decodeIfPresent([NexusQueueEntry].self, forKey: .queue)
+        entries = directEntries ?? queueEntries ?? []
     }
 }
 
@@ -70,19 +71,24 @@ private struct NexusQueueEntry: Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        teamNumber =
-            (try container.decodeIfPresent(Int.self, forKey: .teamNumber))
-            ?? (try container.decode(Int.self, forKey: .team))
-        nextMatch =
-            (try container.decodeIfPresent(String.self, forKey: .nextMatch))
-            ?? (try container.decodeIfPresent(String.self, forKey: .nextMatchAlt))
-        estimatedStartTime =
-            (try container.decodeIfPresent(String.self, forKey: .estimatedStartTime))
-            ?? (try container.decodeIfPresent(String.self, forKey: .estimatedTimeAlt))
-        status =
-            (try container.decodeIfPresent(NexusQueuingStatus.self, forKey: .queueStatus))
-            ?? (try container.decodeIfPresent(NexusQueuingStatus.self, forKey: .status))
-            ?? .unknown
+        let primaryTeamNumber = try container.decodeIfPresent(Int.self, forKey: .teamNumber)
+        let fallbackTeamNumber = try container.decodeIfPresent(Int.self, forKey: .team)
+        guard let resolvedTeamNumber = primaryTeamNumber ?? fallbackTeamNumber else {
+            throw NexusAPIClientError.invalidResponse
+        }
+        teamNumber = resolvedTeamNumber
+
+        let primaryNextMatch = try container.decodeIfPresent(String.self, forKey: .nextMatch)
+        let fallbackNextMatch = try container.decodeIfPresent(String.self, forKey: .nextMatchAlt)
+        nextMatch = primaryNextMatch ?? fallbackNextMatch
+
+        let primaryEstimated = try container.decodeIfPresent(String.self, forKey: .estimatedStartTime)
+        let fallbackEstimated = try container.decodeIfPresent(String.self, forKey: .estimatedTimeAlt)
+        estimatedStartTime = primaryEstimated ?? fallbackEstimated
+
+        let primaryStatus = try container.decodeIfPresent(NexusQueuingStatus.self, forKey: .queueStatus)
+        let fallbackStatus = try container.decodeIfPresent(NexusQueuingStatus.self, forKey: .status)
+        status = primaryStatus ?? fallbackStatus ?? .unknown
     }
 }
 
