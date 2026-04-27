@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct DashboardView: View {
     @AppStorage("teamNumber") private var teamNumber: String = ""
@@ -6,6 +7,9 @@ struct DashboardView: View {
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
+    @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = false
+    @AppStorage("lastQueueAlertKey") private var lastQueueAlertKey: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     @State private var liveSnapshot: NexusTeamQueueSnapshot?
@@ -210,6 +214,7 @@ struct DashboardView: View {
             liveSnapshot = snapshot
             liveErrorMessage = nil
             isMatchScheduleNotCreated = false
+            await handleLiveIntegrations(with: snapshot)
         } catch {
             do {
                 let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
@@ -231,6 +236,39 @@ struct DashboardView: View {
                 liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
             }
         }
+    }
+
+    @MainActor
+    private func handleLiveIntegrations(with snapshot: NexusTeamQueueSnapshot) async {
+        let nextMatch = snapshot.teamNextMatch ?? L10n.text(.noUpcomingMatch, language: appLanguage)
+        let status = statusText(snapshot.queuingStatus)
+        let estimated = snapshot.estimatedStartTime ?? "-"
+
+        if liveActivitiesEnabled {
+            await LiveActivityManager.shared.update(
+                teamNumber: teamNumber,
+                eventName: selectedEventName,
+                nextMatch: nextMatch,
+                status: status,
+                currentOnField: snapshot.currentMatchOnField,
+                estimatedStart: estimated
+            )
+        } else {
+            await LiveActivityManager.shared.end()
+        }
+
+        guard notificationsEnabled else { return }
+        guard snapshot.queuingStatus == .calledToQueue || snapshot.queuingStatus == .onField else { return }
+
+        let alertKey = "\(selectedEventCode)|\(nextMatch)|\(snapshot.queuingStatus.rawValue)"
+        guard alertKey != lastQueueAlertKey else { return }
+        lastQueueAlertKey = alertKey
+
+        AppNotificationManager.shared.sendQueueStatusNotification(
+            teamNumber: teamNumber,
+            nextMatch: nextMatch,
+            statusText: status
+        )
     }
 
     private func statusText(_ status: NexusQueuingStatus) -> String {

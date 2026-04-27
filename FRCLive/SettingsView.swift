@@ -18,6 +18,11 @@ struct SettingsView: View {
                 Section {
                     Toggle(L10n.text(.liveActivitiesToggle, language: appLanguage), isOn: $liveActivitiesEnabled)
                         .tint(.blue)
+                        .onChange(of: liveActivitiesEnabled) { _, newValue in
+                            if !newValue {
+                                Task { await LiveActivityManager.shared.end() }
+                            }
+                        }
 
                     Toggle(L10n.text(.notificationsToggle, language: appLanguage), isOn: $notificationsEnabled)
                         .tint(.blue)
