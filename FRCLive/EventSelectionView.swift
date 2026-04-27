@@ -6,17 +6,23 @@ struct EventSelectionView: View {
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
 
     @State private var events: [TBAEvent] = []
+    @State private var teamName: String = "Takım"
     @State private var isLoading = false
     @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white.ignoresSafeArea()
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
 
                 Group {
                     if isLoading {
-                        ProgressView("Etkinlikler yükleniyor...")
+                        VStack(spacing: 10) {
+                            ProgressView()
+                            Text("Etkinlikler yükleniyor...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
                     } else if let errorMessage {
                         VStack(spacing: 12) {
                             Text(errorMessage)
@@ -29,32 +35,48 @@ struct EventSelectionView: View {
                         }
                         .padding(.horizontal, 24)
                     } else {
-                        List(events) { event in
-                            Button {
-                                selectedEventCode = event.eventCode
-                                selectedEventName = event.name
-                            } label: {
-                                EventCardView(event: event)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 18) {
+                                headerSection
+
+                                VStack(spacing: 12) {
+                                    ForEach(events) { event in
+                                        Button {
+                                            selectedEventCode = event.eventCode
+                                            selectedEventName = event.name
+                                        } label: {
+                                            EventCardView(event: event)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
                             }
-                            .buttonStyle(.plain)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 10)
+                            .padding(.bottom, 24)
                         }
-                        .listStyle(.plain)
                     }
                 }
             }
-            .navigationTitle("Etkinlik Seçimi")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Text("Takım \(teamNumber)")
-                        .font(.subheadline.weight(.medium))
-                }
-            }
+            .navigationBarTitleDisplayMode(.inline)
             .task {
                 await loadEvents()
             }
         }
+    }
+
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(teamName)
+                .font(.largeTitle.bold())
+                .foregroundColor(.primary)
+                .lineLimit(2)
+
+            Text("Takım \(teamNumber)")
+                .font(.title3)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @MainActor
@@ -66,7 +88,16 @@ struct EventSelectionView: View {
         defer { isLoading = false }
 
         do {
-            events = try await TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
+            async let profile = TBAAPIClient.shared.fetchTeamProfile(teamNumber: teamNumber)
+            async let fetchedEvents = TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
+
+            let (fetchedProfile, allEvents) = try await (profile, fetchedEvents)
+            if let nickname = fetchedProfile.nickname, !nickname.isEmpty {
+                teamName = nickname
+            } else {
+                teamName = "Takım"
+            }
+            events = allEvents
             if events.isEmpty {
                 errorMessage = "Bu takım için 2026 etkinliği bulunamadı."
             }
@@ -80,35 +111,42 @@ private struct EventCardView: View {
     let event: TBAEvent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(event.name)
-                .font(.headline)
-                .foregroundColor(.black)
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(event.name)
+                    .font(.headline.weight(.semibold))
+                    .foregroundColor(.primary)
 
-            Text(event.city ?? "Konum belirtilmedi")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .foregroundColor(.secondary)
+                    Text(event.date)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
 
-            Text("Tarih: \(event.date)")
-                .font(.footnote)
-                .foregroundColor(.gray)
+                HStack(spacing: 6) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .foregroundColor(.secondary)
+                    Text(event.city ?? "Konum belirtilmedi")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.secondary.opacity(0.8))
         }
-        .padding(14)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.black.opacity(0.15), Color.black.opacity(0.04)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
+                .fill(Color(UIColor.secondarySystemGroupedBackground))
         )
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
 }
 
