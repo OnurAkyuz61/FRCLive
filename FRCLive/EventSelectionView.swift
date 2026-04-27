@@ -49,9 +49,15 @@ struct EventSelectionView: View {
                                             selectedEventCode = event.eventCode
                                             selectedEventName = event.name
                                         } label: {
-                                            EventCardView(event: event)
+                                            EventCardView(
+                                                event: event,
+                                                isCompleted: isEventCompleted(event),
+                                                appLanguage: appLanguage
+                                            )
                                         }
                                         .buttonStyle(.plain)
+                                        .disabled(isEventCompleted(event))
+                                        .opacity(isEventCompleted(event) ? 0.7 : 1.0)
                                     }
                                 }
 
@@ -145,10 +151,19 @@ struct EventSelectionView: View {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
         }
     }
+
+    private func isEventCompleted(_ event: TBAEvent) -> Bool {
+        guard let eventDate = DateFormatter.tbaEventDate.date(from: event.date) else {
+            return false
+        }
+        return eventDate < Calendar.current.startOfDay(for: Date())
+    }
 }
 
 private struct EventCardView: View {
     let event: TBAEvent
+    let isCompleted: Bool
+    let appLanguage: AppLanguage
 
     var body: some View {
         HStack(spacing: 12) {
@@ -172,6 +187,16 @@ private struct EventCardView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
+
+                if isCompleted {
+                    Text(
+                        appLanguage == .tr
+                            ? "Etkinlik Tamamlandı"
+                            : "Event Completed"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.red)
+                }
             }
 
             Spacer(minLength: 8)
@@ -187,6 +212,17 @@ private struct EventCardView: View {
         )
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
+}
+
+private extension DateFormatter {
+    static let tbaEventDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }
 
 #Preview {
