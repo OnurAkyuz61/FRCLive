@@ -16,6 +16,13 @@ struct TBAEvent: Decodable, Identifiable {
         case city
     }
 
+    init(name: String, eventCode: String, date: String, city: String?) {
+        self.name = name
+        self.eventCode = eventCode
+        self.date = date
+        self.city = city
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
@@ -42,7 +49,7 @@ struct NexusQueue: Decodable {
     }
 }
 
-enum FRCServiceError: LocalizedError {
+enum FRCServiceError: LocalizedError, Equatable {
     case invalidResponse
     case invalidTeam
     case unauthorized
