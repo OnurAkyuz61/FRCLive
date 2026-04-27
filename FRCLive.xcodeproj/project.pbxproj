@@ -6,11 +6,62 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DCABEE362F9FF77000437534 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCABEE352F9FF77000437534 /* WidgetKit.framework */; };
+		DCABEE382F9FF77000437534 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCABEE372F9FF77000437534 /* SwiftUI.framework */; };
+		DCABEE452F9FF77100437534 /* FRCLiveWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DCABEE332F9FF77000437534 /* FRCLiveWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DCABEE432F9FF77100437534 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DCD90A982F9F8CC000C120D3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DCABEE322F9FF77000437534;
+			remoteInfo = FRCLiveWidgetsExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DCABEE4A2F9FF77100437534 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DCABEE452F9FF77100437534 /* FRCLiveWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		DCABEE332F9FF77000437534 /* FRCLiveWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FRCLiveWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCABEE352F9FF77000437534 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		DCABEE372F9FF77000437534 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		DCD90AA02F9F8CC000C120D3 /* FRCLive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FRCLive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DCABEE462F9FF77100437534 /* Exceptions for "FRCLiveWidgets" folder in "FRCLiveWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DCABEE322F9FF77000437534 /* FRCLiveWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		DCABEE392F9FF77000437534 /* FRCLiveWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DCABEE462F9FF77100437534 /* Exceptions for "FRCLiveWidgets" folder in "FRCLiveWidgetsExtension" target */,
+			);
+			path = FRCLiveWidgets;
+			sourceTree = "<group>";
+		};
 		DCD90AA22F9F8CC000C120D3 /* FRCLive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FRCLive;
@@ -19,6 +70,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		DCABEE302F9FF77000437534 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DCABEE382F9FF77000437534 /* SwiftUI.framework in Frameworks */,
+				DCABEE362F9FF77000437534 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DCD90A9D2F9F8CC000C120D3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -29,10 +89,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		DCABEE342F9FF77000437534 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DCABEE352F9FF77000437534 /* WidgetKit.framework */,
+				DCABEE372F9FF77000437534 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		DCD90A972F9F8CC000C120D3 = {
 			isa = PBXGroup;
 			children = (
 				DCD90AA22F9F8CC000C120D3 /* FRCLive */,
+				DCABEE392F9FF77000437534 /* FRCLiveWidgets */,
+				DCABEE342F9FF77000437534 /* Frameworks */,
 				DCD90AA12F9F8CC000C120D3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				DCD90AA02F9F8CC000C120D3 /* FRCLive.app */,
+				DCABEE332F9FF77000437534 /* FRCLiveWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +120,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		DCABEE322F9FF77000437534 /* FRCLiveWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DCABEE472F9FF77100437534 /* Build configuration list for PBXNativeTarget "FRCLiveWidgetsExtension" */;
+			buildPhases = (
+				DCABEE2F2F9FF77000437534 /* Sources */,
+				DCABEE302F9FF77000437534 /* Frameworks */,
+				DCABEE312F9FF77000437534 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DCABEE392F9FF77000437534 /* FRCLiveWidgets */,
+			);
+			name = FRCLiveWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = FRCLiveWidgetsExtension;
+			productReference = DCABEE332F9FF77000437534 /* FRCLiveWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		DCD90A9F2F9F8CC000C120D3 /* FRCLive */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = DCD90AAD2F9F8CC200C120D3 /* Build configuration list for PBXNativeTarget "FRCLive" */;
@@ -55,10 +149,12 @@
 				DCD90A9C2F9F8CC000C120D3 /* Sources */,
 				DCD90A9D2F9F8CC000C120D3 /* Frameworks */,
 				DCD90A9E2F9F8CC000C120D3 /* Resources */,
+				DCABEE4A2F9FF77100437534 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DCABEE442F9FF77100437534 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DCD90AA22F9F8CC000C120D3 /* FRCLive */,
@@ -80,6 +176,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					DCABEE322F9FF77000437534 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					DCD90A9F2F9F8CC000C120D3 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
@@ -100,11 +199,19 @@
 			projectRoot = "";
 			targets = (
 				DCD90A9F2F9F8CC000C120D3 /* FRCLive */,
+				DCABEE322F9FF77000437534 /* FRCLiveWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		DCABEE312F9FF77000437534 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DCD90A9E2F9F8CC000C120D3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +222,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		DCABEE2F2F9FF77000437534 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DCD90A9C2F9F8CC000C120D3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +238,75 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		DCABEE442F9FF77100437534 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DCABEE322F9FF77000437534 /* FRCLiveWidgetsExtension */;
+			targetProxy = DCABEE432F9FF77100437534 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		DCABEE482F9FF77100437534 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 287WZ2ML8F;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FRCLiveWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FRCLiveWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = onurakyuz.FRCLive.FRCLiveWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DCABEE492F9FF77100437534 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 287WZ2ML8F;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FRCLiveWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FRCLiveWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = onurakyuz.FRCLive.FRCLiveWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		DCD90AAB2F9F8CC200C120D3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -315,6 +497,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		DCABEE472F9FF77100437534 /* Build configuration list for PBXNativeTarget "FRCLiveWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DCABEE482F9FF77100437534 /* Debug */,
+				DCABEE492F9FF77100437534 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		DCD90A9B2F9F8CC000C120D3 /* Build configuration list for PBXProject "FRCLive" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
