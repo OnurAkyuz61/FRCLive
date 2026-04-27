@@ -21,23 +21,13 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(alignment: .center, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
-                                .font(.title3.weight(.semibold))
-                                .foregroundColor(.black)
-                            Text(teamNickname.isEmpty ? "Overcharge" : teamNickname)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        TeamAvatarView(avatarURLString: teamAvatarURL, size: 42)
-                    }
+                VStack(alignment: .leading, spacing: 18) {
+                    headerCard
 
                     Text(selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName)
                         .font(.headline)
                         .foregroundColor(.secondary)
+                        .padding(.horizontal, 4)
 
                     liveMatchCard
                     currentFieldStatusRow
@@ -47,6 +37,7 @@ struct DashboardView: View {
                         Text(liveErrorMessage)
                             .font(.footnote)
                             .foregroundColor(.red)
+                            .padding(.horizontal, 4)
                     }
 
                     footer
@@ -69,11 +60,40 @@ struct DashboardView: View {
         }
     }
 
+    private var headerCard: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
+                    .font(.title3.weight(.bold))
+                    .foregroundColor(.black)
+                Text(teamNickname.isEmpty ? "Overcharge" : teamNickname)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            TeamAvatarView(avatarURLString: teamAvatarURL, size: 46)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+
     private var liveMatchCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(L10n.text(.nextMatch, language: appLanguage))
-                .font(.headline)
-                .foregroundColor(.black)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(L10n.text(.nextMatch, language: appLanguage))
+                    .font(.headline)
+                    .foregroundColor(.black)
+                Spacer()
+                Image(systemName: "clock")
+                    .foregroundColor(.secondary)
+            }
 
             if isLoadingLiveData && liveSnapshot == nil {
                 HStack {
@@ -85,7 +105,7 @@ struct DashboardView: View {
             } else if let snapshot = liveSnapshot, let nextMatch = snapshot.teamNextMatch, !nextMatch.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(nextMatch)
-                        .font(.title.weight(.bold))
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
 
                     HStack(spacing: 8) {
@@ -120,13 +140,13 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(
                             LinearGradient(
-                                colors: [Color.black.opacity(0.12), Color.black.opacity(0.03)],
+                                colors: [Color.black.opacity(0.10), Color.black.opacity(0.03)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -142,16 +162,16 @@ struct DashboardView: View {
             Image(systemName: "dot.radiowaves.left.and.right")
                 .foregroundColor(.blue)
             Text("\(L10n.text(.currentlyOnField, language: appLanguage)) \(liveSnapshot?.currentMatchOnField ?? "-")")
-                .font(.subheadline.weight(.medium))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(.secondary)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color.black.opacity(0.06), lineWidth: 1)
                 )
         )
@@ -163,10 +183,11 @@ struct DashboardView: View {
                 .fill(Color.green)
                 .frame(width: 10, height: 10)
             Text(L10n.text(.liveActivityReady, language: appLanguage))
-                .font(.subheadline.weight(.medium))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(.black)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
@@ -185,7 +206,7 @@ struct DashboardView: View {
                 .foregroundColor(.secondary)
             Spacer()
         }
-        .padding(.top, 8)
+        .padding(.top, 6)
     }
 
     @MainActor
