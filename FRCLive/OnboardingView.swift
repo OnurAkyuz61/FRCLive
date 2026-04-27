@@ -5,6 +5,8 @@ struct OnboardingView: View {
     @State private var teamNumberInput: String = ""
     @State private var selectedLanguage: AppLanguage = .tr
     @State private var navigateToMain = false
+    @State private var isLoading = false
+    @State private var errorMessage: String?
     @FocusState private var isFieldFocused: Bool
     private let maxTeamNumberLength = 5
 
@@ -27,6 +29,14 @@ struct OnboardingView: View {
                 continueButton
                     .padding(.bottom, 20)
 
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 12)
+                }
+
                 languageSelector
 
                 Spacer()
@@ -39,7 +49,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
             .background(Color.white.ignoresSafeArea())
             .navigationDestination(isPresented: $navigateToMain) {
-                MainNavigationView()
+                MainDashboardView()
             }
         }
         .onAppear {
@@ -94,27 +104,29 @@ struct OnboardingView: View {
 
     private var continueButton: some View {
         Button {
-            let cleaned = teamNumberInput.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !cleaned.isEmpty else { return }
-
-            storedTeamNumber = cleaned
-            isFieldFocused = false
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                navigateToMain = true
+            Task {
+                await validateAndContinue()
             }
         } label: {
-            Text(AppStrings.text(.continueButtonText, language: selectedLanguage))
-                .font(.headline.weight(.semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color(red: 0.09, green: 0.19, blue: 0.36))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Text(AppStrings.text(.continueButtonText, language: selectedLanguage))
+                        .font(.headline.weight(.semibold))
+                        .foregroundColor(.white)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(Color(red: 0.09, green: 0.19, blue: 0.36))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(teamNumberInput.isEmpty)
-        .opacity(teamNumberInput.isEmpty ? 0.6 : 1)
-        .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty)
+        .disabled(teamNumberInput.isEmpty || isLoading)
+        .opacity((teamNumberInput.isEmpty || isLoading) ? 0.6 : 1)
+        .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty || isLoading)
     }
 
     private var languageSelector: some View {
@@ -137,6 +149,27 @@ struct OnboardingView: View {
                 .foregroundColor(selectedLanguage == language ? .black : .gray)
         }
         .buttonStyle(.plain)
+    }
+
+    @MainActor
+    private func validateAndContinue() async {
+        let cleaned = teamNumberInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            try await FRCService.shared.validateTeam(teamNumber: cleaned)
+            storedTeamNumber = cleaned
+            isFieldFocused = false
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                navigateToMain = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
 
@@ -164,17 +197,6 @@ private struct AppStrings {
             .continueButtonText: "Continue"
         ]
         return language == .tr ? (tr[key] ?? "") : (en[key] ?? "")
-    }
-}
-
-struct MainNavigationView: View {
-    var body: some View {
-        ZStack {
-            Color.white.ignoresSafeArea()
-            Text("Main Navigation Placeholder")
-                .foregroundStyle(.black)
-                .font(.title2.weight(.semibold))
-        }
     }
 }
 

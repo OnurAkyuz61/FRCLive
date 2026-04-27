@@ -45,3 +45,6 @@ Carthage/Build/
 # Misc
 *.swp
 *.tmp
+
+# Local API secrets
+Config/Secrets.xcconfig
