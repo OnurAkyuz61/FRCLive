@@ -42,6 +42,15 @@ enum L10nKey {
     case notificationPermissionDenied
     case testNotificationSent
     case testNotificationFailed
+    case allMatchesCompleted
+    case noUpcomingMatch
+    case currentlyOnField
+    case queueStatusNotCalled
+    case queueStatusCalled
+    case queueStatusOnField
+    case queueStatusUnknown
+    case estimatedStart
+    case liveDataError
 }
 
 enum L10n {
@@ -83,6 +92,15 @@ enum L10n {
             case .notificationPermissionDenied: return "Bildirim izni verilmedi."
             case .testNotificationSent: return "2 saniye içinde test bildirimi gönderilecek."
             case .testNotificationFailed: return "Bildirim gönderilemedi:"
+            case .allMatchesCompleted: return "Tüm maçlar tamamlandı"
+            case .noUpcomingMatch: return "Sıradaki maç bulunamadı"
+            case .currentlyOnField: return "Şu an sahada:"
+            case .queueStatusNotCalled: return "Henüz çağrılmadı"
+            case .queueStatusCalled: return "Kuyruğa çağrıldı"
+            case .queueStatusOnField: return "Sahada"
+            case .queueStatusUnknown: return "Durum bilinmiyor"
+            case .estimatedStart: return "Tahmini Başlangıç"
+            case .liveDataError: return "Canlı veri alınamadı."
             }
         case .en:
             switch key {
@@ -120,6 +138,15 @@ enum L10n {
             case .notificationPermissionDenied: return "Notification permission denied."
             case .testNotificationSent: return "Test notification will arrive in 2 seconds."
             case .testNotificationFailed: return "Could not send notification:"
+            case .allMatchesCompleted: return "All matches are completed"
+            case .noUpcomingMatch: return "No upcoming match found"
+            case .currentlyOnField: return "Currently on field:"
+            case .queueStatusNotCalled: return "Not Called"
+            case .queueStatusCalled: return "Called to Queue"
+            case .queueStatusOnField: return "On Field"
+            case .queueStatusUnknown: return "Unknown Status"
+            case .estimatedStart: return "Estimated Start"
+            case .liveDataError: return "Could not fetch live data."
             }
         }
     }

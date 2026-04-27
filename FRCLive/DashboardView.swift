@@ -8,6 +8,10 @@ struct DashboardView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
+    @State private var liveSnapshot: NexusTeamQueueSnapshot?
+    @State private var isLoadingLiveData = false
+    @State private var liveErrorMessage: String?
+    @State private var pulse = false
 
     var body: some View {
         NavigationStack {
@@ -31,7 +35,14 @@ struct DashboardView: View {
                         .foregroundColor(.secondary)
 
                     liveMatchCard
+                    currentFieldStatusRow
                     liveActivityStatus
+
+                    if let liveErrorMessage {
+                        Text(liveErrorMessage)
+                            .font(.footnote)
+                            .foregroundColor(.red)
+                    }
 
                     footer
                 }
@@ -47,6 +58,9 @@ struct DashboardView: View {
                     }
                 }
             }
+            .task {
+                await startLivePolling()
+            }
         }
     }
 
@@ -56,9 +70,43 @@ struct DashboardView: View {
                 .font(.headline)
                 .foregroundColor(.black)
 
-            Text(L10n.text(.nextMatchPlaceholder, language: appLanguage))
-                .font(.subheadline)
-                .foregroundColor(.gray)
+            if isLoadingLiveData && liveSnapshot == nil {
+                HStack {
+                    ProgressView()
+                    Text(L10n.text(.loadingEvents, language: appLanguage))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            } else if let snapshot = liveSnapshot, let nextMatch = snapshot.teamNextMatch, !nextMatch.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(nextMatch)
+                        .font(.title.weight(.bold))
+                        .foregroundColor(.primary)
+
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(statusColor(snapshot.queuingStatus))
+                            .frame(width: 10, height: 10)
+                            .scaleEffect(pulse ? 1.15 : 0.85)
+                            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: pulse)
+                        Text(statusText(snapshot.queuingStatus))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text("\(L10n.text(.estimatedStart, language: appLanguage)): \(snapshot.estimatedStartTime ?? "-")")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(.green)
+                    Text(L10n.text(.noUpcomingMatch, language: appLanguage))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -75,6 +123,27 @@ struct DashboardView: View {
                             ),
                             lineWidth: 1
                         )
+                )
+        )
+        .onAppear { pulse = true }
+    }
+
+    private var currentFieldStatusRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .foregroundColor(.blue)
+            Text("\(L10n.text(.currentlyOnField, language: appLanguage)) \(liveSnapshot?.currentMatchOnField ?? "-")")
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
                 )
         )
     }
@@ -108,6 +177,62 @@ struct DashboardView: View {
             Spacer()
         }
         .padding(.top, 8)
+    }
+
+    @MainActor
+    private func startLivePolling() async {
+        while !Task.isCancelled {
+            await fetchLiveDataOnce()
+            do {
+                try await Task.sleep(nanoseconds: 30_000_000_000)
+            } catch {
+                break
+            }
+        }
+    }
+
+    @MainActor
+    private func fetchLiveDataOnce() async {
+        guard let team = Int(teamNumber), !selectedEventCode.isEmpty else { return }
+        isLoadingLiveData = true
+        defer { isLoadingLiveData = false }
+
+        do {
+            let snapshot = try await NexusAPIClient.shared.fetchQueueSnapshot(
+                eventCode: selectedEventCode,
+                teamNumber: team
+            )
+            liveSnapshot = snapshot
+            liveErrorMessage = nil
+        } catch {
+            liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
+        }
+    }
+
+    private func statusText(_ status: NexusQueuingStatus) -> String {
+        switch status {
+        case .notCalled:
+            return L10n.text(.queueStatusNotCalled, language: appLanguage)
+        case .calledToQueue:
+            return L10n.text(.queueStatusCalled, language: appLanguage)
+        case .onField:
+            return L10n.text(.queueStatusOnField, language: appLanguage)
+        case .unknown:
+            return L10n.text(.queueStatusUnknown, language: appLanguage)
+        }
+    }
+
+    private func statusColor(_ status: NexusQueuingStatus) -> Color {
+        switch status {
+        case .notCalled:
+            return .gray
+        case .calledToQueue:
+            return .orange
+        case .onField:
+            return .green
+        case .unknown:
+            return .secondary
+        }
     }
 }
 
