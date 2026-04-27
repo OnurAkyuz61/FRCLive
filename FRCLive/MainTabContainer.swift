@@ -26,6 +26,7 @@ struct MainTabContainer: View {
                 .tag(Tab.settings)
         }
         .tint(.black)
+        .id(appLanguageRaw)
     }
 }
 
