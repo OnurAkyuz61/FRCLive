@@ -154,52 +154,64 @@ struct OnboardingView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(.black)
 
-            TextField(
-                "TBA key girin",
-                text: $tbaKeyInput,
-                prompt: Text("TBA key girin").foregroundColor(.gray)
-            )
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled(true)
-            .font(.footnote.monospaced())
-            .foregroundColor(.black)
-            .padding(.horizontal, 12)
-            .frame(height: 44)
-            .background(Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.gray.opacity(0.7), lineWidth: 1)
-            )
-
-            HStack(spacing: 10) {
-                Button("Onayla") {
-                    let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !cleaned.isEmpty else { return }
-                    storedTBAKey = cleaned
-                    isTBAKeyConfirmed = true
-                    tbaKeyStatusMessage = "Onaylandı"
-                }
-                .font(.footnote.weight(.semibold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(red: 0.09, green: 0.19, blue: 0.36))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                Button("Kaldır") {
-                    storedTBAKey = ""
-                    tbaKeyInput = ""
-                    isTBAKeyConfirmed = false
-                    tbaKeyStatusMessage = "Kaldırıldı"
-                }
-                .font(.footnote.weight(.semibold))
-                .foregroundColor(.red)
-            }
-
-            if let tbaKeyStatusMessage {
-                Text(tbaKeyStatusMessage)
+            if isTBAKeyConfirmed {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundColor(.green)
+                    Text("TBA Key Onaylandı")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.green)
+                    Spacer()
+                    Button("Kaldır") {
+                        storedTBAKey = ""
+                        tbaKeyInput = ""
+                        isTBAKeyConfirmed = false
+                        tbaKeyStatusMessage = nil
+                    }
                     .font(.footnote.weight(.semibold))
-                    .foregroundColor(isTBAKeyConfirmed ? .green : .secondary)
+                    .foregroundColor(.red)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(Color.green.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.green.opacity(0.30), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            } else {
+                TextField(
+                    "TBA key girin",
+                    text: $tbaKeyInput,
+                    prompt: Text("TBA key girin").foregroundColor(.gray)
+                )
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .font(.footnote.monospaced())
+                .foregroundColor(.black)
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.gray.opacity(0.7), lineWidth: 1)
+                )
+
+                HStack(spacing: 10) {
+                    Button("Onayla") {
+                        let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !cleaned.isEmpty else { return }
+                        storedTBAKey = cleaned
+                        isTBAKeyConfirmed = true
+                        tbaKeyStatusMessage = nil
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(red: 0.09, green: 0.19, blue: 0.36))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
             }
         }
     }
