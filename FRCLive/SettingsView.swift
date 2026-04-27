@@ -62,11 +62,28 @@ struct SettingsView: View {
                                 .foregroundColor(.gray)
                         }
                     }
+
+                    Section {
+                        HStack {
+                            Spacer()
+                            Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                    }
                 }
                 .scrollContentBackground(.hidden)
                 .listStyle(.insetGrouped)
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Etkinlik Seçimi") {
+                        selectedEventCode = ""
+                    }
+                }
+            }
         }
     }
 

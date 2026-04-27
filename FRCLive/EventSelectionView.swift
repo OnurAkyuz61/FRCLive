@@ -4,9 +4,11 @@ struct EventSelectionView: View {
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
+    @AppStorage("teamNickname") private var teamNickname: String = ""
+    @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
 
     @State private var events: [TBAEvent] = []
-    @State private var teamName: String = "Takım"
+    @State private var teamName: String = "Overcharge"
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -50,6 +52,8 @@ struct EventSelectionView: View {
                                         .buttonStyle(.plain)
                                     }
                                 }
+
+                                footer
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 10)
@@ -59,6 +63,21 @@ struct EventSelectionView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        teamNumber = ""
+                        selectedEventCode = ""
+                        selectedEventName = ""
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Takım Seçimi")
+                        }
+                    }
+                    .foregroundColor(.primary)
+                }
+            }
             .task {
                 await loadEvents()
             }
@@ -72,11 +91,26 @@ struct EventSelectionView: View {
                 .foregroundColor(.primary)
                 .lineLimit(2)
 
-            Text("Takım \(teamNumber)")
-                .font(.title3)
-                .foregroundColor(.secondary)
+            HStack(spacing: 10) {
+                Text("Takım \(teamNumber)")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+
+                TeamAvatarView(avatarURLString: teamAvatarURL, size: 34)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var footer: some View {
+        HStack {
+            Spacer()
+            Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding(.top, 8)
     }
 
     @MainActor
@@ -90,14 +124,18 @@ struct EventSelectionView: View {
         do {
             async let profile = TBAAPIClient.shared.fetchTeamProfile(teamNumber: teamNumber)
             async let fetchedEvents = TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
+            async let avatarURL = TBAAPIClient.shared.fetchTeamAvatarURL(teamNumber: teamNumber)
 
-            let (fetchedProfile, allEvents) = try await (profile, fetchedEvents)
+            let (fetchedProfile, allEvents, fetchedAvatarURL) = try await (profile, fetchedEvents, avatarURL)
             if let nickname = fetchedProfile.nickname, !nickname.isEmpty {
                 teamName = nickname
+                teamNickname = nickname
             } else {
-                teamName = "Takım"
+                teamName = "Overcharge"
+                teamNickname = ""
             }
             events = allEvents
+            teamAvatarURL = fetchedAvatarURL?.absoluteString ?? ""
             if events.isEmpty {
                 errorMessage = "Bu takım için 2026 etkinliği bulunamadı."
             }
@@ -142,10 +180,9 @@ private struct EventCardView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(UIColor.secondarySystemGroupedBackground))
         )
-        .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
 }

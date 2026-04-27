@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MainTabContainer: View {
+    @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @State private var selectedTab: Tab = .dashboard
 
     var body: some View {
@@ -37,11 +38,16 @@ struct MainTabContainer: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(
                             LinearGradient(
-                                colors: [Color.white.opacity(0.75), Color.white.opacity(0.25)],
+                                colors: [
+                                    Color.white.opacity(0.85),
+                                    Color.blue.opacity(0.25),
+                                    Color.purple.opacity(0.22),
+                                    Color.white.opacity(0.40)
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1
+                            lineWidth: 1.35
                         )
                 )
                 .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
@@ -51,24 +57,29 @@ struct MainTabContainer: View {
     }
 
     private func tabButton(tab: Tab, icon: String, title: String) -> some View {
+        let isSelected = selectedTab == tab
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
                 selectedTab = tab
             }
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 17, weight: .semibold))
+                    .scaleEffect(isSelected ? 1.08 : 1.0)
                 Text(title)
                     .font(.caption2.weight(.medium))
+                    .scaleEffect(isSelected ? 1.03 : 1.0)
             }
-            .foregroundColor(selectedTab == tab ? .black : .gray)
+            .foregroundColor(isSelected ? .black : .gray)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(selectedTab == tab ? Color.white.opacity(0.7) : Color.clear)
+                    .fill(isSelected ? Color.white.opacity(0.75) : Color.clear)
             )
+            .offset(y: isSelected ? -1 : 0)
+            .animation(.spring(response: 0.30, dampingFraction: 0.86), value: isSelected)
         }
         .buttonStyle(.plain)
     }
@@ -81,14 +92,28 @@ private enum Tab {
 }
 
 private struct ScheduleView: View {
+    @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
+
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white.ignoresSafeArea()
-                Text("Event match list buraya gelecek.")
-                    .foregroundColor(.gray)
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+                VStack(spacing: 12) {
+                    Text("Event match list buraya gelecek.")
+                        .foregroundColor(.gray)
+                    Link("Powered by Onur Akyüz", destination: URL(string: "https://onurakyuz.com")!)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
             }
             .navigationTitle("Schedule")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Etkinlik Seçimi") {
+                        selectedEventCode = ""
+                    }
+                }
+            }
         }
     }
 }
