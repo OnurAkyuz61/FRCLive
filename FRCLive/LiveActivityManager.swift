@@ -9,6 +9,7 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
         var status: String
         var currentOnField: String
         var estimatedStart: String
+        var languageCode: String
     }
 }
 
@@ -25,7 +26,8 @@ final class LiveActivityManager {
         nextMatch: String,
         status: String,
         currentOnField: String,
-        estimatedStart: String
+        estimatedStart: String,
+        languageCode: String
     ) async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
@@ -35,7 +37,8 @@ final class LiveActivityManager {
             nextMatch: nextMatch,
             status: status,
             currentOnField: currentOnField,
-            estimatedStart: estimatedStart
+            estimatedStart: estimatedStart,
+            languageCode: languageCode
         )
 
         if currentActivity == nil {

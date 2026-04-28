@@ -34,13 +34,15 @@ struct FRCLiveWidgetProvider: TimelineProvider {
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "Qual 42"
         let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? "Kuyruğa çağrıldı"
         let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? "Az önce"
+        let languageCode = defaults.string(forKey: "widget_languageCode") ?? "tr"
         return SimpleEntry(
             date: Date(),
             teamNumber: teamNumber,
             eventName: eventName,
             nextMatch: nextMatch,
             queueStatus: queueStatus,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            languageCode: languageCode
         )
     }
 }
@@ -53,6 +55,7 @@ struct SimpleEntry: TimelineEntry {
     let nextMatch: String
     let queueStatus: String
     let updatedAt: String
+    let languageCode: String
 
     static let preview = SimpleEntry(
         date: .now,
@@ -60,13 +63,15 @@ struct SimpleEntry: TimelineEntry {
         eventName: "Demo Active Regional",
         nextMatch: "Qual 42",
         queueStatus: "Kuyruğa çağrıldı",
-        updatedAt: "Az önce"
+        updatedAt: "Az önce",
+        languageCode: "tr"
     )
 }
 
 struct FRCLiveWidgetsEntryView: View {
     var entry: FRCLiveWidgetProvider.Entry
     @Environment(\.widgetFamily) private var family
+    private var isEnglish: Bool { entry.languageCode == "en" }
 
     var body: some View {
         switch family {
@@ -83,7 +88,7 @@ struct FRCLiveWidgetsEntryView: View {
 
     private var smallWidget: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Takım \(entry.teamNumber)")
+            Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(entry.nextMatch)
@@ -102,7 +107,7 @@ struct FRCLiveWidgetsEntryView: View {
     private var mediumWidget: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Takım \(entry.teamNumber)")
+                Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(entry.eventName)
@@ -131,7 +136,7 @@ struct FRCLiveWidgetsEntryView: View {
             Text("FRCLive")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("Takım \(entry.teamNumber)")
+            Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                 .font(.headline)
             Text(entry.eventName)
                 .font(.subheadline)
@@ -147,7 +152,7 @@ struct FRCLiveWidgetsEntryView: View {
                 .foregroundStyle(.secondary)
 
             Spacer()
-            Text("Güncelleme: \(entry.updatedAt)")
+            Text("\(isEnglish ? "Updated" : "Güncelleme"): \(entry.updatedAt)")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

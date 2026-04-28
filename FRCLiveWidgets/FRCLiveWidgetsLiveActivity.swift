@@ -17,15 +17,17 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
         var status: String
         var currentOnField: String
         var estimatedStart: String
+        var languageCode: String
     }
 }
 
 struct FRCLiveWidgetsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
+            let isEnglish = context.state.languageCode == "en"
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Takım \(context.state.teamNumber)")
+                    Text("\(isEnglish ? "Team" : "Takım") \(context.state.teamNumber)")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
@@ -53,7 +55,7 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                     Image(systemName: "dot.radiowaves.left.and.right")
                         .font(.caption)
                         .foregroundStyle(.blue)
-                    Text("Şu an sahada: \(context.state.currentOnField)")
+                    Text("\(isEnglish ? "On field" : "Şu an sahada"): \(context.state.currentOnField)")
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -66,10 +68,11 @@ struct FRCLiveWidgetsLiveActivity: Widget {
             .activitySystemActionForegroundColor(.primary)
 
         } dynamicIsland: { context in
+            let isEnglish = context.state.languageCode == "en"
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading) {
-                        Text("Takım")
+                        Text(isEnglish ? "Team" : "Takım")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Text(context.state.teamNumber)
@@ -78,7 +81,7 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing) {
-                        Text("Sıradaki")
+                        Text(isEnglish ? "Next" : "Sıradaki")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Text(context.state.nextMatch)
@@ -90,7 +93,7 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                         Text(context.state.status)
                             .lineLimit(1)
                         Spacer()
-                        Text("Saha: \(context.state.currentOnField)")
+                        Text("\(isEnglish ? "Field" : "Saha"): \(context.state.currentOnField)")
                             .lineLimit(1)
                     }
                     .font(.subheadline)
@@ -125,7 +128,8 @@ extension FRCLiveActivityAttributes.ContentState {
             nextMatch: "Qual 42",
             status: "Kuyruğa çağrıldı",
             currentOnField: "Qual 34",
-            estimatedStart: "10 dk"
+            estimatedStart: "10 dk",
+            languageCode: "tr"
         )
     }
 }

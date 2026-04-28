@@ -11,7 +11,8 @@ enum WidgetDataStore {
         eventName: String,
         nextMatch: String,
         queueStatus: String,
-        updatedAt: String
+        updatedAt: String,
+        languageCode: String
     ) {
         let defaults = UserDefaults(suiteName: appGroupID) ?? UserDefaults.standard
         defaults.set(teamNumber, forKey: "widget_teamNumber")
@@ -19,6 +20,7 @@ enum WidgetDataStore {
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(queueStatus, forKey: "widget_queueStatus")
         defaults.set(updatedAt, forKey: "widget_updatedAt")
+        defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
     }
 }

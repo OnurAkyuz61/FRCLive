@@ -274,7 +274,8 @@ struct DashboardView: View {
                 nextMatch: nextMatch,
                 status: status,
                 currentOnField: snapshot.currentMatchOnField,
-                estimatedStart: estimated
+                estimatedStart: estimated,
+                languageCode: appLanguageRaw
             )
         } else {
             await LiveActivityManager.shared.end()
@@ -307,7 +308,8 @@ struct DashboardView: View {
             eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "Qual 42"),
             queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusUnknown, language: appLanguage)),
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            languageCode: appLanguageRaw
         )
     }
 
