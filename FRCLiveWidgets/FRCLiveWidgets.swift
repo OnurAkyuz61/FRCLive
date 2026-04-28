@@ -29,13 +29,14 @@ struct FRCLiveWidgetProvider: TimelineProvider {
 
     private func loadEntry() -> SimpleEntry {
         let defaults = UserDefaults(suiteName: WidgetSharedKeys.appGroupID) ?? UserDefaults.standard
+        let languageCode = defaults.string(forKey: "widget_languageCode") ?? "tr"
+        let isEnglish = languageCode == "en"
         let rawTeamNumber = defaults.string(forKey: "widget_teamNumber") ?? defaults.string(forKey: "teamNumber") ?? ""
         let teamNumber = rawTeamNumber.isEmpty ? "----" : rawTeamNumber
-        let eventName = defaults.string(forKey: "widget_eventName") ?? "Etkinlik seçilmedi"
-        let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "Qual 42"
-        let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? "Kuyruğa çağrıldı"
-        let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? "Az önce"
-        let languageCode = defaults.string(forKey: "widget_languageCode") ?? "tr"
+        let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Please enter a team number" : "Lutfen bir takim numarasi girin")
+        let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
+        let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Waiting for team selection" : "Takim secimi bekleniyor")
+        let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? (isEnglish ? "Just now" : "Az once")
         return SimpleEntry(
             date: Date(),
             teamNumber: teamNumber,

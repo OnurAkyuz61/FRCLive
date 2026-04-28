@@ -307,7 +307,7 @@ struct DashboardView: View {
         WidgetDataStore.writeSnapshot(
             teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
             eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
-            nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "Qual 42"),
+            nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "-"),
             queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusNotCalled, language: appLanguage)),
             updatedAt: updatedAt,
             languageCode: appLanguageRaw

@@ -18,13 +18,32 @@ struct FRCLiveApp: App {
         WindowGroup {
             rootView
             .onAppear {
-                WidgetDataStore.syncIdentity(teamNumber: teamNumber, languageCode: appLanguageRaw)
+                WidgetDataStore.syncAppState(
+                    teamNumber: teamNumber,
+                    selectedEventCode: selectedEventCode,
+                    languageCode: appLanguageRaw
+                )
             }
             .onChange(of: teamNumber) { _, newValue in
-                WidgetDataStore.syncIdentity(teamNumber: newValue, languageCode: appLanguageRaw)
+                WidgetDataStore.syncAppState(
+                    teamNumber: newValue,
+                    selectedEventCode: selectedEventCode,
+                    languageCode: appLanguageRaw
+                )
+            }
+            .onChange(of: selectedEventCode) { _, newValue in
+                WidgetDataStore.syncAppState(
+                    teamNumber: teamNumber,
+                    selectedEventCode: newValue,
+                    languageCode: appLanguageRaw
+                )
             }
             .onChange(of: appLanguageRaw) { _, newValue in
-                WidgetDataStore.syncIdentity(teamNumber: teamNumber, languageCode: newValue)
+                WidgetDataStore.syncAppState(
+                    teamNumber: teamNumber,
+                    selectedEventCode: selectedEventCode,
+                    languageCode: newValue
+                )
             }
         }
     }
