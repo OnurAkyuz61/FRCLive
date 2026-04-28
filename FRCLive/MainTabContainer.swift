@@ -212,6 +212,7 @@ private struct RankingsView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSection: RankingsSection = .rankings
+    @State private var showAllAwardRecipients = false
 
     var body: some View {
         NavigationStack {
@@ -297,18 +298,48 @@ private struct RankingsView: View {
                                 .padding(.horizontal, 24)
                                 .frame(maxWidth: .infinity, alignment: .center)
                         } else {
-                            List(awards) { award in
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(award.name)
-                                        .font(.headline)
-                                    Text(awardRecipientsText(award))
-                                        .font(.footnote)
+                            VStack(spacing: 10) {
+                                if filteredAwards.isEmpty {
+                                    Text(L10n.text(.noTeamAwards, language: appLanguage))
+                                        .font(.subheadline)
                                         .foregroundColor(.secondary)
+                                        .padding(.horizontal, 24)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                } else {
+                                    List(filteredAwards) { award in
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(award.name)
+                                                .font(.headline)
+                                            Text(awardRecipientsText(award))
+                                                .font(.footnote)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                    .listStyle(.insetGrouped)
+                                    .refreshable { await loadRankingsAndAwards() }
                                 }
-                                .padding(.vertical, 4)
+
+                                Button(showAllAwardRecipients ? L10n.text(.showOnlyTeamAwards, language: appLanguage) : L10n.text(.showAllAwardWinners, language: appLanguage)) {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        showAllAwardRecipients.toggle()
+                                    }
+                                }
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(.ultraThinMaterial)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                                        )
+                                )
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 12)
                             }
-                            .listStyle(.insetGrouped)
-                            .refreshable { await loadRankingsAndAwards() }
                         }
                     }
                 }
@@ -345,6 +376,16 @@ private struct RankingsView: View {
         let recipients = award.recipients.compactMap { $0.teamKey?.replacingOccurrences(of: "frc", with: "") }
         guard !recipients.isEmpty else { return "-" }
         return recipients.joined(separator: ", ")
+    }
+
+    private var filteredAwards: [TBAAward] {
+        if showAllAwardRecipients {
+            return awards
+        }
+        let ownTeamKey = "frc\(teamNumber)"
+        return awards.filter { award in
+            award.recipients.contains { $0.teamKey == ownTeamKey }
+        }
     }
 }
 

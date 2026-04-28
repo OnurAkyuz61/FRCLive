@@ -109,6 +109,9 @@ enum L10nKey {
     case awards
     case noAwards
     case wltHeader
+    case noTeamAwards
+    case showAllAwardWinners
+    case showOnlyTeamAwards
 }
 
 enum L10n {
@@ -197,6 +200,9 @@ enum L10n {
             case .awards: return "Ödüller"
             case .noAwards: return "Bu etkinlik için ödül verisi bulunamadı."
             case .wltHeader: return "W / L / T"
+            case .noTeamAwards: return "Takımınıza ait ödül bulunamadı."
+            case .showAllAwardWinners: return "Tüm ödül alanları göster"
+            case .showOnlyTeamAwards: return "Takıma dön"
             }
         case .en:
             switch key {
@@ -281,6 +287,9 @@ enum L10n {
             case .awards: return "Awards"
             case .noAwards: return "No awards data found for this event."
             case .wltHeader: return "W / L / T"
+            case .noTeamAwards: return "No awards found for your team."
+            case .showAllAwardWinners: return "Show all award winners"
+            case .showOnlyTeamAwards: return "Back to team"
             }
         }
     }
