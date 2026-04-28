@@ -77,12 +77,7 @@ struct FRCLiveWidgetsEntryView: View {
     private var isEnglish: Bool { entry.languageCode == "en" }
     private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
     private var cardBackground: Color {
-        colorScheme == .dark
-            ? Color(red: 0.14, green: 0.15, blue: 0.17)
-            : Color.white.opacity(0.92)
-    }
-    private var cardBorder: Color {
-        colorScheme == .dark ? processBlue.opacity(0.35) : processBlue.opacity(0.22)
+        colorScheme == .dark ? processBlue.opacity(0.45) : processBlue.opacity(0.28)
     }
 
     var body: some View {
@@ -123,10 +118,6 @@ struct FRCLiveWidgetsEntryView: View {
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(cardBorder, lineWidth: 1)
-                )
         )
     }
 
@@ -160,10 +151,6 @@ struct FRCLiveWidgetsEntryView: View {
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(cardBorder, lineWidth: 1)
-                )
         )
     }
 
@@ -197,10 +184,6 @@ struct FRCLiveWidgetsEntryView: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(cardBorder, lineWidth: 1)
-                )
         )
     }
 }
