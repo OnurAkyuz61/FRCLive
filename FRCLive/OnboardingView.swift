@@ -25,7 +25,7 @@ struct OnboardingView: View {
 
                 Text(L10n.text(.teamNumberTitle, language: appLanguage))
                     .font(.title2.weight(.semibold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 20)
 
@@ -51,7 +51,7 @@ struct OnboardingView: View {
                     .padding(.bottom, 20)
             }
             .padding(.horizontal, 32)
-            .background(Color.white.ignoresSafeArea())
+            .background(Color(UIColor.systemBackground).ignoresSafeArea())
         }
         .onAppear {
             let clamped = String(storedTeamNumber.prefix(maxTeamNumberLength))
@@ -113,12 +113,12 @@ struct OnboardingView: View {
             .textInputAutocapitalization(.never)
             .focused($isFieldFocused)
             .font(.body)
-            .foregroundColor(.black)
-            .tint(.black)
+            .foregroundColor(.primary)
+            .tint(.primary)
         }
         .padding(.horizontal, 12)
         .frame(height: 54)
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(Color.gray.opacity(0.7), lineWidth: 1)
@@ -156,7 +156,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.text(.tbaApiKey, language: appLanguage))
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.black)
+                .foregroundColor(.primary)
 
             if isTBAKeyConfirmed {
                 HStack(spacing: 8) {
@@ -192,10 +192,10 @@ struct OnboardingView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
                 .font(.footnote.monospaced())
-                .foregroundColor(.black)
+                .foregroundColor(.primary)
                 .padding(.horizontal, 12)
                 .frame(height: 44)
-                .background(Color.white)
+                .background(Color(UIColor.secondarySystemBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(Color.gray.opacity(0.7), lineWidth: 1)
@@ -237,7 +237,7 @@ struct OnboardingView: View {
         } label: {
             Text(label)
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(appLanguage == language ? .black : .gray)
+                .foregroundColor(appLanguage == language ? .primary : .gray)
         }
         .buttonStyle(.plain)
     }

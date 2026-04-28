@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
+    @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
     @State private var infoMessage: String?
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
@@ -42,6 +43,15 @@ struct SettingsView: View {
                     Picker(L10n.text(.language, language: appLanguage), selection: $appLanguageRaw) {
                         Text("TR").tag(AppLanguage.tr.rawValue)
                         Text("EN").tag(AppLanguage.en.rawValue)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                Section(L10n.text(.theme, language: appLanguage)) {
+                    Picker(L10n.text(.theme, language: appLanguage), selection: $appThemeRaw) {
+                        Text(L10n.text(.themeSystem, language: appLanguage)).tag(AppTheme.system.rawValue)
+                        Text(L10n.text(.themeLight, language: appLanguage)).tag(AppTheme.light.rawValue)
+                        Text(L10n.text(.themeDark, language: appLanguage)).tag(AppTheme.dark.rawValue)
                     }
                     .pickerStyle(.segmented)
                 }

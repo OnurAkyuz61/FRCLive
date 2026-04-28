@@ -70,7 +70,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
                     .font(.title3.weight(.bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
                 Text(teamNickname.isEmpty ? "Overcharge" : teamNickname)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -94,7 +94,7 @@ struct DashboardView: View {
             HStack {
                 Text(L10n.text(.nextMatch, language: appLanguage))
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .foregroundColor(.primary)
                 Spacer()
                 Image(systemName: "clock")
                     .foregroundColor(.secondary)
@@ -209,7 +209,7 @@ struct DashboardView: View {
                 .frame(width: 10, height: 10)
             Text(L10n.text(.liveActivityReady, language: appLanguage))
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.black)
+                .foregroundColor(.primary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -230,7 +230,7 @@ struct DashboardView: View {
                 .frame(width: 10, height: 10)
             Text("\(L10n.text(.dataSource, language: appLanguage)): \(dataSourceText)")
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(.black)
+                .foregroundColor(.primary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

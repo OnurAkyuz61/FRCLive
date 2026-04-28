@@ -81,6 +81,10 @@ enum L10nKey {
     case eventPhaseQualification
     case eventPhasePlayoff
     case eventPhaseUnknown
+    case theme
+    case themeSystem
+    case themeLight
+    case themeDark
 }
 
 enum L10n {
@@ -161,6 +165,10 @@ enum L10n {
             case .eventPhaseQualification: return "Qualification"
             case .eventPhasePlayoff: return "Playoff"
             case .eventPhaseUnknown: return "Bilinmiyor"
+            case .theme: return "Tema"
+            case .themeSystem: return "Sistem"
+            case .themeLight: return "Açık"
+            case .themeDark: return "Koyu"
             }
         case .en:
             switch key {
@@ -237,6 +245,10 @@ enum L10n {
             case .eventPhaseQualification: return "Qualification"
             case .eventPhasePlayoff: return "Playoff"
             case .eventPhaseUnknown: return "Unknown"
+            case .theme: return "Theme"
+            case .themeSystem: return "System"
+            case .themeLight: return "Light"
+            case .themeDark: return "Dark"
             }
         }
     }

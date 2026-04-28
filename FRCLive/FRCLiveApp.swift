@@ -13,6 +13,7 @@ struct FRCLiveApp: App {
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
+    @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
     var body: some Scene {
         WindowGroup {
@@ -45,7 +46,12 @@ struct FRCLiveApp: App {
                     languageCode: newValue
                 )
             }
+            .preferredColorScheme(appTheme.colorScheme)
         }
+    }
+
+    private var appTheme: AppTheme {
+        AppTheme(rawValue: appThemeRaw) ?? .system
     }
 
     @ViewBuilder
