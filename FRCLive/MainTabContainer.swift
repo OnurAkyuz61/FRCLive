@@ -165,7 +165,10 @@ private struct ScheduleView: View {
             if match.matchNumber == 2 { return "Final 2" }
             return "Final Tiebreaker"
         case "qf", "sf", "ef":
-            return "\(L10n.text(.matchLabel, language: appLanguage)) \(match.setNumber)"
+            if match.matchNumber <= 1 {
+                return "\(L10n.text(.matchLabel, language: appLanguage)) \(match.setNumber)"
+            }
+            return "\(L10n.text(.matchLabel, language: appLanguage)) \(match.setNumber)-\(match.matchNumber)"
         default:
             return "\(L10n.text(.matchLabel, language: appLanguage)) \(match.matchNumber)"
         }
