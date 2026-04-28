@@ -383,20 +383,26 @@ private struct RankingsView: View {
 
     private func awardRecipientsText(_ award: TBAAward) -> String {
         let recipients = award.recipients.compactMap { recipient -> String? in
-            if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                if let teamKey = recipient.teamKey {
-                    return "\(awardee) (\(teamKey.replacingOccurrences(of: "frc", with: "")))"
-                }
-                if let teamNumber = recipient.teamNumber {
-                    return "\(awardee) (\(teamNumber))"
-                }
-                return awardee
-            }
             if let teamKey = recipient.teamKey {
-                return teamKey.replacingOccurrences(of: "frc", with: "")
+                let teamNumber = teamKey.replacingOccurrences(of: "frc", with: "")
+                let teamName = teamNameByKey[teamKey] ?? teamNumber
+                if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    return "\(awardee) • \(teamNumber) - \(teamName)"
+                }
+                return "\(teamNumber) - \(teamName)"
             }
+
             if let teamNumber = recipient.teamNumber {
-                return String(teamNumber)
+                let key = "frc\(teamNumber)"
+                let teamName = teamNameByKey[key] ?? "\(teamNumber)"
+                if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    return "\(awardee) • \(teamNumber) - \(teamName)"
+                }
+                return "\(teamNumber) - \(teamName)"
+            }
+
+            if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return awardee
             }
             return nil
         }
@@ -416,6 +422,10 @@ private struct RankingsView: View {
 
     private var sortedRankings: [TBARankingEntry] {
         rankings.sorted { $0.rank < $1.rank }
+    }
+
+    private var teamNameByKey: [String: String] {
+        Dictionary(uniqueKeysWithValues: rankings.map { ($0.teamKey, $0.teamName) })
     }
 }
 
