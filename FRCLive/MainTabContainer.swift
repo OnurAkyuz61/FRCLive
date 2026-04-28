@@ -233,7 +233,7 @@ private struct RankingsView: View {
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
                         Button(L10n.text(.retry, language: appLanguage)) {
-                            Task { await loadRankings() }
+                            Task { await loadRankingsAndAwards() }
                         }
                     }
                     .padding(.horizontal, 24)
