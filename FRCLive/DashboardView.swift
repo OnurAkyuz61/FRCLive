@@ -281,6 +281,12 @@ struct DashboardView: View {
             await LiveActivityManager.shared.end()
         }
 
+        // Keep widget in sync on every live snapshot, independent from notification settings.
+        pushWidgetSnapshot(
+            nextMatch: nextMatch,
+            queueStatus: status
+        )
+
         guard notificationsEnabled else { return }
         guard snapshot.queuingStatus == .calledToQueue || snapshot.queuingStatus == .onField else { return }
 
@@ -292,11 +298,6 @@ struct DashboardView: View {
             teamNumber: teamNumber,
             nextMatch: nextMatch,
             statusText: status
-        )
-
-        pushWidgetSnapshot(
-            nextMatch: nextMatch,
-            queueStatus: status
         )
     }
 
