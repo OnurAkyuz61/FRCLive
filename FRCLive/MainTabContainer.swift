@@ -161,12 +161,8 @@ private struct ScheduleView: View {
         switch match.compLevel {
         case "qm":
             level = "Qual"
-        case "qf":
-            level = "QF"
-        case "sf":
-            level = "SF"
-        case "f":
-            level = "Final"
+        case "qf", "sf", "f", "ef":
+            level = L10n.text(.matchLabel, language: appLanguage)
         default:
             level = L10n.text(.matchLabel, language: appLanguage)
         }
