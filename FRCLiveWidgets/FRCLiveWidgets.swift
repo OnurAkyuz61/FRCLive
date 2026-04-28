@@ -73,7 +73,17 @@ struct SimpleEntry: TimelineEntry {
 struct FRCLiveWidgetsEntryView: View {
     var entry: FRCLiveWidgetProvider.Entry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
     private var isEnglish: Bool { entry.languageCode == "en" }
+    private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
+    private var cardBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.14, green: 0.15, blue: 0.17)
+            : Color.white.opacity(0.92)
+    }
+    private var cardBorder: Color {
+        colorScheme == .dark ? processBlue.opacity(0.35) : processBlue.opacity(0.22)
+    }
 
     var body: some View {
         switch family {
@@ -89,12 +99,12 @@ struct FRCLiveWidgetsEntryView: View {
     }
 
     private var smallWidget: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(entry.eventName)
-                .font(.caption2.weight(.medium))
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Text(entry.nextMatch)
@@ -108,6 +118,16 @@ struct FRCLiveWidgetsEntryView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(cardBorder, lineWidth: 1)
+                )
+        )
     }
 
     private var mediumWidget: some View {
@@ -129,12 +149,22 @@ struct FRCLiveWidgetsEntryView: View {
             VStack(alignment: .trailing, spacing: 6) {
                 Image(systemName: "bolt.shield")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(processBlue)
                 Text(entry.updatedAt)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(cardBorder, lineWidth: 1)
+                )
+        )
     }
 
     private var largeWidget: some View {
@@ -162,6 +192,16 @@ struct FRCLiveWidgetsEntryView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(cardBorder, lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -172,7 +212,9 @@ struct FRCLiveWidgets: Widget {
         StaticConfiguration(kind: kind, provider: FRCLiveWidgetProvider()) { entry in
             if #available(iOS 17.0, *) {
                 FRCLiveWidgetsEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
+                    .containerBackground(for: .widget) {
+                        Color.clear
+                    }
             } else {
                 FRCLiveWidgetsEntryView(entry: entry)
                     .padding()
