@@ -407,7 +407,7 @@ private struct RankingsView: View {
             return nil
         }
         guard !recipients.isEmpty else { return "-" }
-        return recipients.joined(separator: ", ")
+        return recipients.joined(separator: "\n")
     }
 
     private var filteredAwards: [TBAAward] {
