@@ -264,7 +264,7 @@ private struct RankingsView: View {
                                                 .frame(width: 38, alignment: .leading)
 
                                             VStack(alignment: .leading, spacing: 2) {
-                                                Text(entry.teamKey.replacingOccurrences(of: "frc", with: ""))
+                                                Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(entry.teamKey.replacingOccurrences(of: "frc", with: ""))")
                                                     .font(.headline)
                                                 Text(entry.teamName)
                                                     .font(.footnote)
