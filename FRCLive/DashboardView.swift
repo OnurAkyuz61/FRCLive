@@ -61,6 +61,7 @@ struct DashboardView: View {
                     Button(L10n.text(.eventSelection, language: appLanguage)) {
                         selectedEventCode = ""
                     }
+                    .foregroundColor(.primary)
                 }
             }
             .task {
