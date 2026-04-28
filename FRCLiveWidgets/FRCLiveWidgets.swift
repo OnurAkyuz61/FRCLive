@@ -29,7 +29,8 @@ struct FRCLiveWidgetProvider: TimelineProvider {
 
     private func loadEntry() -> SimpleEntry {
         let defaults = UserDefaults(suiteName: WidgetSharedKeys.appGroupID) ?? UserDefaults.standard
-        let teamNumber = defaults.string(forKey: "widget_teamNumber") ?? "----"
+        let rawTeamNumber = defaults.string(forKey: "widget_teamNumber") ?? defaults.string(forKey: "teamNumber") ?? ""
+        let teamNumber = rawTeamNumber.isEmpty ? "----" : rawTeamNumber
         let eventName = defaults.string(forKey: "widget_eventName") ?? "Etkinlik seçilmedi"
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "Qual 42"
         let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? "Kuyruğa çağrıldı"

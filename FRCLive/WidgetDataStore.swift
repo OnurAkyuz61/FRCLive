@@ -23,4 +23,12 @@ enum WidgetDataStore {
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
     }
+
+    static func syncIdentity(teamNumber: String, languageCode: String) {
+        let defaults = UserDefaults(suiteName: appGroupID) ?? UserDefaults.standard
+        defaults.set(teamNumber, forKey: "widget_teamNumber")
+        defaults.set(teamNumber, forKey: "teamNumber")
+        defaults.set(languageCode, forKey: "widget_languageCode")
+        WidgetCenter.shared.reloadAllTimelines()
+    }
 }
