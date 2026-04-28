@@ -256,7 +256,7 @@ private struct RankingsView: View {
                         } else if selectedSection == .rankings {
                             List {
                                 Section {
-                                    ForEach(rankings) { entry in
+                                    ForEach(sortedRankings) { entry in
                                         HStack(spacing: 10) {
                                             Text("#\(entry.rank)")
                                                 .font(.footnote.weight(.bold))
@@ -270,6 +270,11 @@ private struct RankingsView: View {
                                                     .font(.footnote)
                                                     .foregroundColor(.secondary)
                                                     .lineLimit(1)
+                                                if isOwnTeam(entry.teamKey) {
+                                                    Text("● \(L10n.text(.teamPrefix, language: appLanguage))")
+                                                        .font(.caption2.weight(.semibold))
+                                                        .foregroundColor(.blue)
+                                                }
                                             }
 
                                             Spacer()
@@ -279,6 +284,10 @@ private struct RankingsView: View {
                                                 .foregroundColor(isOwnTeam(entry.teamKey) ? .blue : .primary)
                                         }
                                         .padding(.vertical, 4)
+                                        .listRowBackground(
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .fill(isOwnTeam(entry.teamKey) ? Color.blue.opacity(0.12) : Color.clear)
+                                        )
                                     }
                                 } header: {
                                     HStack {
@@ -386,6 +395,10 @@ private struct RankingsView: View {
         return awards.filter { award in
             award.recipients.contains { $0.teamKey == ownTeamKey }
         }
+    }
+
+    private var sortedRankings: [TBARankingEntry] {
+        rankings.sorted { $0.rank < $1.rank }
     }
 }
 
