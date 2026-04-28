@@ -93,28 +93,25 @@ struct FRCLiveWidgetsEntryView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.92))
             Text(entry.eventName)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.85))
                 .lineLimit(1)
             Text(entry.nextMatch)
                 .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
                 .lineLimit(1)
             Text(entry.queueStatus)
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.9))
             Spacer()
             Text(entry.updatedAt)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.white.opacity(0.75))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(processBlue)
-        )
     }
 
     private var mediumWidget: some View {
@@ -122,65 +119,61 @@ struct FRCLiveWidgetsEntryView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.white.opacity(0.92))
                 Text(entry.eventName)
                     .font(.headline)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                 Text(entry.nextMatch)
                     .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
                 Text(entry.queueStatus)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.white.opacity(0.9))
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 6) {
                 Image(systemName: "bolt.shield")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(processBlue)
+                    .foregroundStyle(.white)
                 Text(entry.updatedAt)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.white.opacity(0.75))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(processBlue)
-        )
     }
 
     private var largeWidget: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("FRCLive")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.9))
             Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                 .font(.headline)
+                .foregroundStyle(.white)
             Text(entry.eventName)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.9))
 
-            Divider()
+            Divider().overlay(Color.white.opacity(0.35))
 
             Text(entry.nextMatch)
                 .font(.system(size: 32, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
                 .lineLimit(1)
             Text(entry.queueStatus)
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.white.opacity(0.9))
 
             Spacer()
             Text("\(isEnglish ? "Updated" : "Güncelleme"): \(entry.updatedAt)")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color.white.opacity(0.75))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(processBlue)
-        )
     }
 }
 
