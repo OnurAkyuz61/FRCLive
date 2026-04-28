@@ -80,6 +80,12 @@ private struct TBARankingsResponse: Decodable {
     let rankings: [TBARankingEntry]
 }
 
+private struct TBAEventTeamSimple: Decodable {
+    let key: String
+    let nickname: String?
+    let name: String?
+}
+
 struct TBAAwardRecipient: Decodable {
     let teamKey: String?
 
@@ -361,7 +367,16 @@ final class TBAAPIClient {
         case 200:
             do {
                 let decoded = try JSONDecoder().decode(TBARankingsResponse.self, from: data)
-                return decoded.rankings
+                let teamNameMap = (try? await fetchEventTeamNames(eventKey: eventKey, authKey: cleanedKey)) ?? [:]
+                return decoded.rankings.map { ranking in
+                    let resolvedName = teamNameMap[ranking.teamKey] ?? ranking.teamName
+                    return TBARankingEntry(
+                        rank: ranking.rank,
+                        teamKey: ranking.teamKey,
+                        teamName: resolvedName,
+                        record: ranking.record
+                    )
+                }
             } catch {
                 throw TBAAPIClientError.failedToLoadEvents
             }
@@ -520,5 +535,27 @@ final class TBAAPIClient {
         let hasYearPrefix = trimmed.count >= 4 && trimmed.prefix(4).allSatisfy(\.isNumber)
         if hasYearPrefix { return trimmed }
         return "2026\(trimmed)"
+    }
+
+    private func fetchEventTeamNames(eventKey: String, authKey: String) async throws -> [String: String] {
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventKey)/teams/simple") else {
+            throw TBAAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(authKey, forHTTPHeaderField: "X-TBA-Auth-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+
+        let teams = try JSONDecoder().decode([TBAEventTeamSimple].self, from: data)
+        return Dictionary(
+            uniqueKeysWithValues: teams.map { team in
+                let resolvedName = (team.nickname?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? team.nickname : team.name) ?? team.key.replacingOccurrences(of: "frc", with: "")
+                return (team.key, resolvedName)
+            }
+        )
     }
 }
