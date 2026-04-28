@@ -88,13 +88,19 @@ private struct TBAEventTeamSimple: Decodable {
 
 struct TBAAwardRecipient: Decodable {
     let teamKey: String?
+    let teamNumber: Int?
+    let awardee: String?
 
     enum CodingKeys: String, CodingKey {
         case teamKey = "team_key"
+        case teamNumber = "team_number"
+        case awardee
     }
 
-    init(teamKey: String?) {
+    init(teamKey: String?, teamNumber: Int? = nil, awardee: String? = nil) {
         self.teamKey = teamKey
+        self.teamNumber = teamNumber
+        self.awardee = awardee
     }
 }
 

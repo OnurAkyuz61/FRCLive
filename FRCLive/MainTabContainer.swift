@@ -212,7 +212,7 @@ private struct RankingsView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSection: RankingsSection = .rankings
-    @State private var showAllAwardRecipients = false
+    @State private var showAllAwardRecipients = true
 
     var body: some View {
         NavigationStack {
@@ -382,7 +382,24 @@ private struct RankingsView: View {
     }
 
     private func awardRecipientsText(_ award: TBAAward) -> String {
-        let recipients = award.recipients.compactMap { $0.teamKey?.replacingOccurrences(of: "frc", with: "") }
+        let recipients = award.recipients.compactMap { recipient -> String? in
+            if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if let teamKey = recipient.teamKey {
+                    return "\(awardee) (\(teamKey.replacingOccurrences(of: "frc", with: "")))"
+                }
+                if let teamNumber = recipient.teamNumber {
+                    return "\(awardee) (\(teamNumber))"
+                }
+                return awardee
+            }
+            if let teamKey = recipient.teamKey {
+                return teamKey.replacingOccurrences(of: "frc", with: "")
+            }
+            if let teamNumber = recipient.teamNumber {
+                return String(teamNumber)
+            }
+            return nil
+        }
         guard !recipients.isEmpty else { return "-" }
         return recipients.joined(separator: ", ")
     }
