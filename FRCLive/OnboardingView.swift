@@ -66,10 +66,10 @@ struct OnboardingView: View {
             }
         }
         .alert(
-            appLanguage == .tr ? "Uyarı" : "Warning",
+            L10n.text(.alertWarningTitle, language: appLanguage),
             isPresented: $showErrorAlert,
             actions: {
-                Button("OK", role: .cancel) {}
+                Button(L10n.text(.alertOk, language: appLanguage), role: .cancel) {}
             },
             message: {
                 Text(errorMessage ?? L10n.text(.teamValidationFailed, language: appLanguage))
@@ -261,8 +261,15 @@ struct OnboardingView: View {
             storedTeamNumber = cleaned
             isFieldFocused = false
         } catch {
-            if let localizedError = error as? LocalizedError, let description = localizedError.errorDescription {
-                errorMessage = description
+            if let tbaError = error as? TBAAPIClientError {
+                switch tbaError {
+                case .unauthorized:
+                    errorMessage = L10n.text(.tbaKeyInvalid, language: appLanguage)
+                case .invalidTeam, .invalidRequest, .failedToLoadEvents:
+                    errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
+                }
+            } else if let urlError = error as? URLError, urlError.code == .notConnectedToInternet {
+                errorMessage = appLanguage == .tr ? "Internet baglantisi bulunamadi." : "No internet connection."
             } else {
                 errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
             }

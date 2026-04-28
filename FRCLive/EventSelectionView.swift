@@ -80,13 +80,13 @@ struct EventSelectionView: View {
                 await loadEvents()
             }
             .alert(
-                appLanguage == .tr ? "Uyarı" : "Warning",
+                L10n.text(.alertWarningTitle, language: appLanguage),
                 isPresented: $showErrorAlert,
                 actions: {
                     Button(L10n.text(.retry, language: appLanguage)) {
                         Task { await loadEvents() }
                     }
-                    Button("OK", role: .cancel) {}
+                    Button(L10n.text(.alertOk, language: appLanguage), role: .cancel) {}
                 },
                 message: {
                     Text(errorMessage ?? L10n.text(.invalidTeamOrEvents, language: appLanguage))

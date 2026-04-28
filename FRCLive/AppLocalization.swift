@@ -57,6 +57,9 @@ enum L10nKey {
     case matchLabel
     case redAlliance
     case blueAlliance
+    case alertWarningTitle
+    case alertOk
+    case tbaKeyInvalid
 }
 
 enum L10n {
@@ -113,6 +116,9 @@ enum L10n {
             case .matchLabel: return "Maç"
             case .redAlliance: return "Kırmızı"
             case .blueAlliance: return "Mavi"
+            case .alertWarningTitle: return "Uyarı"
+            case .alertOk: return "Tamam"
+            case .tbaKeyInvalid: return "TBA API anahtarı geçersiz."
             }
         case .en:
             switch key {
@@ -165,6 +171,9 @@ enum L10n {
             case .matchLabel: return "Match"
             case .redAlliance: return "Red"
             case .blueAlliance: return "Blue"
+            case .alertWarningTitle: return "Warning"
+            case .alertOk: return "OK"
+            case .tbaKeyInvalid: return "TBA API key is invalid."
             }
         }
     }
