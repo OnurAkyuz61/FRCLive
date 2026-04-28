@@ -69,7 +69,7 @@ struct FRCLiveWidgetsLiveActivity: Widget {
 
         } dynamicIsland: { context in
             let isEnglish = context.state.languageCode == "en"
-            DynamicIsland {
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading) {
                         Text(isEnglish ? "Team" : "Takım")
