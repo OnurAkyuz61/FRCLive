@@ -438,13 +438,26 @@ private struct RankingsView: View {
         errorMessage = nil
         defer { isLoading = false }
 
+        var rankingsError: Error?
+        var awardsError: Error?
+
         do {
-            async let fetchedRankings = TBAAPIClient.shared.fetchEventRankings(eventCode: selectedEventCode)
-            async let fetchedAwards = TBAAPIClient.shared.fetchEventAwards(eventCode: selectedEventCode)
-            rankings = try await fetchedRankings
-            awards = try await fetchedAwards
+            rankings = try await TBAAPIClient.shared.fetchEventRankings(eventCode: selectedEventCode)
         } catch {
+            rankingsError = error
+        }
+
+        do {
+            awards = try await TBAAPIClient.shared.fetchEventAwards(eventCode: selectedEventCode)
+        } catch {
+            awardsError = error
+        }
+
+        if rankingsError != nil && awardsError != nil {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
+        } else {
+            // Keep currently available section visible even if the other request fails.
+            errorMessage = nil
         }
     }
 
