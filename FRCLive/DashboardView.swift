@@ -16,6 +16,7 @@ struct DashboardView: View {
     @State private var isLoadingLiveData = false
     @State private var liveErrorMessage: String?
     @State private var isMatchScheduleNotCreated = false
+    @State private var playoffStarted = false
     @State private var pulse = false
 
     var body: some View {
@@ -28,6 +29,8 @@ struct DashboardView: View {
                         .font(.headline)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 4)
+
+                    playoffStatusRow
 
                     liveMatchCard
                     currentFieldStatusRow
@@ -179,6 +182,26 @@ struct DashboardView: View {
         )
     }
 
+    private var playoffStatusRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: playoffStarted ? "flag.checkered" : "flag")
+                .foregroundColor(playoffStarted ? .green : .secondary)
+            Text(playoffStarted ? L10n.text(.playoffStarted, language: appLanguage) : L10n.text(.playoffNotStarted, language: appLanguage))
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+        )
+    }
+
     private var liveActivityStatus: some View {
         HStack(spacing: 8) {
             Circle()
@@ -255,6 +278,7 @@ struct DashboardView: View {
                 eventCode: selectedEventCode,
                 teamNumber: team
             )
+            await refreshPlayoffStatus()
             liveSnapshot = snapshot
             liveErrorMessage = nil
             isMatchScheduleNotCreated = false
@@ -262,6 +286,7 @@ struct DashboardView: View {
         } catch {
             do {
                 let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
+                playoffStarted = hasStartedPlayoff(in: allMatches)
                 let teamKey = "frc\(team)"
                 let teamMatches = allMatches.filter { match in
                     match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
@@ -276,6 +301,7 @@ struct DashboardView: View {
                     liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
                 }
             } catch {
+                playoffStarted = false
                 isMatchScheduleNotCreated = false
                 liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
             }
@@ -380,6 +406,32 @@ struct DashboardView: View {
             return .red
         }
         return .green
+    }
+
+    @MainActor
+    private func refreshPlayoffStatus() async {
+        guard !selectedEventCode.isEmpty else {
+            playoffStarted = false
+            return
+        }
+        do {
+            let matches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
+            playoffStarted = hasStartedPlayoff(in: matches)
+        } catch {
+            playoffStarted = false
+        }
+    }
+
+    private func hasStartedPlayoff(in matches: [TBASimpleMatch]) -> Bool {
+        let playoffLevels = Set(["ef", "qf", "sf", "f"])
+        let now = Int(Date().timeIntervalSince1970)
+        return matches.contains { match in
+            guard playoffLevels.contains(match.compLevel) else { return false }
+            if let start = match.predictedTime ?? match.time {
+                return start <= now
+            }
+            return true
+        }
     }
 }
 

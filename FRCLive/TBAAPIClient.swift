@@ -39,6 +39,47 @@ struct TBASimpleMatch: Decodable, Identifiable {
     }
 }
 
+struct TBARankingRecord: Decodable {
+    let wins: Int
+    let losses: Int
+    let ties: Int
+}
+
+struct TBARankingEntry: Decodable, Identifiable {
+    var id: String { teamKey }
+
+    let rank: Int
+    let teamKey: String
+    let teamName: String
+    let record: TBARankingRecord
+
+    enum CodingKeys: String, CodingKey {
+        case rank
+        case teamKey = "team_key"
+        case nickname
+        case record
+    }
+
+    init(rank: Int, teamKey: String, teamName: String, record: TBARankingRecord) {
+        self.rank = rank
+        self.teamKey = teamKey
+        self.teamName = teamName
+        self.record = record
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        rank = try container.decode(Int.self, forKey: .rank)
+        teamKey = try container.decode(String.self, forKey: .teamKey)
+        teamName = try container.decodeIfPresent(String.self, forKey: .nickname) ?? teamKey.replacingOccurrences(of: "frc", with: "")
+        record = try container.decode(TBARankingRecord.self, forKey: .record)
+    }
+}
+
+private struct TBARankingsResponse: Decodable {
+    let rankings: [TBARankingEntry]
+}
+
 enum TBAAPIClientError: LocalizedError {
     case invalidRequest
     case unauthorized
@@ -249,8 +290,59 @@ final class TBAAPIClient {
         }
     }
 
+    func fetchEventRankings(eventCode: String) async throws -> [TBARankingEntry] {
+        if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
+            return demoRankings()
+        }
+
+        let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedKey.isEmpty else {
+            throw TBAAPIClientError.unauthorized
+        }
+
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventCode)/rankings") else {
+            throw TBAAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(cleanedKey, forHTTPHeaderField: "X-TBA-Auth-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            do {
+                let decoded = try JSONDecoder().decode(TBARankingsResponse.self, from: data)
+                return decoded.rankings
+            } catch {
+                throw TBAAPIClientError.failedToLoadEvents
+            }
+        case 401, 403:
+            throw TBAAPIClientError.unauthorized
+        case 404:
+            throw TBAAPIClientError.invalidTeam
+        default:
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+    }
+
     private func demoMatches(for eventCode: String) -> [TBASimpleMatch] {
         let demoMatches: [TBASimpleMatch] = [
+            TBASimpleMatch(
+                key: "\(eventCode)_pm1",
+                compLevel: "pm",
+                matchNumber: 1,
+                setNumber: 1,
+                alliances: TBASimpleAlliances(
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc6415", "frc8154"]),
+                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc4784", "frc8840"])
+                ),
+                time: 1_773_590_000,
+                predictedTime: 1_773_590_000
+            ),
             TBASimpleMatch(
                 key: "\(eventCode)_qm1",
                 compLevel: "qm",
@@ -286,9 +378,30 @@ final class TBAAPIClient {
                 ),
                 time: 1_773_603_000,
                 predictedTime: 1_773_603_200
+            ),
+            TBASimpleMatch(
+                key: "\(eventCode)_qf1m1",
+                compLevel: "qf",
+                matchNumber: 1,
+                setNumber: 1,
+                alliances: TBASimpleAlliances(
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc7285", "frc7748"]),
+                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc5234", "frc4134"])
+                ),
+                time: 1_773_610_000,
+                predictedTime: 1_773_610_000
             )
         ]
         return demoMatches
+    }
+
+    private func demoRankings() -> [TBARankingEntry] {
+        [
+            TBARankingEntry(rank: 1, teamKey: "frc99999", teamName: "Demo Robotics", record: TBARankingRecord(wins: 11, losses: 1, ties: 0)),
+            TBARankingEntry(rank: 2, teamKey: "frc6459", teamName: "AG Robotik", record: TBARankingRecord(wins: 9, losses: 3, ties: 0)),
+            TBARankingEntry(rank: 3, teamKey: "frc6415", teamName: "Anatolian Eagles", record: TBARankingRecord(wins: 8, losses: 4, ties: 0)),
+            TBARankingEntry(rank: 4, teamKey: "frc4784", teamName: "Bosphorus Bots", record: TBARankingRecord(wins: 8, losses: 4, ties: 0))
+        ]
     }
 
     private static let demoDateFormatter: DateFormatter = {

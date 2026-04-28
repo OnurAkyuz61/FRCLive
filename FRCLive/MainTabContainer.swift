@@ -19,6 +19,12 @@ struct MainTabContainer: View {
                 }
                 .tag(Tab.schedule)
 
+            RankingsView()
+                .tabItem {
+                    Label(L10n.text(.rankings, language: appLanguage), systemImage: "list.number")
+                }
+                .tag(Tab.rankings)
+
             SettingsView()
                 .tabItem {
                     Label(L10n.text(.settings, language: appLanguage), systemImage: "gearshape.fill")
@@ -33,6 +39,7 @@ struct MainTabContainer: View {
 private enum Tab {
     case dashboard
     case schedule
+    case rankings
     case settings
 }
 
@@ -44,6 +51,7 @@ private struct ScheduleView: View {
     @State private var matches: [TBASimpleMatch] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var selectedSection: MatchSection = .qualification
 
     var body: some View {
         NavigationStack {
@@ -83,24 +91,35 @@ private struct ScheduleView: View {
                     }
                     .padding(.horizontal, 24)
                 } else {
-                    List(matches) { match in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(matchTitle(match))
-                                .font(.headline)
-                                .foregroundColor(.primary)
-
-                            Text("\(L10n.text(.redAlliance, language: appLanguage)): \(allianceTeams(match.alliances.red.teamKeys))")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-
-                            Text("\(L10n.text(.blueAlliance, language: appLanguage)): \(allianceTeams(match.alliances.blue.teamKeys))")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
+                    VStack(spacing: 10) {
+                        Picker(L10n.text(.schedule, language: appLanguage), selection: $selectedSection) {
+                            Text(L10n.text(.practice, language: appLanguage)).tag(MatchSection.practice)
+                            Text(L10n.text(.qualification, language: appLanguage)).tag(MatchSection.qualification)
+                            Text(L10n.text(.playoff, language: appLanguage)).tag(MatchSection.playoff)
                         }
-                        .padding(.vertical, 4)
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                        List(filteredMatches) { match in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(matchTitle(match))
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+
+                                Text("\(L10n.text(.redAlliance, language: appLanguage)): \(allianceTeams(match.alliances.red.teamKeys))")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+
+                                Text("\(L10n.text(.blueAlliance, language: appLanguage)): \(allianceTeams(match.alliances.blue.teamKeys))")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .listStyle(.insetGrouped)
+                        .refreshable { await loadMatches() }
                     }
-                    .listStyle(.insetGrouped)
-                    .refreshable { await loadMatches() }
                 }
             }
             .navigationTitle(L10n.text(.schedule, language: appLanguage))
@@ -158,6 +177,118 @@ private struct ScheduleView: View {
         teamKeys
             .map { $0.replacingOccurrences(of: "frc", with: "") }
             .joined(separator: ", ")
+    }
+
+    private var filteredMatches: [TBASimpleMatch] {
+        matches.filter { selectedSection.includes(compLevel: $0.compLevel) }
+    }
+}
+
+private enum MatchSection: CaseIterable {
+    case practice
+    case qualification
+    case playoff
+
+    func includes(compLevel: String) -> Bool {
+        switch self {
+        case .practice:
+            return compLevel == "pm" || compLevel == "pr"
+        case .qualification:
+            return compLevel == "qm"
+        case .playoff:
+            return compLevel == "ef" || compLevel == "qf" || compLevel == "sf" || compLevel == "f"
+        }
+    }
+}
+
+private struct RankingsView: View {
+    @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
+    @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
+    private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
+
+    @State private var rankings: [TBARankingEntry] = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+
+                if isLoading {
+                    VStack(spacing: 10) {
+                        ProgressView()
+                        Text(L10n.text(.loadingEvents, language: appLanguage))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                } else if let errorMessage {
+                    VStack(spacing: 12) {
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                        Button(L10n.text(.retry, language: appLanguage)) {
+                            Task { await loadRankings() }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                } else if rankings.isEmpty {
+                    Text(L10n.text(.noRankings, language: appLanguage))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 24)
+                } else {
+                    List(rankings) { entry in
+                        HStack(spacing: 10) {
+                            Text("#\(entry.rank)")
+                                .font(.footnote.weight(.bold))
+                                .foregroundColor(.secondary)
+                                .frame(width: 38, alignment: .leading)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(entry.teamKey.replacingOccurrences(of: "frc", with: ""))
+                                    .font(.headline)
+                                Text(entry.teamName)
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
+
+                            Spacer()
+
+                            Text("\(L10n.text(.wins, language: appLanguage)) \(entry.record.wins)")
+                                .font(.caption.weight(.semibold))
+                            Text("\(L10n.text(.losses, language: appLanguage)) \(entry.record.losses)")
+                                .font(.caption.weight(.semibold))
+                            Text("\(L10n.text(.ties, language: appLanguage)) \(entry.record.ties)")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .listStyle(.insetGrouped)
+                    .refreshable { await loadRankings() }
+                }
+            }
+            .navigationTitle(L10n.text(.rankings, language: appLanguage))
+            .task {
+                await loadRankings()
+            }
+        }
+    }
+
+    @MainActor
+    private func loadRankings() async {
+        guard !selectedEventCode.isEmpty else { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            rankings = try await TBAAPIClient.shared.fetchEventRankings(eventCode: selectedEventCode)
+        } catch {
+            errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
+        }
     }
 }
 

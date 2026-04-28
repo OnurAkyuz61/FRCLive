@@ -64,6 +64,18 @@ enum L10nKey {
     case dataSourceLive
     case dataSourceDemo
     case dataSourceOffline
+    case rankings
+    case noRankings
+    case rank
+    case teamName
+    case wins
+    case losses
+    case ties
+    case practice
+    case qualification
+    case playoff
+    case playoffStarted
+    case playoffNotStarted
 }
 
 enum L10n {
@@ -127,6 +139,18 @@ enum L10n {
             case .dataSourceLive: return "CANLI • Nexus"
             case .dataSourceDemo: return "DEMO • Takım 99999"
             case .dataSourceOffline: return "ÇEVRİMDIŞI • Yedek"
+            case .rankings: return "Sıralama"
+            case .noRankings: return "Sıralama verisi henüz yayınlanmadı."
+            case .rank: return "Sıra"
+            case .teamName: return "Takım Adı"
+            case .wins: return "G"
+            case .losses: return "M"
+            case .ties: return "B"
+            case .practice: return "Pratik"
+            case .qualification: return "Sıralama"
+            case .playoff: return "Playoff"
+            case .playoffStarted: return "Playoff: Başladı"
+            case .playoffNotStarted: return "Playoff: Henüz başlamadı"
             }
         case .en:
             switch key {
@@ -186,6 +210,18 @@ enum L10n {
             case .dataSourceLive: return "LIVE • Nexus"
             case .dataSourceDemo: return "DEMO • Team 99999"
             case .dataSourceOffline: return "OFFLINE • Fallback"
+            case .rankings: return "Rankings"
+            case .noRankings: return "Rankings are not published yet."
+            case .rank: return "Rank"
+            case .teamName: return "Team Name"
+            case .wins: return "W"
+            case .losses: return "L"
+            case .ties: return "T"
+            case .practice: return "Practice"
+            case .qualification: return "Qualification"
+            case .playoff: return "Playoff"
+            case .playoffStarted: return "Playoff: Started"
+            case .playoffNotStarted: return "Playoff: Not started yet"
             }
         }
     }
