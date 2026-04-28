@@ -307,7 +307,7 @@ struct DashboardView: View {
             teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
             eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "Qual 42"),
-            queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusUnknown, language: appLanguage)),
+            queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusNotCalled, language: appLanguage)),
             updatedAt: updatedAt,
             languageCode: appLanguageRaw
         )
