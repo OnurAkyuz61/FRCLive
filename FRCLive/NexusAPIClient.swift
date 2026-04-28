@@ -109,8 +109,19 @@ enum NexusAPIClientError: LocalizedError {
 
 final class NexusAPIClient {
     static let shared = NexusAPIClient()
+    static let nexusApiKeyStorageKey = "nexusApiKey"
     private let demoTeamNumber = 99999
+    private let defaultNexusApiKey = "HfG4EGZoOR6gUdof2-gtqNU3I8E"
     private init() {}
+
+    private var nexusApiKey: String {
+        let stored = UserDefaults.standard.string(forKey: Self.nexusApiKeyStorageKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let stored, !stored.isEmpty {
+            return stored
+        }
+        return defaultNexusApiKey
+    }
 
     func fetchQueueSnapshot(eventCode: String, teamNumber: Int) async throws -> NexusTeamQueueSnapshot {
         if teamNumber == demoTeamNumber {
@@ -126,7 +137,13 @@ final class NexusAPIClient {
             throw NexusAPIClientError.invalidRequest
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        let apiKey = nexusApiKey
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw NexusAPIClientError.invalidResponse
         }
