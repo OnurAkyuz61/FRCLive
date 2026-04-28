@@ -80,6 +80,49 @@ private struct TBARankingsResponse: Decodable {
     let rankings: [TBARankingEntry]
 }
 
+struct TBAAwardRecipient: Decodable {
+    let teamKey: String?
+
+    enum CodingKeys: String, CodingKey {
+        case teamKey = "team_key"
+    }
+
+    init(teamKey: String?) {
+        self.teamKey = teamKey
+    }
+}
+
+struct TBAAward: Decodable, Identifiable {
+    var id: String { "\(name)-\(awardType)" }
+
+    let name: String
+    let awardType: Int
+    let eventKey: String?
+    let recipients: [TBAAwardRecipient]
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case awardType = "award_type"
+        case eventKey = "event_key"
+        case recipientList = "recipient_list"
+    }
+
+    init(name: String, awardType: Int, eventKey: String?, recipients: [TBAAwardRecipient]) {
+        self.name = name
+        self.awardType = awardType
+        self.eventKey = eventKey
+        self.recipients = recipients
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        awardType = try container.decodeIfPresent(Int.self, forKey: .awardType) ?? -1
+        eventKey = try container.decodeIfPresent(String.self, forKey: .eventKey)
+        recipients = try container.decodeIfPresent([TBAAwardRecipient].self, forKey: .recipientList) ?? []
+    }
+}
+
 enum TBAAPIClientError: LocalizedError {
     case invalidRequest
     case unauthorized
@@ -317,6 +360,60 @@ final class TBAAPIClient {
             do {
                 let decoded = try JSONDecoder().decode(TBARankingsResponse.self, from: data)
                 return decoded.rankings
+            } catch {
+                throw TBAAPIClientError.failedToLoadEvents
+            }
+        case 401, 403:
+            throw TBAAPIClientError.unauthorized
+        case 404:
+            throw TBAAPIClientError.invalidTeam
+        default:
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+    }
+
+    func fetchEventAwards(eventCode: String) async throws -> [TBAAward] {
+        if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
+            return [
+                TBAAward(
+                    name: "Regional Winner",
+                    awardType: 0,
+                    eventKey: eventCode,
+                    recipients: [
+                        TBAAwardRecipient(teamKey: "frc99999"),
+                        TBAAwardRecipient(teamKey: "frc6459")
+                    ]
+                ),
+                TBAAward(
+                    name: "Industrial Design Award",
+                    awardType: 9,
+                    eventKey: eventCode,
+                    recipients: [TBAAwardRecipient(teamKey: "frc6459")]
+                )
+            ]
+        }
+
+        let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedKey.isEmpty else {
+            throw TBAAPIClientError.unauthorized
+        }
+
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventCode)/awards") else {
+            throw TBAAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(cleanedKey, forHTTPHeaderField: "X-TBA-Auth-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            do {
+                return try JSONDecoder().decode([TBAAward].self, from: data)
             } catch {
                 throw TBAAPIClientError.failedToLoadEvents
             }

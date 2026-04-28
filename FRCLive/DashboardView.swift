@@ -4,6 +4,7 @@ import UserNotifications
 struct DashboardView: View {
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
+    @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
@@ -29,6 +30,10 @@ struct DashboardView: View {
                         .font(.headline)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 4)
+
+                    if isSelectedEventCompleted {
+                        completedEventBanner
+                    }
 
                     eventPhaseRow
 
@@ -255,6 +260,27 @@ struct DashboardView: View {
         .padding(.top, 6)
     }
 
+    private var completedEventBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundColor(.orange)
+            Text(L10n.text(.eventCompletedBanner, language: appLanguage))
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+                )
+        )
+    }
+
     @MainActor
     private func startLivePolling() async {
         while !Task.isCancelled {
@@ -408,6 +434,11 @@ struct DashboardView: View {
         return .green
     }
 
+    private var isSelectedEventCompleted: Bool {
+        guard let date = DateFormatter.tbaEventDate.date(from: selectedEventDate) else { return false }
+        return date < Calendar.current.startOfDay(for: Date())
+    }
+
     @MainActor
     private func refreshEventPhase(using snapshot: NexusTeamQueueSnapshot?) async {
         guard !selectedEventCode.isEmpty else {
@@ -473,6 +504,17 @@ struct DashboardView: View {
         }
         return .unknown
     }
+}
+
+private extension DateFormatter {
+    static let tbaEventDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }
 
 private enum EventPhase {

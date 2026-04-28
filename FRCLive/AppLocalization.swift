@@ -105,6 +105,10 @@ enum L10nKey {
     case themeSystem
     case themeLight
     case themeDark
+    case eventCompletedBanner
+    case awards
+    case noAwards
+    case wltHeader
 }
 
 enum L10n {
@@ -189,6 +193,10 @@ enum L10n {
             case .themeSystem: return "Sistem"
             case .themeLight: return "Açık"
             case .themeDark: return "Koyu"
+            case .eventCompletedBanner: return "Etkinlik Tamamlandı"
+            case .awards: return "Ödüller"
+            case .noAwards: return "Bu etkinlik için ödül verisi bulunamadı."
+            case .wltHeader: return "W / L / T"
             }
         case .en:
             switch key {
@@ -269,6 +277,10 @@ enum L10n {
             case .themeSystem: return "System"
             case .themeLight: return "Light"
             case .themeDark: return "Dark"
+            case .eventCompletedBanner: return "Event Completed"
+            case .awards: return "Awards"
+            case .noAwards: return "No awards data found for this event."
+            case .wltHeader: return "W / L / T"
             }
         }
     }

@@ -4,6 +4,7 @@ struct EventSelectionView: View {
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
+    @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
@@ -38,6 +39,7 @@ struct EventSelectionView: View {
                                         Button {
                                             selectedEventCode = event.eventCode
                                             selectedEventName = event.name
+                                            selectedEventDate = event.date
                                         } label: {
                                             EventCardView(
                                                 event: event,
@@ -46,8 +48,7 @@ struct EventSelectionView: View {
                                             )
                                         }
                                         .buttonStyle(.plain)
-                                        .disabled(isEventCompleted(event))
-                                        .opacity(isEventCompleted(event) ? 0.7 : 1.0)
+                                        .opacity(isEventCompleted(event) ? 0.9 : 1.0)
                                     }
                                 }
 
@@ -67,6 +68,7 @@ struct EventSelectionView: View {
                         teamNumber = ""
                         selectedEventCode = ""
                         selectedEventName = ""
+                        selectedEventDate = ""
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left")

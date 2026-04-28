@@ -203,12 +203,15 @@ private enum MatchSection: CaseIterable {
 
 private struct RankingsView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
+    @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     @State private var rankings: [TBARankingEntry] = []
+    @State private var awards: [TBAAward] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var selectedSection: RankingsSection = .rankings
 
     var body: some View {
         NavigationStack {
@@ -233,63 +236,121 @@ private struct RankingsView: View {
                         }
                     }
                     .padding(.horizontal, 24)
-                } else if rankings.isEmpty {
-                    Text(L10n.text(.noRankings, language: appLanguage))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 24)
                 } else {
-                    List(rankings) { entry in
-                        HStack(spacing: 10) {
-                            Text("#\(entry.rank)")
-                                .font(.footnote.weight(.bold))
-                                .foregroundColor(.secondary)
-                                .frame(width: 38, alignment: .leading)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(entry.teamKey.replacingOccurrences(of: "frc", with: ""))
-                                    .font(.headline)
-                                Text(entry.teamName)
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                            }
-
-                            Spacer()
-
-                            Text("\(L10n.text(.wins, language: appLanguage)) \(entry.record.wins)")
-                                .font(.caption.weight(.semibold))
-                            Text("\(L10n.text(.losses, language: appLanguage)) \(entry.record.losses)")
-                                .font(.caption.weight(.semibold))
-                            Text("\(L10n.text(.ties, language: appLanguage)) \(entry.record.ties)")
-                                .font(.caption.weight(.semibold))
+                    VStack(spacing: 10) {
+                        Picker(L10n.text(.rankings, language: appLanguage), selection: $selectedSection) {
+                            Text(L10n.text(.rankings, language: appLanguage)).tag(RankingsSection.rankings)
+                            Text(L10n.text(.awards, language: appLanguage)).tag(RankingsSection.awards)
                         }
-                        .padding(.vertical, 4)
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                        if selectedSection == .rankings && rankings.isEmpty {
+                            Text(L10n.text(.noRankings, language: appLanguage))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 24)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        } else if selectedSection == .rankings {
+                            List {
+                                Section {
+                                    ForEach(rankings) { entry in
+                                        HStack(spacing: 10) {
+                                            Text("#\(entry.rank)")
+                                                .font(.footnote.weight(.bold))
+                                                .foregroundColor(.secondary)
+                                                .frame(width: 38, alignment: .leading)
+
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(entry.teamKey.replacingOccurrences(of: "frc", with: ""))
+                                                    .font(.headline)
+                                                Text(entry.teamName)
+                                                    .font(.footnote)
+                                                    .foregroundColor(.secondary)
+                                                    .lineLimit(1)
+                                            }
+
+                                            Spacer()
+
+                                            Text("\(entry.record.wins) / \(entry.record.losses) / \(entry.record.ties)")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundColor(isOwnTeam(entry.teamKey) ? .blue : .primary)
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                } header: {
+                                    HStack {
+                                        Spacer()
+                                        Text(L10n.text(.wltHeader, language: appLanguage))
+                                            .font(.caption.weight(.bold))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                            .listStyle(.insetGrouped)
+                            .refreshable { await loadRankingsAndAwards() }
+                        } else if awards.isEmpty {
+                            Text(L10n.text(.noAwards, language: appLanguage))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 24)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        } else {
+                            List(awards) { award in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(award.name)
+                                        .font(.headline)
+                                    Text(awardRecipientsText(award))
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .listStyle(.insetGrouped)
+                            .refreshable { await loadRankingsAndAwards() }
+                        }
                     }
-                    .listStyle(.insetGrouped)
-                    .refreshable { await loadRankings() }
                 }
             }
             .navigationTitle(L10n.text(.rankings, language: appLanguage))
             .task {
-                await loadRankings()
+                await loadRankingsAndAwards()
             }
         }
     }
 
     @MainActor
-    private func loadRankings() async {
+    private func loadRankingsAndAwards() async {
         guard !selectedEventCode.isEmpty else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            rankings = try await TBAAPIClient.shared.fetchEventRankings(eventCode: selectedEventCode)
+            async let fetchedRankings = TBAAPIClient.shared.fetchEventRankings(eventCode: selectedEventCode)
+            async let fetchedAwards = TBAAPIClient.shared.fetchEventAwards(eventCode: selectedEventCode)
+            rankings = try await fetchedRankings
+            awards = try await fetchedAwards
         } catch {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
         }
     }
+
+    private func isOwnTeam(_ teamKey: String) -> Bool {
+        teamKey == "frc\(teamNumber)"
+    }
+
+    private func awardRecipientsText(_ award: TBAAward) -> String {
+        let recipients = award.recipients.compactMap { $0.teamKey?.replacingOccurrences(of: "frc", with: "") }
+        guard !recipients.isEmpty else { return "-" }
+        return recipients.joined(separator: ", ")
+    }
+}
+
+private enum RankingsSection {
+    case rankings
+    case awards
 }
 
 #Preview {
