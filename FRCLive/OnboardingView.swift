@@ -11,6 +11,7 @@ struct OnboardingView: View {
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showErrorAlert = false
     @FocusState private var isFieldFocused: Bool
     private let maxTeamNumberLength = 5
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
@@ -36,14 +37,6 @@ struct OnboardingView: View {
 
                 tbaKeySection
                     .padding(.bottom, 16)
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 12)
-                }
 
                 languageSelector
 
@@ -72,6 +65,16 @@ struct OnboardingView: View {
                 tbaKeyStatusMessage = "Onaylandı"
             }
         }
+        .alert(
+            appLanguage == .tr ? "Uyarı" : "Warning",
+            isPresented: $showErrorAlert,
+            actions: {
+                Button("OK", role: .cancel) {}
+            },
+            message: {
+                Text(errorMessage ?? L10n.text(.teamValidationFailed, language: appLanguage))
+            }
+        )
     }
 
     private var rebuiltGifSection: some View {
@@ -245,6 +248,7 @@ struct OnboardingView: View {
         guard !cleaned.isEmpty else { return }
         guard isTBAKeyConfirmed else {
             errorMessage = L10n.text(.mustConfirmTba, language: appLanguage)
+            showErrorAlert = true
             return
         }
 
@@ -262,6 +266,7 @@ struct OnboardingView: View {
             } else {
                 errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
             }
+            showErrorAlert = true
         }
     }
 }

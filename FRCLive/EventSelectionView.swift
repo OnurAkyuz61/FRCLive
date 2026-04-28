@@ -12,6 +12,7 @@ struct EventSelectionView: View {
     @State private var teamName: String = "Overcharge"
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showErrorAlert = false
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     var body: some View {
@@ -27,17 +28,6 @@ struct EventSelectionView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
-                    } else if let errorMessage {
-                        VStack(spacing: 12) {
-                            Text(errorMessage)
-                                .font(.subheadline)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.center)
-                            Button(L10n.text(.retry, language: appLanguage)) {
-                                Task { await loadEvents() }
-                            }
-                        }
-                        .padding(.horizontal, 24)
                     } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 18) {
@@ -89,6 +79,19 @@ struct EventSelectionView: View {
             .task {
                 await loadEvents()
             }
+            .alert(
+                appLanguage == .tr ? "Uyarı" : "Warning",
+                isPresented: $showErrorAlert,
+                actions: {
+                    Button(L10n.text(.retry, language: appLanguage)) {
+                        Task { await loadEvents() }
+                    }
+                    Button("OK", role: .cancel) {}
+                },
+                message: {
+                    Text(errorMessage ?? L10n.text(.invalidTeamOrEvents, language: appLanguage))
+                }
+            )
         }
     }
 
@@ -146,9 +149,11 @@ struct EventSelectionView: View {
             teamAvatarURL = fetchedAvatarURL?.absoluteString ?? ""
             if events.isEmpty {
                 errorMessage = L10n.text(.noEventsForYear, language: appLanguage)
+                showErrorAlert = true
             }
         } catch {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
+            showErrorAlert = true
         }
     }
 
