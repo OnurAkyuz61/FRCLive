@@ -16,13 +16,7 @@ struct FRCLiveApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if teamNumber.isEmpty {
-                OnboardingView()
-            } else if selectedEventCode.isEmpty {
-                EventSelectionView()
-            } else {
-                MainTabContainer()
-            }
+            rootView
             .onAppear {
                 WidgetDataStore.syncIdentity(teamNumber: teamNumber, languageCode: appLanguageRaw)
             }
@@ -32,6 +26,17 @@ struct FRCLiveApp: App {
             .onChange(of: appLanguageRaw) { _, newValue in
                 WidgetDataStore.syncIdentity(teamNumber: teamNumber, languageCode: newValue)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+        if teamNumber.isEmpty {
+            OnboardingView()
+        } else if selectedEventCode.isEmpty {
+            EventSelectionView()
+        } else {
+            MainTabContainer()
         }
     }
 }
