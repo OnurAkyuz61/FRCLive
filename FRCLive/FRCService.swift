@@ -1,24 +1,27 @@
 import Foundation
 
 struct TBAEvent: Decodable, Identifiable {
-    var id: String { eventCode }
+    var id: String { eventKey }
 
     let name: String
     let eventCode: String
+    let eventKey: String
     let date: String
     let city: String?
 
     enum CodingKeys: String, CodingKey {
         case name
         case eventCode = "event_code"
+        case eventKey = "key"
         case date
         case startDate = "start_date"
         case city
     }
 
-    init(name: String, eventCode: String, date: String, city: String?) {
+    init(name: String, eventCode: String, eventKey: String, date: String, city: String?) {
         self.name = name
         self.eventCode = eventCode
+        self.eventKey = eventKey
         self.date = date
         self.city = city
     }
@@ -27,6 +30,7 @@ struct TBAEvent: Decodable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
         eventCode = try container.decode(String.self, forKey: .eventCode)
+        eventKey = try container.decode(String.self, forKey: .eventKey)
         city = try container.decodeIfPresent(String.self, forKey: .city)
 
         if let explicitDate = try container.decodeIfPresent(String.self, forKey: .date) {

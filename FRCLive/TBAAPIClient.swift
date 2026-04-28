@@ -248,10 +248,10 @@ final class TBAAPIClient {
         if teamNumber == demoTeamNumber {
             let today = Self.demoDateFormatter.string(from: Date())
             return [
-                TBAEvent(name: "Demo Active Regional", eventCode: "2026demoactive", date: today, city: "Istanbul"),
-                TBAEvent(name: "Demo Marmara Regional", eventCode: "2026trmr", date: "2026-03-20", city: "Istanbul"),
-                TBAEvent(name: "Demo Bosphorus Regional", eventCode: "2026trbo", date: "2026-03-27", city: "Istanbul"),
-                TBAEvent(name: "Demo Championship", eventCode: "2026cmp", date: "2026-04-18", city: "Houston")
+                TBAEvent(name: "Demo Active Regional", eventCode: "demoactive", eventKey: "2026demoactive", date: today, city: "Istanbul"),
+                TBAEvent(name: "Demo Marmara Regional", eventCode: "trmr", eventKey: "2026trmr", date: "2026-03-20", city: "Istanbul"),
+                TBAEvent(name: "Demo Bosphorus Regional", eventCode: "trbo", eventKey: "2026trbo", date: "2026-03-27", city: "Istanbul"),
+                TBAEvent(name: "Demo Championship", eventCode: "cmp", eventKey: "2026cmp", date: "2026-04-18", city: "Houston")
             ]
         }
 
@@ -289,8 +289,9 @@ final class TBAAPIClient {
     }
 
     func fetchEventMatches(eventCode: String) async throws -> [TBASimpleMatch] {
+        let eventKey = normalizedEventKey(from: eventCode)
         if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
-            return demoMatches(for: eventCode)
+            return demoMatches(for: eventKey)
         }
 
         let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -298,7 +299,7 @@ final class TBAAPIClient {
             throw TBAAPIClientError.unauthorized
         }
 
-        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventCode)/matches/simple") else {
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventKey)/matches/simple") else {
             throw TBAAPIClientError.invalidRequest
         }
 
@@ -334,6 +335,7 @@ final class TBAAPIClient {
     }
 
     func fetchEventRankings(eventCode: String) async throws -> [TBARankingEntry] {
+        let eventKey = normalizedEventKey(from: eventCode)
         if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
             return demoRankings()
         }
@@ -343,7 +345,7 @@ final class TBAAPIClient {
             throw TBAAPIClientError.unauthorized
         }
 
-        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventCode)/rankings") else {
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventKey)/rankings") else {
             throw TBAAPIClientError.invalidRequest
         }
 
@@ -373,12 +375,13 @@ final class TBAAPIClient {
     }
 
     func fetchEventAwards(eventCode: String) async throws -> [TBAAward] {
+        let eventKey = normalizedEventKey(from: eventCode)
         if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
             return [
                 TBAAward(
                     name: "Regional Winner",
                     awardType: 0,
-                    eventKey: eventCode,
+                    eventKey: eventKey,
                     recipients: [
                         TBAAwardRecipient(teamKey: "frc99999"),
                         TBAAwardRecipient(teamKey: "frc6459")
@@ -387,7 +390,7 @@ final class TBAAPIClient {
                 TBAAward(
                     name: "Industrial Design Award",
                     awardType: 9,
-                    eventKey: eventCode,
+                    eventKey: eventKey,
                     recipients: [TBAAwardRecipient(teamKey: "frc6459")]
                 )
             ]
@@ -398,7 +401,7 @@ final class TBAAPIClient {
             throw TBAAPIClientError.unauthorized
         }
 
-        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventCode)/awards") else {
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventKey)/awards") else {
             throw TBAAPIClientError.invalidRequest
         }
 
@@ -509,4 +512,13 @@ final class TBAAPIClient {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+
+    private func normalizedEventKey(from value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmed.isEmpty else { return trimmed }
+
+        let hasYearPrefix = trimmed.count >= 4 && trimmed.prefix(4).allSatisfy(\.isNumber)
+        if hasYearPrefix { return trimmed }
+        return "2026\(trimmed)"
+    }
 }

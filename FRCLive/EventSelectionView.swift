@@ -37,7 +37,7 @@ struct EventSelectionView: View {
                                 VStack(spacing: 12) {
                                     ForEach(events) { event in
                                         Button {
-                                            selectedEventCode = event.eventCode
+                                            selectedEventCode = event.eventKey
                                             selectedEventName = event.name
                                             selectedEventDate = event.date
                                         } label: {
