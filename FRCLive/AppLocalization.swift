@@ -76,6 +76,11 @@ enum L10nKey {
     case playoff
     case playoffStarted
     case playoffNotStarted
+    case eventPhase
+    case eventPhasePractice
+    case eventPhaseQualification
+    case eventPhasePlayoff
+    case eventPhaseUnknown
 }
 
 enum L10n {
@@ -151,6 +156,11 @@ enum L10n {
             case .playoff: return "Playoff"
             case .playoffStarted: return "Playoff: Başladı"
             case .playoffNotStarted: return "Playoff: Henüz başlamadı"
+            case .eventPhase: return "Etkinlik Aşaması"
+            case .eventPhasePractice: return "Practice"
+            case .eventPhaseQualification: return "Qualification"
+            case .eventPhasePlayoff: return "Playoff"
+            case .eventPhaseUnknown: return "Bilinmiyor"
             }
         case .en:
             switch key {
@@ -222,6 +232,11 @@ enum L10n {
             case .playoff: return "Playoff"
             case .playoffStarted: return "Playoff: Started"
             case .playoffNotStarted: return "Playoff: Not started yet"
+            case .eventPhase: return "Event Phase"
+            case .eventPhasePractice: return "Practice"
+            case .eventPhaseQualification: return "Qualification"
+            case .eventPhasePlayoff: return "Playoff"
+            case .eventPhaseUnknown: return "Unknown"
             }
         }
     }

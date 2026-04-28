@@ -16,7 +16,7 @@ struct DashboardView: View {
     @State private var isLoadingLiveData = false
     @State private var liveErrorMessage: String?
     @State private var isMatchScheduleNotCreated = false
-    @State private var playoffStarted = false
+    @State private var eventPhase: EventPhase = .unknown
     @State private var pulse = false
 
     var body: some View {
@@ -30,7 +30,7 @@ struct DashboardView: View {
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 4)
 
-                    playoffStatusRow
+                    eventPhaseRow
 
                     liveMatchCard
                     currentFieldStatusRow
@@ -182,11 +182,11 @@ struct DashboardView: View {
         )
     }
 
-    private var playoffStatusRow: some View {
+    private var eventPhaseRow: some View {
         HStack(spacing: 8) {
-            Image(systemName: playoffStarted ? "flag.checkered" : "flag")
-                .foregroundColor(playoffStarted ? .green : .secondary)
-            Text(playoffStarted ? L10n.text(.playoffStarted, language: appLanguage) : L10n.text(.playoffNotStarted, language: appLanguage))
+            Image(systemName: eventPhase.iconName)
+                .foregroundColor(eventPhase.iconColor)
+            Text("\(L10n.text(.eventPhase, language: appLanguage)): \(eventPhase.localizedText(language: appLanguage))")
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(.secondary)
         }
@@ -278,7 +278,7 @@ struct DashboardView: View {
                 eventCode: selectedEventCode,
                 teamNumber: team
             )
-            await refreshPlayoffStatus()
+            await refreshEventPhase(using: snapshot)
             liveSnapshot = snapshot
             liveErrorMessage = nil
             isMatchScheduleNotCreated = false
@@ -286,7 +286,7 @@ struct DashboardView: View {
         } catch {
             do {
                 let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
-                playoffStarted = hasStartedPlayoff(in: allMatches)
+                eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
                 let teamKey = "frc\(team)"
                 let teamMatches = allMatches.filter { match in
                     match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
@@ -301,7 +301,7 @@ struct DashboardView: View {
                     liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
                 }
             } catch {
-                playoffStarted = false
+                eventPhase = .unknown
                 isMatchScheduleNotCreated = false
                 liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
             }
@@ -409,28 +409,106 @@ struct DashboardView: View {
     }
 
     @MainActor
-    private func refreshPlayoffStatus() async {
+    private func refreshEventPhase(using snapshot: NexusTeamQueueSnapshot?) async {
         guard !selectedEventCode.isEmpty else {
-            playoffStarted = false
+            eventPhase = .unknown
             return
         }
         do {
             let matches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
-            playoffStarted = hasStartedPlayoff(in: matches)
+            eventPhase = resolveEventPhase(matches: matches, snapshot: snapshot)
         } catch {
-            playoffStarted = false
+            eventPhase = resolveEventPhase(matches: [], snapshot: snapshot)
         }
     }
 
-    private func hasStartedPlayoff(in matches: [TBASimpleMatch]) -> Bool {
-        let playoffLevels = Set(["ef", "qf", "sf", "f"])
+    private func resolveEventPhase(matches: [TBASimpleMatch], snapshot: NexusTeamQueueSnapshot?) -> EventPhase {
+        if let snapshot {
+            let lowerCombined = "\(snapshot.currentMatchOnField) \(snapshot.teamNextMatch ?? "")".lowercased()
+            if lowerCombined.contains("qf") || lowerCombined.contains("sf") || lowerCombined.contains("final") {
+                return .playoff
+            }
+            if lowerCombined.contains("qual") || lowerCombined.contains("qm") {
+                return .qualification
+            }
+            if lowerCombined.contains("practice") || lowerCombined.contains("pm") || lowerCombined.contains("pr") {
+                return .practice
+            }
+        }
+
         let now = Int(Date().timeIntervalSince1970)
-        return matches.contains { match in
+        let playoffLevels = Set(["ef", "qf", "sf", "f"])
+        let qualificationLevels = Set(["qm"])
+        let practiceLevels = Set(["pm", "pr"])
+
+        let playoffStarted = matches.contains { match in
             guard playoffLevels.contains(match.compLevel) else { return false }
             if let start = match.predictedTime ?? match.time {
                 return start <= now
             }
             return true
+        }
+        if playoffStarted { return .playoff }
+
+        let qualificationStarted = matches.contains { match in
+            guard qualificationLevels.contains(match.compLevel) else { return false }
+            if let start = match.predictedTime ?? match.time {
+                return start <= now
+            }
+            return true
+        }
+        if qualificationStarted { return .qualification }
+
+        let practiceStarted = matches.contains { match in
+            guard practiceLevels.contains(match.compLevel) else { return false }
+            if let start = match.predictedTime ?? match.time {
+                return start <= now
+            }
+            return true
+        }
+        if practiceStarted { return .practice }
+
+        if matches.contains(where: { playoffLevels.contains($0.compLevel) || qualificationLevels.contains($0.compLevel) }) {
+            return .practice
+        }
+        return .unknown
+    }
+}
+
+private enum EventPhase {
+    case practice
+    case qualification
+    case playoff
+    case unknown
+
+    var iconName: String {
+        switch self {
+        case .practice: return "wrench.and.screwdriver"
+        case .qualification: return "flag"
+        case .playoff: return "flag.checkered"
+        case .unknown: return "questionmark.circle"
+        }
+    }
+
+    var iconColor: Color {
+        switch self {
+        case .practice: return .orange
+        case .qualification: return .blue
+        case .playoff: return .green
+        case .unknown: return .secondary
+        }
+    }
+
+    func localizedText(language: AppLanguage) -> String {
+        switch self {
+        case .practice:
+            return L10n.text(.eventPhasePractice, language: language)
+        case .qualification:
+            return L10n.text(.eventPhaseQualification, language: language)
+        case .playoff:
+            return L10n.text(.eventPhasePlayoff, language: language)
+        case .unknown:
+            return L10n.text(.eventPhaseUnknown, language: language)
         }
     }
 }
