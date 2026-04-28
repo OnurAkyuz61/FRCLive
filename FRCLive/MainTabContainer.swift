@@ -157,16 +157,18 @@ private struct ScheduleView: View {
     }
 
     private func matchTitle(_ match: TBASimpleMatch) -> String {
-        let level: String
         switch match.compLevel {
         case "qm":
-            level = "Qual"
-        case "qf", "sf", "f", "ef":
-            level = L10n.text(.matchLabel, language: appLanguage)
+            return "Qual \(match.matchNumber)"
+        case "f":
+            if match.matchNumber == 1 { return "Final 1" }
+            if match.matchNumber == 2 { return "Final 2" }
+            return "Final Tiebreaker"
+        case "qf", "sf", "ef":
+            return "\(L10n.text(.matchLabel, language: appLanguage)) \(match.setNumber)"
         default:
-            level = L10n.text(.matchLabel, language: appLanguage)
+            return "\(L10n.text(.matchLabel, language: appLanguage)) \(match.matchNumber)"
         }
-        return "\(level) \(match.matchNumber)"
     }
 
     private func allianceTeams(_ teamKeys: [String]) -> String {
