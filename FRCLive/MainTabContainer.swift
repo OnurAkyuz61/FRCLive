@@ -351,6 +351,7 @@ private struct RankingsView: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
             .navigationTitle(L10n.text(.rankings, language: appLanguage))
