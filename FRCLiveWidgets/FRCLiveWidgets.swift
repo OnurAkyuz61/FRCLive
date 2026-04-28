@@ -89,10 +89,14 @@ struct FRCLiveWidgetsEntryView: View {
     }
 
     private var smallWidget: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
+            Text(entry.eventName)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             Text(entry.nextMatch)
                 .font(.title3.weight(.bold))
                 .lineLimit(1)
