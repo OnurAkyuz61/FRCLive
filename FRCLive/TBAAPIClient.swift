@@ -457,6 +457,26 @@ final class TBAAPIClient {
         }
     }
 
+    func fetchEventTeamNameMap(eventCode: String) async throws -> [String: String] {
+        let eventKey = normalizedEventKey(from: eventCode)
+
+        if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
+            return [
+                "frc99999": "Demo Robotics",
+                "frc6459": "AG Robotik",
+                "frc6415": "Anatolian Eagles",
+                "frc4784": "Bosphorus Bots"
+            ]
+        }
+
+        let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedKey.isEmpty else {
+            throw TBAAPIClientError.unauthorized
+        }
+
+        return try await fetchEventTeamNames(eventKey: eventKey, authKey: cleanedKey)
+    }
+
     private func demoMatches(for eventCode: String) -> [TBASimpleMatch] {
         let demoMatches: [TBASimpleMatch] = [
             TBASimpleMatch(

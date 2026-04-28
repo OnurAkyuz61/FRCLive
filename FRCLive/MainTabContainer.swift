@@ -284,6 +284,7 @@ private struct RankingsView: View {
     @State private var errorMessage: String?
     @State private var selectedSection: RankingsSection = .rankings
     @State private var showAllAwardRecipients = true
+    @State private var eventTeamNameLookup: [String: String] = [:]
 
     var body: some View {
         NavigationStack {
@@ -454,6 +455,8 @@ private struct RankingsView: View {
             awardsError = error
         }
 
+        eventTeamNameLookup = (try? await TBAAPIClient.shared.fetchEventTeamNameMap(eventCode: selectedEventCode)) ?? [:]
+
         if rankingsError != nil && awardsError != nil {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
         } else {
@@ -470,7 +473,7 @@ private struct RankingsView: View {
         let recipients = award.recipients.compactMap { recipient -> String? in
             if let teamKey = recipient.teamKey {
                 let teamNumber = teamKey.replacingOccurrences(of: "frc", with: "")
-                let teamName = teamNameByKey[teamKey] ?? teamNumber
+                let teamName = resolvedTeamName(for: teamKey, fallbackNumber: teamNumber)
                 if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     return "\(awardee) • \(teamNumber) - \(teamName)"
                 }
@@ -479,7 +482,7 @@ private struct RankingsView: View {
 
             if let teamNumber = recipient.teamNumber {
                 let key = "frc\(teamNumber)"
-                let teamName = teamNameByKey[key] ?? "\(teamNumber)"
+                let teamName = resolvedTeamName(for: key, fallbackNumber: "\(teamNumber)")
                 if let awardee = recipient.awardee, !awardee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     return "\(awardee) • \(teamNumber) - \(teamName)"
                 }
@@ -511,6 +514,16 @@ private struct RankingsView: View {
 
     private var teamNameByKey: [String: String] {
         Dictionary(uniqueKeysWithValues: rankings.map { ($0.teamKey, $0.teamName) })
+    }
+
+    private func resolvedTeamName(for teamKey: String, fallbackNumber: String) -> String {
+        if let fromEventMap = eventTeamNameLookup[teamKey], !fromEventMap.isEmpty {
+            return fromEventMap
+        }
+        if let fromRankings = teamNameByKey[teamKey], !fromRankings.isEmpty {
+            return fromRankings
+        }
+        return fallbackNumber
     }
 }
 
