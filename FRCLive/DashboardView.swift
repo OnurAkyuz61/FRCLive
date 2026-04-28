@@ -31,6 +31,7 @@ struct DashboardView: View {
 
                     liveMatchCard
                     currentFieldStatusRow
+                    dataSourceRow
                     liveActivityStatus
 
                     if let liveErrorMessage {
@@ -199,6 +200,27 @@ struct DashboardView: View {
         )
     }
 
+    private var dataSourceRow: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(dataSourceColor)
+                .frame(width: 10, height: 10)
+            Text("\(L10n.text(.dataSource, language: appLanguage)): \(dataSourceText)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.black)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+
     private var footer: some View {
         HStack {
             Spacer()
@@ -338,6 +360,26 @@ struct DashboardView: View {
         case .unknown:
             return .secondary
         }
+    }
+
+    private var dataSourceText: String {
+        if teamNumber == "99999" {
+            return L10n.text(.dataSourceDemo, language: appLanguage)
+        }
+        if liveErrorMessage != nil {
+            return L10n.text(.dataSourceOffline, language: appLanguage)
+        }
+        return L10n.text(.dataSourceLive, language: appLanguage)
+    }
+
+    private var dataSourceColor: Color {
+        if teamNumber == "99999" {
+            return .orange
+        }
+        if liveErrorMessage != nil {
+            return .red
+        }
+        return .green
     }
 }
 

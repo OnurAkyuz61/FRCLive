@@ -60,6 +60,10 @@ enum L10nKey {
     case alertWarningTitle
     case alertOk
     case tbaKeyInvalid
+    case dataSource
+    case dataSourceLive
+    case dataSourceDemo
+    case dataSourceOffline
 }
 
 enum L10n {
@@ -119,6 +123,10 @@ enum L10n {
             case .alertWarningTitle: return "Uyarı"
             case .alertOk: return "Tamam"
             case .tbaKeyInvalid: return "TBA API anahtarı geçersiz."
+            case .dataSource: return "Veri Kaynağı"
+            case .dataSourceLive: return "CANLI • Nexus"
+            case .dataSourceDemo: return "DEMO • Takım 99999"
+            case .dataSourceOffline: return "ÇEVRİMDIŞI • Yedek"
             }
         case .en:
             switch key {
@@ -174,6 +182,10 @@ enum L10n {
             case .alertWarningTitle: return "Warning"
             case .alertOk: return "OK"
             case .tbaKeyInvalid: return "TBA API key is invalid."
+            case .dataSource: return "Data Source"
+            case .dataSourceLive: return "LIVE • Nexus"
+            case .dataSourceDemo: return "DEMO • Team 99999"
+            case .dataSourceOffline: return "OFFLINE • Fallback"
             }
         }
     }
