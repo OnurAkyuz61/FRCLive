@@ -102,18 +102,35 @@ private struct ScheduleView: View {
                         .padding(.top, 8)
 
                         List(filteredMatches) { match in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(matchTitle(match))
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(spacing: 8) {
+                                        Text(matchTitle(match))
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+                                        if matchIncludesOurTeam(match) {
+                                            Text("TEAM")
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundColor(.black)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 3)
+                                                .background(Color.yellow.opacity(0.9))
+                                                .clipShape(Capsule())
+                                        }
+                                    }
 
-                                Text("\(L10n.text(.redAlliance, language: appLanguage)): \(allianceTeams(match.alliances.red.teamKeys))")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
+                                    Text("\(L10n.text(.redAlliance, language: appLanguage)): \(allianceTeams(match.alliances.red.teamKeys))")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
 
-                                Text("\(L10n.text(.blueAlliance, language: appLanguage)): \(allianceTeams(match.alliances.blue.teamKeys))")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
+                                    Text("\(L10n.text(.blueAlliance, language: appLanguage)): \(allianceTeams(match.alliances.blue.teamKeys))")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer(minLength: 4)
+
+                                scoreBanner(for: match)
                             }
                             .padding(.vertical, 4)
                         }
@@ -176,12 +193,64 @@ private struct ScheduleView: View {
 
     private func allianceTeams(_ teamKeys: [String]) -> String {
         teamKeys
-            .map { $0.replacingOccurrences(of: "frc", with: "") }
+            .map { key in
+                let team = key.replacingOccurrences(of: "frc", with: "")
+                return key == currentTeamKey ? "⭐\(team)" : team
+            }
             .joined(separator: ", ")
     }
 
     private var filteredMatches: [TBASimpleMatch] {
         matches.filter { selectedSection.includes(compLevel: $0.compLevel) }
+    }
+
+    private var currentTeamKey: String {
+        "frc\(teamNumber)"
+    }
+
+    private func matchIncludesOurTeam(_ match: TBASimpleMatch) -> Bool {
+        match.alliances.red.teamKeys.contains(currentTeamKey) || match.alliances.blue.teamKeys.contains(currentTeamKey)
+    }
+
+    private func scoreBanner(for match: TBASimpleMatch) -> some View {
+        let redScore = displayScore(match.alliances.red.score)
+        let blueScore = displayScore(match.alliances.blue.score)
+        let resultColor = resultBannerColor(for: match)
+
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("R: \(redScore)")
+                .font(.caption.weight(.semibold))
+            Text("B: \(blueScore)")
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(resultColor)
+        )
+    }
+
+    private func displayScore(_ score: Int?) -> String {
+        guard let score, score >= 0 else { return "-" }
+        return String(score)
+    }
+
+    private func resultBannerColor(for match: TBASimpleMatch) -> Color {
+        guard let red = match.alliances.red.score, red >= 0,
+              let blue = match.alliances.blue.score, blue >= 0 else {
+            return .gray
+        }
+
+        let teamIsRed = match.alliances.red.teamKeys.contains(currentTeamKey)
+        let teamIsBlue = match.alliances.blue.teamKeys.contains(currentTeamKey)
+        guard teamIsRed || teamIsBlue else { return .gray }
+
+        if red == blue { return .orange }
+
+        let ourWon = (teamIsRed && red > blue) || (teamIsBlue && blue > red)
+        return ourWon ? .green : .red
     }
 }
 

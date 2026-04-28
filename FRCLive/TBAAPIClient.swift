@@ -6,9 +6,16 @@ struct TBATeamProfile: Decodable {
 
 struct TBASimpleAlliance: Decodable {
     let teamKeys: [String]
+    let score: Int?
 
     enum CodingKeys: String, CodingKey {
         case teamKeys = "team_keys"
+        case score
+    }
+
+    init(teamKeys: [String], score: Int? = nil) {
+        self.teamKeys = teamKeys
+        self.score = score
     }
 }
 
@@ -458,8 +465,8 @@ final class TBAAPIClient {
                 matchNumber: 1,
                 setNumber: 1,
                 alliances: TBASimpleAlliances(
-                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc6415", "frc8154"]),
-                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc4784", "frc8840"])
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc6415", "frc8154"], score: 92),
+                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc4784", "frc8840"], score: 88)
                 ),
                 time: 1_773_590_000,
                 predictedTime: 1_773_590_000
@@ -470,8 +477,8 @@ final class TBAAPIClient {
                 matchNumber: 1,
                 setNumber: 1,
                 alliances: TBASimpleAlliances(
-                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc6415", "frc8154"]),
-                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc4784", "frc8840"])
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc6415", "frc8154"], score: 110),
+                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc4784", "frc8840"], score: 97)
                 ),
                 time: 1_773_600_000,
                 predictedTime: 1_773_600_000
@@ -482,8 +489,8 @@ final class TBAAPIClient {
                 matchNumber: 12,
                 setNumber: 1,
                 alliances: TBASimpleAlliances(
-                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc7285", "frc7748"]),
-                    blue: TBASimpleAlliance(teamKeys: ["frc10213", "frc2234", "frc5980"])
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc7285", "frc7748"], score: 84),
+                    blue: TBASimpleAlliance(teamKeys: ["frc10213", "frc2234", "frc5980"], score: 101)
                 ),
                 time: 1_773_601_200,
                 predictedTime: 1_773_601_260
@@ -494,8 +501,8 @@ final class TBAAPIClient {
                 matchNumber: 25,
                 setNumber: 1,
                 alliances: TBASimpleAlliances(
-                    red: TBASimpleAlliance(teamKeys: ["frc6459", "frc5234", "frc4134"]),
-                    blue: TBASimpleAlliance(teamKeys: ["frc99999", "frc8840", "frc3310"])
+                    red: TBASimpleAlliance(teamKeys: ["frc6459", "frc5234", "frc4134"], score: 76),
+                    blue: TBASimpleAlliance(teamKeys: ["frc99999", "frc8840", "frc3310"], score: 73)
                 ),
                 time: 1_773_603_000,
                 predictedTime: 1_773_603_200
@@ -506,8 +513,8 @@ final class TBAAPIClient {
                 matchNumber: 1,
                 setNumber: 1,
                 alliances: TBASimpleAlliances(
-                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc7285", "frc7748"]),
-                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc5234", "frc4134"])
+                    red: TBASimpleAlliance(teamKeys: ["frc99999", "frc7285", "frc7748"], score: 126),
+                    blue: TBASimpleAlliance(teamKeys: ["frc6459", "frc5234", "frc4134"], score: 121)
                 ),
                 time: 1_773_610_000,
                 predictedTime: 1_773_610_000
