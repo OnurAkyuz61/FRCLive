@@ -1,10 +1,30 @@
 import Foundation
+import SwiftUI
 
 enum AppLanguage: String, CaseIterable, Identifiable {
     case tr
     case en
 
     var id: String { rawValue }
+}
+
+enum AppTheme: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
 }
 
 enum L10nKey {
