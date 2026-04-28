@@ -73,12 +73,8 @@ struct SimpleEntry: TimelineEntry {
 struct FRCLiveWidgetsEntryView: View {
     var entry: FRCLiveWidgetProvider.Entry
     @Environment(\.widgetFamily) private var family
-    @Environment(\.colorScheme) private var colorScheme
     private var isEnglish: Bool { entry.languageCode == "en" }
     private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
-    private var cardBackground: Color {
-        colorScheme == .dark ? processBlue.opacity(0.45) : processBlue.opacity(0.28)
-    }
 
     var body: some View {
         switch family {
@@ -114,10 +110,10 @@ struct FRCLiveWidgetsEntryView: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(12)
+        .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(cardBackground)
+                .fill(processBlue)
         )
     }
 
@@ -147,10 +143,10 @@ struct FRCLiveWidgetsEntryView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(12)
+        .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(cardBackground)
+                .fill(processBlue)
         )
     }
 
@@ -180,10 +176,10 @@ struct FRCLiveWidgetsEntryView: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(14)
+        .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(cardBackground)
+                .fill(processBlue)
         )
     }
 }
@@ -196,7 +192,7 @@ struct FRCLiveWidgets: Widget {
             if #available(iOS 17.0, *) {
                 FRCLiveWidgetsEntryView(entry: entry)
                     .containerBackground(for: .widget) {
-                        Color.clear
+                        Color(red: 0/255, green: 156/255, blue: 215/255)
                     }
             } else {
                 FRCLiveWidgetsEntryView(entry: entry)
