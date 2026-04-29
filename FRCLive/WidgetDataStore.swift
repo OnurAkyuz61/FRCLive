@@ -14,7 +14,10 @@ enum WidgetDataStore {
         updatedAt: String,
         languageCode: String
     ) {
-        let defaults = UserDefaults(suiteName: appGroupID) ?? UserDefaults.standard
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            debugLog("App Group unavailable in writeSnapshot.")
+            return
+        }
         defaults.set(teamNumber, forKey: "widget_teamNumber")
         defaults.set(eventName, forKey: "widget_eventName")
         defaults.set(nextMatch, forKey: "widget_nextMatch")
@@ -25,7 +28,10 @@ enum WidgetDataStore {
     }
 
     static func syncAppState(teamNumber: String, selectedEventCode: String, languageCode: String) {
-        let defaults = UserDefaults(suiteName: appGroupID) ?? UserDefaults.standard
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            debugLog("App Group unavailable in syncAppState.")
+            return
+        }
         let isEnglish = languageCode == "en"
 
         let normalizedTeam = teamNumber.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -57,5 +63,11 @@ enum WidgetDataStore {
         defaults.set(isEnglish ? "Just now" : "Az once", forKey: "widget_updatedAt")
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private static func debugLog(_ message: String) {
+#if DEBUG
+        print("[WidgetDataStore] \(message)")
+#endif
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 struct TBATeamProfile: Decodable {
     let nickname: String?
@@ -166,11 +167,43 @@ final class TBAAPIClient {
     private let demoTeamNumber = "99999"
 
     private var tbaAuthKey: String {
-        let value = UserDefaults.standard.string(forKey: Self.tbaAuthKeyStorageKey) ?? ""
-        return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let secureValue = SecureStore.read(key: Self.tbaAuthKeyStorageKey)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !secureValue.isEmpty {
+            return secureValue
+        }
+
+        // One-time migration from plain UserDefaults to Keychain.
+        let legacyValue = (UserDefaults.standard.string(forKey: Self.tbaAuthKeyStorageKey) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !legacyValue.isEmpty {
+            SecureStore.write(key: Self.tbaAuthKeyStorageKey, value: legacyValue)
+            UserDefaults.standard.removeObject(forKey: Self.tbaAuthKeyStorageKey)
+            debugLog("Migrated TBA key from UserDefaults to Keychain.")
+            return legacyValue
+        }
+
+        return ""
     }
 
     private init() {}
+
+    func persistedTBAAuthKey() -> String {
+        tbaAuthKey
+    }
+
+    func saveTBAAuthKey(_ value: String) {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+        SecureStore.write(key: Self.tbaAuthKeyStorageKey, value: cleaned)
+        // Cleanup legacy location if it exists.
+        UserDefaults.standard.removeObject(forKey: Self.tbaAuthKeyStorageKey)
+    }
+
+    func clearTBAAuthKey() {
+        SecureStore.delete(key: Self.tbaAuthKeyStorageKey)
+        UserDefaults.standard.removeObject(forKey: Self.tbaAuthKeyStorageKey)
+    }
 
     func fetchTeamAvatarURL(teamNumber: String) async throws -> URL? {
         if teamNumber == demoTeamNumber {
@@ -193,6 +226,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Team media status=\(httpResponse.statusCode) team=\(teamNumber)")
 
         switch httpResponse.statusCode {
         case 200:
@@ -246,6 +280,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Team profile status=\(httpResponse.statusCode) team=\(teamNumber)")
 
         switch httpResponse.statusCode {
         case 200:
@@ -290,6 +325,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Team events status=\(httpResponse.statusCode) team=\(teamNumber)")
 
         switch httpResponse.statusCode {
         case 200:
@@ -329,6 +365,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Event matches status=\(httpResponse.statusCode) event=\(eventKey)")
 
         switch httpResponse.statusCode {
         case 200:
@@ -375,6 +412,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Event rankings status=\(httpResponse.statusCode) event=\(eventKey)")
 
         switch httpResponse.statusCode {
         case 200:
@@ -440,6 +478,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Event awards status=\(httpResponse.statusCode) event=\(eventKey)")
 
         switch httpResponse.statusCode {
         case 200:
@@ -582,6 +621,7 @@ final class TBAAPIClient {
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw TBAAPIClientError.failedToLoadEvents
         }
+        debugLog("Event teams(simple) status=\(httpResponse.statusCode) event=\(eventKey)")
 
         let teams = try JSONDecoder().decode([TBAEventTeamSimple].self, from: data)
         return Dictionary(
@@ -590,5 +630,56 @@ final class TBAAPIClient {
                 return (team.key, resolvedName)
             }
         )
+    }
+
+    private func debugLog(_ message: String) {
+#if DEBUG
+        print("[TBAAPIClient] \(message)")
+#endif
+    }
+}
+
+private enum SecureStore {
+    static func read(key: String) -> String {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let value = String(data: data, encoding: .utf8)
+        else {
+            return ""
+        }
+        return value
+    }
+
+    static func write(key: String, value: String) {
+        let data = Data(value.utf8)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key
+        ]
+        let attributes: [String: Any] = [kSecValueData as String: data]
+
+        let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if status == errSecItemNotFound {
+            var createQuery = query
+            createQuery[kSecValueData as String] = data
+            SecItemAdd(createQuery as CFDictionary, nil)
+        }
+    }
+
+    static func delete(key: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 }

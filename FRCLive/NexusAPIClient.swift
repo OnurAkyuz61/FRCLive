@@ -145,8 +145,12 @@ final class NexusAPIClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            if let httpResponse = response as? HTTPURLResponse {
+                debugLog("Queue status=\(httpResponse.statusCode) event=\(eventCode) team=\(teamNumber)")
+            }
             throw NexusAPIClientError.invalidResponse
         }
+        debugLog("Queue status=\(httpResponse.statusCode) event=\(eventCode) team=\(teamNumber)")
 
         let decoded = try JSONDecoder().decode(NexusQueuingResponse.self, from: data)
         let current = decoded.currentMatchOnField ?? "-"
@@ -165,5 +169,11 @@ final class NexusAPIClient {
             estimatedStartTime: teamEntry.estimatedStartTime,
             queuingStatus: teamEntry.status
         )
+    }
+
+    private func debugLog(_ message: String) {
+#if DEBUG
+        print("[NexusAPIClient] \(message)")
+#endif
     }
 }

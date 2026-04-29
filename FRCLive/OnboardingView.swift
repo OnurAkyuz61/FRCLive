@@ -3,7 +3,6 @@ import WebKit
 
 struct OnboardingView: View {
     @AppStorage("teamNumber") private var storedTeamNumber: String = ""
-    @AppStorage(TBAAPIClient.tbaAuthKeyStorageKey) private var storedTBAKey: String = ""
     @State private var teamNumberInput: String = ""
     @State private var tbaKeyInput: String = ""
     @State private var tbaKeyStatusMessage: String?
@@ -59,8 +58,9 @@ struct OnboardingView: View {
                 storedTeamNumber = clamped
             }
             teamNumberInput = clamped
-            tbaKeyInput = storedTBAKey
-            if !storedTBAKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let persistedKey = TBAAPIClient.shared.persistedTBAAuthKey()
+            tbaKeyInput = persistedKey
+            if !persistedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 isTBAKeyConfirmed = true
                 tbaKeyStatusMessage = "Onaylandı"
             }
@@ -167,7 +167,7 @@ struct OnboardingView: View {
                         .foregroundColor(.green)
                     Spacer()
                     Button(L10n.text(.remove, language: appLanguage)) {
-                        storedTBAKey = ""
+                        TBAAPIClient.shared.clearTBAAuthKey()
                         tbaKeyInput = ""
                         isTBAKeyConfirmed = false
                         tbaKeyStatusMessage = nil
@@ -205,7 +205,7 @@ struct OnboardingView: View {
                     Button(L10n.text(.confirm, language: appLanguage)) {
                         let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !cleaned.isEmpty else { return }
-                        storedTBAKey = cleaned
+                        TBAAPIClient.shared.saveTBAAuthKey(cleaned)
                         isTBAKeyConfirmed = true
                         tbaKeyStatusMessage = nil
                     }
