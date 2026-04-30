@@ -327,6 +327,9 @@ final class NexusAPIClient {
     private func fetchQueuingPayload(eventCode: String) async throws -> (Data, HTTPURLResponse, String) {
         let apiKey = nexusApiKey
         let normalizedCandidates = await resolvedEventCandidates(from: eventCode, apiKey: apiKey)
+        var sawUnauthorized = false
+        var sawNotFound = false
+        var sawServiceUnavailable = false
         var lastStatusCode: Int?
 
         for candidate in normalizedCandidates {
@@ -350,18 +353,30 @@ final class NexusAPIClient {
             }
 
             if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
-                throw NexusAPIClientError.unauthorized
+                sawUnauthorized = true
+                continue
+            }
+            if httpResponse.statusCode == 404 {
+                sawNotFound = true
+                continue
+            }
+            if httpResponse.statusCode == 502 || httpResponse.statusCode == 503 || httpResponse.statusCode == 504 {
+                sawServiceUnavailable = true
+                continue
             }
         }
 
-        switch lastStatusCode {
-        case 404:
+        if sawNotFound {
             throw NexusAPIClientError.eventNotFound
-        case 502, 503, 504:
-            throw NexusAPIClientError.serviceUnavailable
-        default:
-            throw NexusAPIClientError.invalidResponse
         }
+        if sawUnauthorized {
+            throw NexusAPIClientError.unauthorized
+        }
+        if sawServiceUnavailable {
+            throw NexusAPIClientError.serviceUnavailable
+        }
+        debugLog("Queue unresolved status last=\(lastStatusCode.map(String.init) ?? "nil") candidates=\(normalizedCandidates.joined(separator: ","))")
+        throw NexusAPIClientError.invalidResponse
     }
 
     private func resolvedEventCandidates(from eventCode: String, apiKey: String) async -> [String] {
@@ -438,13 +453,6 @@ final class NexusAPIClient {
         let trimmed = eventCode.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
             candidates.append(trimmed)
-        }
-
-        if trimmed.count > 4 {
-            let dropYear = String(trimmed.dropFirst(4))
-            if !dropYear.isEmpty {
-                candidates.append(dropYear)
-            }
         }
 
         return Array(NSOrderedSet(array: candidates)) as? [String] ?? candidates
