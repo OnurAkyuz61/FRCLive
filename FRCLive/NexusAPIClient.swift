@@ -215,7 +215,8 @@ final class NexusAPIClient {
         let (data, _, resolvedEventCode) = try await fetchQueuingPayload(eventCode: eventCode)
         debugLog("Queue status=200 event=\(resolvedEventCode) team=\(teamNumber)")
         let liveEvent = try parseLiveEventPayload(data: data)
-        let currentOnField = liveEvent.matches.first(where: { $0.status.lowercased().contains("on field") })?.label
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let currentOnField = resolveCurrentOnFieldLabel(matches: liveEvent.matches, nowMilliseconds: nowMs)
         let current = currentOnField ?? liveEvent.latestMatchLabel ?? "-"
 
         guard let teamMatch = prioritizedMatch(for: teamNumber, matches: liveEvent.matches) else {
@@ -580,6 +581,37 @@ final class NexusAPIClient {
             || normalized.contains("gün sonu")
             || normalized.contains("day end")
             || normalized.contains("break")
+    }
+
+    private func resolveCurrentOnFieldLabel(matches: [NexusLiveMatch], nowMilliseconds: Int64) -> String? {
+        let onFieldMatches = matches.filter { $0.status.lowercased().contains("on field") }
+        if let resolved = mostRelevantCurrentMatchLabel(from: onFieldMatches, nowMilliseconds: nowMilliseconds) {
+            return resolved
+        }
+
+        let onDeckMatches = matches.filter { $0.status.lowercased().contains("on deck") }
+        if let resolved = mostRelevantCurrentMatchLabel(from: onDeckMatches, nowMilliseconds: nowMilliseconds) {
+            return resolved
+        }
+
+        return nil
+    }
+
+    private func mostRelevantCurrentMatchLabel(from matches: [NexusLiveMatch], nowMilliseconds: Int64) -> String? {
+        let dated = matches.compactMap { match -> (String, Int64)? in
+            let t = match.times.estimatedOnFieldTimeMillis
+                ?? match.times.estimatedStartTimeMillis
+                ?? match.times.estimatedOnDeckTimeMillis
+            guard let t else { return nil }
+            return (match.label, t)
+        }
+        guard !dated.isEmpty else { return nil }
+
+        let pastOrNow = dated.filter { $0.1 <= nowMilliseconds }.sorted { $0.1 > $1.1 }
+        if let latestPast = pastOrNow.first {
+            return latestPast.0
+        }
+        return dated.sorted { $0.1 < $1.1 }.first?.0
     }
 
     private func statusPriority(_ status: String) -> Int {
