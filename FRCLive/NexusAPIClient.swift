@@ -167,10 +167,10 @@ final class NexusAPIClient {
 
         let (data, _, resolvedEventCode) = try await fetchQueuingPayload(eventCode: eventCode)
         debugLog("Queue status=200 event=\(resolvedEventCode) team=\(teamNumber)")
+        let liveEvent = try parseLiveEventPayload(data: data)
+        let current = liveEvent.latestMatchLabel ?? "-"
 
-        let decoded = try JSONDecoder().decode(NexusQueuingResponse.self, from: data)
-        let current = decoded.currentMatchOnField ?? "-"
-        guard let teamEntry = decoded.entries.first(where: { $0.teamNumber == teamNumber }) else {
+        guard let teamMatch = prioritizedMatch(for: teamNumber, matches: liveEvent.matches) else {
             return NexusTeamQueueSnapshot(
                 currentMatchOnField: current,
                 teamNextMatch: nil,
@@ -181,9 +181,9 @@ final class NexusAPIClient {
 
         return NexusTeamQueueSnapshot(
             currentMatchOnField: current,
-            teamNextMatch: teamEntry.nextMatch,
-            estimatedStartTime: teamEntry.estimatedStartTime,
-            queuingStatus: teamEntry.status
+            teamNextMatch: teamMatch.label,
+            estimatedStartTime: formatMillisToTime(teamMatch.times.estimatedStartTimeMillis),
+            queuingStatus: mapStatusToQueueStatus(teamMatch.status)
         )
     }
 
@@ -238,29 +238,41 @@ final class NexusAPIClient {
         }
 
         let (data, _, _) = try await fetchQueuingPayload(eventCode: eventCode)
+        let liveEvent = try parseLiveEventPayload(data: data)
+        let parsedEntries = liveEvent.matches.enumerated().map { index, match in
+            let teamNumberString = String(teamNumber)
+            let accent: NexusAllianceAccent
+            if match.redTeams.contains(teamNumberString) {
+                accent = .red
+            } else if match.blueTeams.contains(teamNumberString) {
+                accent = .blue
+            } else {
+                accent = .neutral
+            }
 
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let json else {
-            throw NexusAPIClientError.invalidResponse
-        }
+            let queueTimeText = formatMillisToTime(match.times.estimatedQueueTimeMillis)
+            let subtitle: String?
+            if let queueTimeText {
+                subtitle = "~\(queueTimeText) gibi sıraya alınacak"
+            } else {
+                subtitle = nil
+            }
 
-        let currentOnField = (json["current_match_on_field"] as? String)
-            ?? (json["current_match"] as? String)
-            ?? "-"
-        let division = (json["division_name"] as? String)
-            ?? (json["division"] as? String)
-            ?? (json["name"] as? String)
-
-        let rawEntries = (json["entries"] as? [[String: Any]])
-            ?? (json["queue"] as? [[String: Any]])
-            ?? []
-        let parsedEntries = rawEntries.enumerated().map { index, raw in
-            parseUpcomingItem(raw: raw, index: index, teamNumber: teamNumber)
+            return NexusUpcomingQueueItem(
+                id: "\(match.label)-\(index)",
+                title: match.label,
+                subtitle: subtitle,
+                estimatedQueueTime: queueTimeText,
+                scheduledStartTime: formatMillisToTime(match.times.estimatedStartTimeMillis),
+                redAlliance: match.redTeams,
+                blueAlliance: match.blueTeams,
+                accentAlliance: accent
+            )
         }
 
         return NexusQueuingBoardSnapshot(
-            divisionName: division,
-            currentMatchOnField: currentOnField,
+            divisionName: liveEvent.eventName,
+            currentMatchOnField: liveEvent.latestMatchLabel ?? "-",
             entries: parsedEntries
         )
     }
@@ -270,7 +282,7 @@ final class NexusAPIClient {
         var lastStatusCode: Int?
 
         for candidate in normalizedCandidates {
-            guard let url = URL(string: "https://frc.nexus/api/v1/events/\(candidate)/queuing") else {
+            guard let url = URL(string: "https://frc.nexus/api/v1/event/\(candidate)") else {
                 continue
             }
 
@@ -324,77 +336,120 @@ final class NexusAPIClient {
         return Array(NSOrderedSet(array: candidates)) as? [String] ?? candidates
     }
 
-    private func parseUpcomingItem(raw: [String: Any], index: Int, teamNumber: Int) -> NexusUpcomingQueueItem {
-        let matchLabel = stringValue(raw, keys: ["match_label", "match", "next_match", "team_next_match", "title"]) ?? "Match -"
-        let queueText = stringValue(raw, keys: ["queue_text", "subtitle", "note", "status_text", "queue_status_text"])
-        let estimatedQueue = stringValue(raw, keys: ["estimated_queue_time", "estimated_time", "estimated_start_time"])
-        let scheduledStart = stringValue(raw, keys: ["scheduled_start_time", "start_time", "match_time"])
-
-        let red = teamList(raw: raw, keys: ["red_alliance", "red", "red_teams", "redAlliance"])
-        let blue = teamList(raw: raw, keys: ["blue_alliance", "blue", "blue_teams", "blueAlliance"])
-
-        let teamNumberString = String(teamNumber)
-        let accent: NexusAllianceAccent
-        if red.contains(teamNumberString) {
-            accent = .red
-        } else if blue.contains(teamNumberString) {
-            accent = .blue
-        } else if !red.isEmpty || !blue.isEmpty {
-            accent = .neutral
-        } else if matchLabel.lowercased().contains("lunch") || matchLabel.lowercased().contains("ara") {
-            accent = .neutral
-        } else {
-            accent = .blue
+    private func parseLiveEventPayload(data: Data) throws -> NexusLiveEventPayload {
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw NexusAPIClientError.invalidResponse
         }
 
-        let subtitle = queueText ?? estimatedQueue.map { "~\($0) gibi sıraya alınacak" }
-        let id = stringValue(raw, keys: ["id", "key"]) ?? "\(matchLabel)-\(index)"
+        let latestMatchLabel = json["latestMatchLabel"] as? String
+        let eventName = json["eventName"] as? String
+        let matchArray = json["matches"] as? [[String: Any]] ?? []
+        let matches = matchArray.compactMap(parseLiveMatch)
 
-        return NexusUpcomingQueueItem(
-            id: id,
-            title: matchLabel,
-            subtitle: subtitle,
-            estimatedQueueTime: estimatedQueue,
-            scheduledStartTime: scheduledStart,
-            redAlliance: red,
-            blueAlliance: blue,
-            accentAlliance: accent
+        return NexusLiveEventPayload(
+            latestMatchLabel: latestMatchLabel,
+            eventName: eventName,
+            matches: matches
         )
     }
 
-    private func stringValue(_ raw: [String: Any], keys: [String]) -> String? {
-        for key in keys {
-            if let value = raw[key] as? String, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                return value
-            }
-            if let value = raw[key] as? Int {
-                return String(value)
-            }
+    private func parseLiveMatch(raw: [String: Any]) -> NexusLiveMatch? {
+        guard let label = raw["label"] as? String, !label.isEmpty else {
+            return nil
         }
+        let status = (raw["status"] as? String) ?? "Unknown"
+        let redTeams = (raw["redTeams"] as? [String]) ?? []
+        let blueTeams = (raw["blueTeams"] as? [String]) ?? []
+        let timesRaw = raw["times"] as? [String: Any] ?? [:]
+
+        return NexusLiveMatch(
+            label: label,
+            status: status,
+            redTeams: redTeams,
+            blueTeams: blueTeams,
+            times: NexusLiveMatchTimes(
+                estimatedQueueTimeMillis: int64Value(timesRaw["estimatedQueueTime"]),
+                estimatedOnDeckTimeMillis: int64Value(timesRaw["estimatedOnDeckTime"]),
+                estimatedOnFieldTimeMillis: int64Value(timesRaw["estimatedOnFieldTime"]),
+                estimatedStartTimeMillis: int64Value(timesRaw["estimatedStartTime"])
+            )
+        )
+    }
+
+    private func prioritizedMatch(for teamNumber: Int, matches: [NexusLiveMatch]) -> NexusLiveMatch? {
+        let key = String(teamNumber)
+        let teamMatches = matches.filter { $0.redTeams.contains(key) || $0.blueTeams.contains(key) }
+        guard !teamMatches.isEmpty else { return nil }
+
+        // Prefer the nearest active match first, then by estimated queue/start times.
+        return teamMatches.sorted { lhs, rhs in
+            let lhsRank = statusPriority(lhs.status)
+            let rhsRank = statusPriority(rhs.status)
+            if lhsRank != rhsRank { return lhsRank < rhsRank }
+
+            let lhsTime = lhs.times.estimatedQueueTimeMillis ?? lhs.times.estimatedStartTimeMillis ?? Int64.max
+            let rhsTime = rhs.times.estimatedQueueTimeMillis ?? rhs.times.estimatedStartTimeMillis ?? Int64.max
+            return lhsTime < rhsTime
+        }.first
+    }
+
+    private func statusPriority(_ status: String) -> Int {
+        let s = status.lowercased()
+        if s.contains("on field") { return 0 }
+        if s.contains("on deck") { return 1 }
+        if s.contains("now queuing") { return 2 }
+        if s.contains("queuing soon") { return 3 }
+        return 4
+    }
+
+    private func mapStatusToQueueStatus(_ status: String) -> NexusQueuingStatus {
+        let s = status.lowercased()
+        if s.contains("on field") { return .onField }
+        if s.contains("on deck") || s.contains("now queuing") {
+            return .calledToQueue
+        }
+        if s.contains("queuing soon") {
+            return .notCalled
+        }
+        return .unknown
+    }
+
+    private func int64Value(_ value: Any?) -> Int64? {
+        if let value = value as? Int64 { return value }
+        if let value = value as? Int { return Int64(value) }
+        if let value = value as? Double { return Int64(value) }
+        if let value = value as? String, let parsed = Int64(value) { return parsed }
         return nil
     }
 
-    private func teamList(raw: [String: Any], keys: [String]) -> [String] {
-        for key in keys {
-            if let items = raw[key] as? [String] {
-                return items.map { $0.replacingOccurrences(of: "frc", with: "") }
-            }
-            if let items = raw[key] as? [Int] {
-                return items.map(String.init)
-            }
-            if let itemGroups = raw[key] as? [[String: Any]] {
-                let resolved = itemGroups.compactMap { item -> String? in
-                    if let team = item["team_number"] as? Int { return String(team) }
-                    if let team = item["team"] as? Int { return String(team) }
-                    if let team = item["team_number"] as? String { return team.replacingOccurrences(of: "frc", with: "") }
-                    return nil
-                }
-                if !resolved.isEmpty {
-                    return resolved
-                }
-            }
-        }
-        return []
+    private func formatMillisToTime(_ milliseconds: Int64?) -> String? {
+        guard let milliseconds, milliseconds > 0 else { return nil }
+        let date = Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private struct NexusLiveEventPayload {
+        let latestMatchLabel: String?
+        let eventName: String?
+        let matches: [NexusLiveMatch]
+    }
+
+    private struct NexusLiveMatch {
+        let label: String
+        let status: String
+        let redTeams: [String]
+        let blueTeams: [String]
+        let times: NexusLiveMatchTimes
+    }
+
+    private struct NexusLiveMatchTimes {
+        let estimatedQueueTimeMillis: Int64?
+        let estimatedOnDeckTimeMillis: Int64?
+        let estimatedOnFieldTimeMillis: Int64?
+        let estimatedStartTimeMillis: Int64?
     }
 
     private func debugLog(_ message: String) {
