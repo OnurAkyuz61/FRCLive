@@ -296,7 +296,8 @@ final class NexusAPIClient {
         }
         let teamNumberString = String(teamNumber)
         let teamOnlyMatches = phaseFilteredMatches.filter { match in
-            match.redTeams.contains(teamNumberString) || match.blueTeams.contains(teamNumberString)
+            let includesTeam = match.redTeams.contains(teamNumberString) || match.blueTeams.contains(teamNumberString)
+            return includesTeam || isBreakMatch(match)
         }
 
         let parsedEntries = teamOnlyMatches.enumerated().map { index, match in
@@ -555,6 +556,9 @@ final class NexusAPIClient {
 
     private func phaseRank(from label: String) -> Int {
         let normalized = label.lowercased()
+        if normalized.contains("lunch") || normalized.contains("öğle") || normalized.contains("gun sonu") || normalized.contains("gün sonu") || normalized.contains("day end") {
+            return 99
+        }
         if normalized.contains("final") || normalized.contains("playoff") || normalized.contains("qf") || normalized.contains("sf") {
             return 3
         }
@@ -565,6 +569,16 @@ final class NexusAPIClient {
             return 1
         }
         return 0
+    }
+
+    private func isBreakMatch(_ match: NexusLiveMatch) -> Bool {
+        let normalized = match.label.lowercased()
+        return normalized.contains("lunch")
+            || normalized.contains("öğle")
+            || normalized.contains("gun sonu")
+            || normalized.contains("gün sonu")
+            || normalized.contains("day end")
+            || normalized.contains("break")
     }
 
     private func statusPriority(_ status: String) -> Int {
