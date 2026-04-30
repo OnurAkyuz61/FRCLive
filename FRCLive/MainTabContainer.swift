@@ -469,7 +469,12 @@ private struct ScheduleUpcomingMatchesSheet: View {
 
     private func localizedQueueSubtitle(for item: NexusUpcomingQueueItem) -> String? {
         if isBreakLabel(item.title) {
-            return item.subtitle
+            guard let subtitle = item.subtitle else { return nil }
+            if appLanguage == .tr, subtitle.lowercased().hasPrefix("after match ") {
+                let suffix = subtitle.dropFirst("After match ".count)
+                return "Maç \(suffix) sonrasında"
+            }
+            return subtitle
         }
         if let t = item.estimatedQueueTime ?? item.subtitle {
             return appLanguage == .tr ? "~\(t) gibi sıraya alınacak" : "~Queued around \(t)"

@@ -614,13 +614,33 @@ final class NexusAPIClient {
         return NexusUpcomingQueueItem(
             id: "synthetic-break-\(index)-\(nextStart)",
             title: title,
-            subtitle: "After \(previous.label)",
+            subtitle: breakSubtitle(after: previous.label),
             estimatedQueueTime: nil,
             scheduledStartTime: nextStartText,
             redAlliance: [],
             blueAlliance: [],
             accentAlliance: .neutral
         )
+    }
+
+    private func breakSubtitle(after previousLabel: String) -> String {
+        if let number = extractTrailingMatchNumber(from: previousLabel) {
+            return "After match \(number)"
+        }
+        return "After \(previousLabel)"
+    }
+
+    private func extractTrailingMatchNumber(from label: String) -> String? {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.split(separator: " ")
+        guard let last = parts.last else { return nil }
+        let allowed = CharacterSet(charactersIn: "0123456789-")
+        let candidate = String(last).trimmingCharacters(in: .punctuationCharacters)
+        guard !candidate.isEmpty,
+              candidate.unicodeScalars.allSatisfy({ allowed.contains($0) }) else {
+            return nil
+        }
+        return candidate
     }
 
     private func resolveCurrentOnFieldLabel(matches: [NexusLiveMatch], nowMilliseconds: Int64) -> String? {
