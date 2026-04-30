@@ -75,6 +75,26 @@ struct FRCLiveWidgetsEntryView: View {
     @Environment(\.widgetFamily) private var family
     private var isEnglish: Bool { entry.languageCode == "en" }
     private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
+    private var compactNextMatch: String {
+        entry.nextMatch
+            .replacingOccurrences(of: "Qualification", with: "Qual")
+            .replacingOccurrences(of: "Practice", with: "Prac")
+            .replacingOccurrences(of: "Playoff", with: "PO")
+    }
+    private var compactQueueStatus: String {
+        let status = entry.queueStatus
+        if status.count <= 14 { return status }
+        if status.lowercased().contains("called") || status.lowercased().contains("çağr") {
+            return isEnglish ? "Called" : "Çağrıldı"
+        }
+        if status.lowercased().contains("field") || status.lowercased().contains("saha") {
+            return isEnglish ? "On Field" : "Sahada"
+        }
+        if status.lowercased().contains("not") || status.lowercased().contains("henüz") {
+            return isEnglish ? "Not Called" : "Çağrılmadı"
+        }
+        return String(status.prefix(14))
+    }
 
     var body: some View {
         switch family {
@@ -90,21 +110,23 @@ struct FRCLiveWidgetsEntryView: View {
     }
 
     private var smallWidget: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
-                .font(.caption.weight(.semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color.white.opacity(0.92))
             Text(entry.eventName)
-                .font(.caption.weight(.medium))
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(Color.white.opacity(0.85))
                 .lineLimit(1)
-            Text(entry.nextMatch)
-                .font(.title3.weight(.bold))
+            Text(compactNextMatch)
+                .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)
-            Text(entry.queueStatus)
+                .minimumScaleFactor(0.62)
+            Text(compactQueueStatus)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(Color.white.opacity(0.9))
+                .lineLimit(1)
             Spacer()
             Text(entry.updatedAt)
                 .font(.caption2)
