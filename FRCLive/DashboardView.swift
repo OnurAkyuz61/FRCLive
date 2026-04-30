@@ -691,7 +691,7 @@ private struct UpcomingMatchesView: View {
                                 .font(.title3.weight(.medium))
                                 .foregroundColor(.white)
                             Spacer()
-                            if let subtitle = item.subtitle {
+                            if let subtitle = localizedQueueSubtitle(for: item) {
                                 Text(subtitle)
                                     .font(.subheadline)
                                     .foregroundColor(.white.opacity(0.96))
@@ -816,6 +816,21 @@ private struct UpcomingMatchesView: View {
                 endPoint: .bottomTrailing
             )
         }
+    }
+
+    private func localizedQueueSubtitle(for item: NexusUpcomingQueueItem) -> String? {
+        if isBreakLabel(item.title) {
+            return item.subtitle
+        }
+        if let t = item.estimatedQueueTime ?? item.subtitle {
+            return appLanguage == .tr ? "~\(t) gibi sıraya alınacak" : "~Queued around \(t)"
+        }
+        return item.subtitle
+    }
+
+    private func isBreakLabel(_ label: String) -> Bool {
+        let n = label.lowercased()
+        return n.contains("lunch") || n.contains("öğle") || n.contains("gün sonu") || n.contains("gun sonu") || n.contains("day end") || n.contains("break")
     }
 
     @MainActor

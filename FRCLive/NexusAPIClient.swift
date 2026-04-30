@@ -245,7 +245,7 @@ final class NexusAPIClient {
                     NexusUpcomingQueueItem(
                         id: "demo-1",
                         title: "Sıralama 10",
-                        subtitle: "~16:48 gibi sıraya alınacak",
+                        subtitle: "16:48",
                         estimatedQueueTime: "16:48",
                         scheduledStartTime: "17:12",
                         redAlliance: ["10396", "245", "9072"],
@@ -255,7 +255,7 @@ final class NexusAPIClient {
                     NexusUpcomingQueueItem(
                         id: "demo-2",
                         title: "Sıralama 24",
-                        subtitle: "~18:40 gibi sıraya alınacak",
+                        subtitle: "18:40",
                         estimatedQueueTime: "18:40",
                         scheduledStartTime: nil,
                         redAlliance: ["598", "3492", "2714"],
@@ -275,7 +275,7 @@ final class NexusAPIClient {
                     NexusUpcomingQueueItem(
                         id: "demo-3",
                         title: "Sıralama 35",
-                        subtitle: "~21:49 gibi sıraya alınacak",
+                        subtitle: "21:49",
                         estimatedQueueTime: "21:49",
                         scheduledStartTime: nil,
                         redAlliance: ["9483", "3316", "7734"],
@@ -313,12 +313,7 @@ final class NexusAPIClient {
             }
 
             let queueTimeText = formatMillisToTime(match.times.estimatedQueueTimeMillis)
-            let subtitle: String?
-            if let queueTimeText {
-                subtitle = "~\(queueTimeText) gibi sıraya alınacak"
-            } else {
-                subtitle = nil
-            }
+            let subtitle = queueTimeText
 
             return NexusUpcomingQueueItem(
                 id: "\(match.label)-\(index)",
@@ -535,6 +530,9 @@ final class NexusAPIClient {
 
     private func isUpcomingMatch(_ match: NexusLiveMatch, nowMilliseconds: Int64) -> Bool {
         let lowerStatus = match.status.lowercased()
+        if isBreakLabel(match.label) {
+            return true
+        }
         if lowerStatus.contains("completed") || lowerStatus.contains("played") {
             return false
         }
@@ -574,7 +572,11 @@ final class NexusAPIClient {
     }
 
     private func isBreakMatch(_ match: NexusLiveMatch) -> Bool {
-        let normalized = match.label.lowercased()
+        isBreakLabel(match.label)
+    }
+
+    private func isBreakLabel(_ label: String) -> Bool {
+        let normalized = label.lowercased()
         return normalized.contains("lunch")
             || normalized.contains("öğle")
             || normalized.contains("gun sonu")

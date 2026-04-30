@@ -398,7 +398,7 @@ private struct ScheduleUpcomingMatchesSheet: View {
                                         HStack(spacing: 8) {
                                             Text(item.title).foregroundColor(.white)
                                             Spacer()
-                                            Text(item.subtitle ?? "")
+                                            Text(localizedQueueSubtitle(for: item) ?? "")
                                                 .foregroundColor(.white.opacity(0.96))
                                                 .lineLimit(1)
                                             Image(systemName: expandedIDs.contains(item.id) ? "chevron.up" : "chevron.down")
@@ -465,6 +465,21 @@ private struct ScheduleUpcomingMatchesSheet: View {
         case .neutral:
             return LinearGradient(colors: [Color(red: 0.21, green: 0.22, blue: 0.25), Color(red: 0.15, green: 0.16, blue: 0.19)], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
+    }
+
+    private func localizedQueueSubtitle(for item: NexusUpcomingQueueItem) -> String? {
+        if isBreakLabel(item.title) {
+            return item.subtitle
+        }
+        if let t = item.estimatedQueueTime ?? item.subtitle {
+            return appLanguage == .tr ? "~\(t) gibi sıraya alınacak" : "~Queued around \(t)"
+        }
+        return item.subtitle
+    }
+
+    private func isBreakLabel(_ label: String) -> Bool {
+        let n = label.lowercased()
+        return n.contains("lunch") || n.contains("öğle") || n.contains("gün sonu") || n.contains("gun sonu") || n.contains("day end") || n.contains("break")
     }
 
     @MainActor
