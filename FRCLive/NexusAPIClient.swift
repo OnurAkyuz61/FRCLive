@@ -294,9 +294,12 @@ final class NexusAPIClient {
             if minimumPhaseRank == 0 { return true }
             return rank >= minimumPhaseRank
         }
+        let teamNumberString = String(teamNumber)
+        let teamOnlyMatches = phaseFilteredMatches.filter { match in
+            match.redTeams.contains(teamNumberString) || match.blueTeams.contains(teamNumberString)
+        }
 
-        let parsedEntries = phaseFilteredMatches.enumerated().map { index, match in
-            let teamNumberString = String(teamNumber)
+        let parsedEntries = teamOnlyMatches.enumerated().map { index, match in
             let accent: NexusAllianceAccent
             if match.redTeams.contains(teamNumberString) {
                 accent = .red
