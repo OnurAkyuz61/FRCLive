@@ -49,6 +49,7 @@ private struct ScheduleView: View {
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     @State private var matches: [TBASimpleMatch] = []
+    @State private var queueSnapshot: NexusTeamQueueSnapshot?
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSection: MatchSection = .qualification
@@ -92,6 +93,33 @@ private struct ScheduleView: View {
                     .padding(.horizontal, 24)
                 } else {
                     VStack(spacing: 10) {
+                        if let queueSnapshot {
+                            HStack(spacing: 8) {
+                                Image(systemName: "clock.badge.checkmark")
+                                    .foregroundColor(.blue)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(queueSnapshot.teamNextMatch ?? "-")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("\(L10n.text(.estimatedStart, language: appLanguage)): \(queueSnapshot.estimatedStartTime ?? "-")")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                                    )
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                        }
+
                         Picker(L10n.text(.schedule, language: appLanguage), selection: $selectedSection) {
                             Text(L10n.text(.practice, language: appLanguage)).tag(MatchSection.practice)
                             Text(L10n.text(.qualification, language: appLanguage)).tag(MatchSection.qualification)
@@ -118,6 +146,10 @@ private struct ScheduleView: View {
                                                 .clipShape(Capsule())
                                         }
                                     }
+
+                                    Text(matchDateTimeText(match))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
 
                                     Text("\(L10n.text(.redAlliance, language: appLanguage)): \(allianceTeams(match.alliances.red.teamKeys))")
                                         .font(.footnote)
@@ -169,6 +201,10 @@ private struct ScheduleView: View {
             matches = allMatches.filter { match in
                 match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
             }
+            queueSnapshot = try? await NexusAPIClient.shared.fetchQueueSnapshot(
+                eventCode: selectedEventCode,
+                teamNumber: teamInt
+            )
         } catch {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
         }
@@ -252,6 +288,16 @@ private struct ScheduleView: View {
 
         let ourWon = (teamIsRed && red > blue) || (teamIsBlue && blue > red)
         return ourWon ? .green : .red
+    }
+
+    private func matchDateTimeText(_ match: TBASimpleMatch) -> String {
+        guard let unix = match.predictedTime ?? match.time, unix > 0 else {
+            return appLanguage == .tr ? "Tarih/Saat: -" : "Date/Time: -"
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: appLanguage == .tr ? "tr_TR" : "en_US_POSIX")
+        formatter.dateFormat = "dd MMM, EEE • HH:mm"
+        return formatter.string(from: Date(timeIntervalSince1970: TimeInterval(unix)))
     }
 }
 
