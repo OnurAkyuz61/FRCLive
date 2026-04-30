@@ -286,7 +286,10 @@ final class NexusAPIClient {
 
         let (data, _, _) = try await fetchQueuingPayload(eventCode: eventCode)
         let liveEvent = try parseLiveEventPayload(data: data)
-        let parsedEntries = liveEvent.matches.enumerated().map { index, match in
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let upcomingMatches = liveEvent.matches.filter { isUpcomingMatch($0, nowMilliseconds: nowMs) }
+
+        let parsedEntries = upcomingMatches.enumerated().map { index, match in
             let teamNumberString = String(teamNumber)
             let accent: NexusAllianceAccent
             if match.redTeams.contains(teamNumberString) {
@@ -463,7 +466,7 @@ final class NexusAPIClient {
             throw NexusAPIClientError.invalidResponse
         }
 
-        let latestMatchLabel = json["latestMatchLabel"] as? String
+        let latestMatchLabel = (json["nowQueuing"] as? String) ?? (json["latestMatchLabel"] as? String)
         let eventName = json["eventName"] as? String
         let matchArray = json["matches"] as? [[String: Any]] ?? []
         let matches = matchArray.compactMap(parseLiveMatch)
@@ -502,9 +505,12 @@ final class NexusAPIClient {
         let key = String(teamNumber)
         let teamMatches = matches.filter { $0.redTeams.contains(key) || $0.blueTeams.contains(key) }
         guard !teamMatches.isEmpty else { return nil }
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let upcomingTeamMatches = teamMatches.filter { isUpcomingMatch($0, nowMilliseconds: nowMs) }
+        let source = upcomingTeamMatches.isEmpty ? teamMatches : upcomingTeamMatches
 
         // Prefer the nearest active match first, then by estimated queue/start times.
-        return teamMatches.sorted { lhs, rhs in
+        return source.sorted { lhs, rhs in
             let lhsRank = statusPriority(lhs.status)
             let rhsRank = statusPriority(rhs.status)
             if lhsRank != rhsRank { return lhsRank < rhsRank }
@@ -513,6 +519,27 @@ final class NexusAPIClient {
             let rhsTime = rhs.times.estimatedQueueTimeMillis ?? rhs.times.estimatedStartTimeMillis ?? Int64.max
             return lhsTime < rhsTime
         }.first
+    }
+
+    private func isUpcomingMatch(_ match: NexusLiveMatch, nowMilliseconds: Int64) -> Bool {
+        let lowerStatus = match.status.lowercased()
+        if lowerStatus.contains("completed") || lowerStatus.contains("played") {
+            return false
+        }
+        if lowerStatus.contains("on field") || lowerStatus.contains("on deck") || lowerStatus.contains("now queuing") || lowerStatus.contains("queuing soon") {
+            return true
+        }
+
+        let time = match.times.estimatedQueueTimeMillis
+            ?? match.times.estimatedOnDeckTimeMillis
+            ?? match.times.estimatedOnFieldTimeMillis
+            ?? match.times.estimatedStartTimeMillis
+
+        guard let time else {
+            return false
+        }
+        // Keep current/near-future only; drop clearly finished matches.
+        return time >= nowMilliseconds - 20 * 60 * 1000
     }
 
     private func statusPriority(_ status: String) -> Int {

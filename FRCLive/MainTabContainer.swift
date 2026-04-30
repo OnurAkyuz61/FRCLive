@@ -378,6 +378,16 @@ private struct ScheduleUpcomingMatchesSheet: View {
                             .padding(.horizontal, 14)
 
                         VStack(spacing: 0) {
+                            if board.entries.isEmpty {
+                                Text(appLanguage == .tr ? "Yaklaşan maç bulunamadı" : "No upcoming matches")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 14)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(UIColor.systemBackground))
+                            }
+
                             ForEach(board.entries) { item in
                                 VStack(spacing: 0) {
                                     Button {
@@ -427,7 +437,7 @@ private struct ScheduleUpcomingMatchesSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                .stroke(Color.black.opacity(0.10), lineWidth: 1)
                         )
                         .padding(.horizontal, 14)
                     }
@@ -453,7 +463,7 @@ private struct ScheduleUpcomingMatchesSheet: View {
         case .blue:
             return LinearGradient(colors: [Color(red: 0.03, green: 0.16, blue: 0.34), Color(red: 0.01, green: 0.09, blue: 0.23)], startPoint: .topLeading, endPoint: .bottomTrailing)
         case .neutral:
-            return LinearGradient(colors: [Color(UIColor.tertiarySystemFill), Color(UIColor.secondarySystemFill)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(colors: [Color(red: 0.21, green: 0.22, blue: 0.25), Color(red: 0.15, green: 0.16, blue: 0.19)], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 
