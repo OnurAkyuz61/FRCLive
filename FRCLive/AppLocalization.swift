@@ -37,6 +37,10 @@ enum L10nKey {
     case remove
     case tbaKeyConfirmed
     case mustConfirmTba
+    case nexusApiKey
+    case enterNexusKey
+    case nexusKeyConfirmed
+    case mustConfirmNexus
     case teamValidationFailed
     case poweredBy
     case eventSelection
@@ -128,6 +132,10 @@ enum L10n {
             case .remove: return "Kaldır"
             case .tbaKeyConfirmed: return "TBA Key Onaylandı"
             case .mustConfirmTba: return "Devam etmek için önce TBA API Key onaylanmalı."
+            case .nexusApiKey: return "Nexus API Key"
+            case .enterNexusKey: return "Nexus key girin"
+            case .nexusKeyConfirmed: return "Nexus Key Onaylandı"
+            case .mustConfirmNexus: return "Devam etmek için önce Nexus API Key onaylanmalı."
             case .teamValidationFailed: return "Takım doğrulanamadı. Lütfen bilgileri kontrol edin."
             case .poweredBy: return "Powered by Onur Akyüz"
             case .eventSelection: return "Etkinlik Seçimi"
@@ -215,6 +223,10 @@ enum L10n {
             case .remove: return "Remove"
             case .tbaKeyConfirmed: return "TBA Key Confirmed"
             case .mustConfirmTba: return "Please confirm TBA API Key before continuing."
+            case .nexusApiKey: return "Nexus API Key"
+            case .enterNexusKey: return "Enter Nexus key"
+            case .nexusKeyConfirmed: return "Nexus Key Confirmed"
+            case .mustConfirmNexus: return "Please confirm Nexus API Key before continuing."
             case .teamValidationFailed: return "Team validation failed. Please check your details."
             case .poweredBy: return "Powered by Onur Akyüz"
             case .eventSelection: return "Event Selection"

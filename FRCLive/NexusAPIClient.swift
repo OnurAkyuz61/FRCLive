@@ -146,6 +146,21 @@ final class NexusAPIClient {
     private let defaultNexusApiKey = "HfG4EGZoOR6gUdof2-gtqNU3I8E"
     private init() {}
 
+    func persistedNexusApiKey() -> String {
+        UserDefaults.standard.string(forKey: Self.nexusApiKeyStorageKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    func saveNexusApiKey(_ value: String) {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+        UserDefaults.standard.set(cleaned, forKey: Self.nexusApiKeyStorageKey)
+    }
+
+    func clearNexusApiKey() {
+        UserDefaults.standard.removeObject(forKey: Self.nexusApiKeyStorageKey)
+    }
+
     private var nexusApiKey: String {
         let stored = UserDefaults.standard.string(forKey: Self.nexusApiKeyStorageKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)

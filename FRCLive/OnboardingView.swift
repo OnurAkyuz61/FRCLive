@@ -7,6 +7,8 @@ struct OnboardingView: View {
     @State private var tbaKeyInput: String = ""
     @State private var tbaKeyStatusMessage: String?
     @State private var isTBAKeyConfirmed = false
+    @State private var nexusKeyInput: String = ""
+    @State private var isNexusKeyConfirmed = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -38,6 +40,9 @@ struct OnboardingView: View {
                 tbaKeySection
                     .padding(.bottom, 16)
 
+                nexusKeySection
+                    .padding(.bottom, 16)
+
                 languageSelector
 
                 Spacer()
@@ -64,6 +69,12 @@ struct OnboardingView: View {
             if !persistedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 isTBAKeyConfirmed = true
                 tbaKeyStatusMessage = "Onaylandı"
+            }
+
+            let persistedNexusKey = NexusAPIClient.shared.persistedNexusApiKey()
+            nexusKeyInput = persistedNexusKey
+            if !persistedNexusKey.isEmpty {
+                isNexusKeyConfirmed = true
             }
         }
         .alert(
@@ -148,9 +159,9 @@ struct OnboardingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed)
-        .opacity((teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed) ? 0.6 : 1)
-        .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed)
+        .disabled(teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed || !isNexusKeyConfirmed)
+        .opacity((teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed || !isNexusKeyConfirmed) ? 0.6 : 1)
+        .animation(.easeInOut(duration: 0.2), value: teamNumberInput.isEmpty || isLoading || !isTBAKeyConfirmed || !isNexusKeyConfirmed)
     }
 
     private var tbaKeySection: some View {
@@ -221,6 +232,72 @@ struct OnboardingView: View {
         }
     }
 
+    private var nexusKeySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.text(.nexusApiKey, language: appLanguage))
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.primary)
+
+            if isNexusKeyConfirmed {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .foregroundColor(.green)
+                    Text(L10n.text(.nexusKeyConfirmed, language: appLanguage))
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.green)
+                    Spacer()
+                    Button(L10n.text(.remove, language: appLanguage)) {
+                        NexusAPIClient.shared.clearNexusApiKey()
+                        nexusKeyInput = ""
+                        isNexusKeyConfirmed = false
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.red)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(Color.green.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.green.opacity(0.30), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            } else {
+                TextField(
+                    L10n.text(.enterNexusKey, language: appLanguage),
+                    text: $nexusKeyInput,
+                    prompt: Text(L10n.text(.enterNexusKey, language: appLanguage)).foregroundColor(.gray)
+                )
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .font(.footnote.monospaced())
+                .foregroundColor(.primary)
+                .padding(.horizontal, 12)
+                .frame(height: 44)
+                .background(Color(UIColor.secondarySystemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.gray.opacity(0.7), lineWidth: 1)
+                )
+
+                HStack(spacing: 10) {
+                    Button(L10n.text(.confirm, language: appLanguage)) {
+                        let cleaned = nexusKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !cleaned.isEmpty else { return }
+                        NexusAPIClient.shared.saveNexusApiKey(cleaned)
+                        isNexusKeyConfirmed = true
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(red: 0.09, green: 0.19, blue: 0.36))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+            }
+        }
+    }
+
     private var languageSelector: some View {
         HStack(spacing: 12) {
             languageTextButton(language: .tr, label: "TR")
@@ -249,6 +326,11 @@ struct OnboardingView: View {
         guard !cleaned.isEmpty else { return }
         guard isTBAKeyConfirmed else {
             errorMessage = L10n.text(.mustConfirmTba, language: appLanguage)
+            showErrorAlert = true
+            return
+        }
+        guard isNexusKeyConfirmed else {
+            errorMessage = L10n.text(.mustConfirmNexus, language: appLanguage)
             showErrorAlert = true
             return
         }
