@@ -12,6 +12,7 @@ struct OnboardingView: View {
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
     @FocusState private var isFieldFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
     private let maxTeamNumberLength = 5
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
@@ -88,7 +89,7 @@ struct OnboardingView: View {
     }
 
     private var firstLogoBottomSection: some View {
-        Image("FIRST_Vertical_RGB")
+        Image(colorScheme == .dark ? "FRC_White" : "FRC")
             .resizable()
             .scaledToFit()
             .frame(width: 120, height: 90)
