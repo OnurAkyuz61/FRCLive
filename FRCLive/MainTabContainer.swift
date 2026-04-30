@@ -53,6 +53,7 @@ private struct ScheduleView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedSection: MatchSection = .qualification
+    @State private var showUpcomingMatches = false
 
     var body: some View {
         NavigationStack {
@@ -93,6 +94,34 @@ private struct ScheduleView: View {
                     .padding(.horizontal, 24)
                 } else {
                     VStack(spacing: 10) {
+                        Button {
+                            showUpcomingMatches = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "list.bullet.rectangle.portrait")
+                                Text(appLanguage == .tr ? "Yaklaşan Maçlar (Nexus)" : "Upcoming Matches (Nexus)")
+                                    .fontWeight(.semibold)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 11)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
                         if let queueSnapshot {
                             HStack(spacing: 8) {
                                 Image(systemName: "clock.badge.checkmark")
@@ -182,6 +211,11 @@ private struct ScheduleView: View {
             }
             .task {
                 await loadMatches()
+            }
+            .sheet(isPresented: $showUpcomingMatches) {
+                NavigationStack {
+                    ScheduleUpcomingMatchesSheet()
+                }
             }
         }
     }
@@ -298,6 +332,144 @@ private struct ScheduleView: View {
         formatter.locale = Locale(identifier: appLanguage == .tr ? "tr_TR" : "en_US_POSIX")
         formatter.dateFormat = "dd MMM, EEE • HH:mm"
         return formatter.string(from: Date(timeIntervalSince1970: TimeInterval(unix)))
+    }
+}
+
+private struct ScheduleUpcomingMatchesSheet: View {
+    @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
+    @AppStorage("teamNumber") private var teamNumber: String = ""
+    @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
+    @AppStorage("selectedEventName") private var selectedEventName: String = ""
+    @Environment(\.dismiss) private var dismiss
+    private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
+
+    @State private var board: NexusQueuingBoardSnapshot?
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var expandedIDs: Set<String> = []
+
+    var body: some View {
+        ZStack {
+            Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+
+            if isLoading && board == nil {
+                ProgressView()
+            } else if let errorMessage {
+                VStack(spacing: 12) {
+                    Text(errorMessage)
+                        .font(.subheadline)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                    Button(L10n.text(.retry, language: appLanguage)) {
+                        Task { await loadBoard() }
+                    }
+                }
+                .padding(.horizontal, 24)
+            } else if let board {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
+                            .font(.title3.weight(.bold))
+                            .padding(.horizontal, 14)
+                            .padding(.top, 4)
+                        Text(board.divisionName ?? selectedEventName)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 14)
+
+                        VStack(spacing: 0) {
+                            ForEach(board.entries) { item in
+                                VStack(spacing: 0) {
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            if expandedIDs.contains(item.id) { expandedIDs.remove(item.id) } else { expandedIDs.insert(item.id) }
+                                        }
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Text(item.title).foregroundColor(.white)
+                                            Spacer()
+                                            Text(item.subtitle ?? "")
+                                                .foregroundColor(.white.opacity(0.88))
+                                                .lineLimit(1)
+                                            Image(systemName: expandedIDs.contains(item.id) ? "chevron.up" : "chevron.down")
+                                                .foregroundColor(.white.opacity(0.9))
+                                        }
+                                        .font(.subheadline.weight(.semibold))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 12)
+                                        .background(rowBg(item.accentAlliance))
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if expandedIDs.contains(item.id) {
+                                        VStack(alignment: .leading, spacing: 7) {
+                                            if let t = item.estimatedQueueTime {
+                                                Label(appLanguage == .tr ? "Tahmini sıra zamanı: \(t)" : "Estimated queue time: \(t)", systemImage: "clock")
+                                            }
+                                            if let t = item.scheduledStartTime {
+                                                Label(appLanguage == .tr ? "Planlanan maç saati: \(t)" : "Planned start time: \(t)", systemImage: "calendar")
+                                            }
+                                            if !item.redAlliance.isEmpty || !item.blueAlliance.isEmpty {
+                                                Text("\(L10n.text(.redAlliance, language: appLanguage)): \(item.redAlliance.joined(separator: ", "))")
+                                                Text("\(L10n.text(.blueAlliance, language: appLanguage)): \(item.blueAlliance.joined(separator: ", "))")
+                                            }
+                                        }
+                                        .font(.footnote)
+                                        .foregroundColor(.white.opacity(0.92))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(Color.black.opacity(0.25))
+                                    }
+                                }
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 14)
+                    }
+                    .padding(.vertical, 10)
+                }
+                .refreshable { await loadBoard() }
+            }
+        }
+        .navigationTitle(appLanguage == .tr ? "Yaklaşan Maçlar" : "Upcoming Matches")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(L10n.text(.alertOk, language: appLanguage)) { dismiss() }
+            }
+        }
+        .task { await loadBoard() }
+    }
+
+    private func rowBg(_ alliance: NexusAllianceAccent) -> LinearGradient {
+        switch alliance {
+        case .red:
+            return LinearGradient(colors: [Color(red: 0.36, green: 0.05, blue: 0.10), Color(red: 0.24, green: 0.03, blue: 0.07)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .blue:
+            return LinearGradient(colors: [Color(red: 0.03, green: 0.16, blue: 0.34), Color(red: 0.01, green: 0.09, blue: 0.23)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .neutral:
+            return LinearGradient(colors: [Color(UIColor.tertiarySystemFill), Color(UIColor.secondarySystemFill)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+
+    @MainActor
+    private func loadBoard() async {
+        guard !selectedEventCode.isEmpty, let team = Int(teamNumber) else { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let loaded = try await NexusAPIClient.shared.fetchQueuingBoard(eventCode: selectedEventCode, teamNumber: team)
+            board = loaded
+            expandedIDs = Set(loaded.entries.prefix(1).map(\.id))
+        } catch {
+            errorMessage = L10n.text(.liveDataError, language: appLanguage)
+        }
     }
 }
 
