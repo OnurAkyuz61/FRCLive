@@ -92,7 +92,7 @@ struct OnboardingView: View {
         Image(colorScheme == .dark ? "FRC_White" : "FRC")
             .resizable()
             .scaledToFit()
-            .frame(width: 120, height: 90)
+            .frame(width: 170, height: 120)
             .opacity(0.95)
     }
 
