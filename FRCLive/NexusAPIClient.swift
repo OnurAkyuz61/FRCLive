@@ -535,20 +535,22 @@ final class NexusAPIClient {
         if lowerStatus.contains("completed") || lowerStatus.contains("played") {
             return false
         }
-        if lowerStatus.contains("on field") || lowerStatus.contains("on deck") || lowerStatus.contains("now queuing") || lowerStatus.contains("queuing soon") {
-            return true
-        }
 
         let time = match.times.estimatedQueueTimeMillis
             ?? match.times.estimatedOnDeckTimeMillis
             ?? match.times.estimatedOnFieldTimeMillis
             ?? match.times.estimatedStartTimeMillis
 
-        guard let time else {
-            return false
+        if let time {
+            // Hard cutoff: if match timing is clearly in the past, treat it as finished.
+            return time >= nowMilliseconds - 10 * 60 * 1000
         }
-        // Keep current/near-future only; drop clearly finished matches.
-        return time >= nowMilliseconds - 20 * 60 * 1000
+
+        // If no timing info exists, fallback to status-based inclusion.
+        if lowerStatus.contains("on field") || lowerStatus.contains("on deck") || lowerStatus.contains("now queuing") || lowerStatus.contains("queuing soon") {
+            return true
+        }
+        return false
     }
 
     private func phaseRank(from label: String) -> Int {
