@@ -693,11 +693,11 @@ private struct UpcomingMatchesView: View {
                             if let subtitle = item.subtitle {
                                 Text(subtitle)
                                     .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.90))
+                                    .foregroundColor(.white.opacity(0.96))
                                     .lineLimit(1)
                             }
                             Image(systemName: expandedIDs.contains(item.id) ? "chevron.up" : "chevron.down")
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(.white.opacity(0.96))
                                 .font(.footnote.weight(.semibold))
                         }
                         .padding(.horizontal, 12)
@@ -736,7 +736,7 @@ private struct UpcomingMatchesView: View {
                     systemImage: "clock"
                 )
                 .font(.subheadline)
-                .foregroundColor(.white.opacity(0.92))
+                .foregroundColor(.white.opacity(0.97))
             }
 
             if let scheduledStartTime = item.scheduledStartTime {
@@ -747,7 +747,7 @@ private struct UpcomingMatchesView: View {
                     systemImage: "calendar"
                 )
                 .font(.subheadline)
-                .foregroundColor(.white.opacity(0.92))
+                .foregroundColor(.white.opacity(0.97))
             }
 
             if !item.redAlliance.isEmpty || !item.blueAlliance.isEmpty {
@@ -759,7 +759,7 @@ private struct UpcomingMatchesView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(.white.opacity(0.97))
                     .padding(.bottom, 5)
 
                     HStack(spacing: 0) {
@@ -773,7 +773,7 @@ private struct UpcomingMatchesView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color.black.opacity(0.28))
+        .background(Color.black.opacity(0.42))
     }
 
     private func allianceColumn(teams: [String], background: Color) -> some View {

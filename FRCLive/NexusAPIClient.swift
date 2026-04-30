@@ -288,8 +288,14 @@ final class NexusAPIClient {
         let liveEvent = try parseLiveEventPayload(data: data)
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         let upcomingMatches = liveEvent.matches.filter { isUpcomingMatch($0, nowMilliseconds: nowMs) }
+        let minimumPhaseRank = phaseRank(from: liveEvent.latestMatchLabel ?? "")
+        let phaseFilteredMatches = upcomingMatches.filter { match in
+            let rank = phaseRank(from: match.label)
+            if minimumPhaseRank == 0 { return true }
+            return rank >= minimumPhaseRank
+        }
 
-        let parsedEntries = upcomingMatches.enumerated().map { index, match in
+        let parsedEntries = phaseFilteredMatches.enumerated().map { index, match in
             let teamNumberString = String(teamNumber)
             let accent: NexusAllianceAccent
             if match.redTeams.contains(teamNumberString) {
@@ -540,6 +546,20 @@ final class NexusAPIClient {
         }
         // Keep current/near-future only; drop clearly finished matches.
         return time >= nowMilliseconds - 20 * 60 * 1000
+    }
+
+    private func phaseRank(from label: String) -> Int {
+        let normalized = label.lowercased()
+        if normalized.contains("final") || normalized.contains("playoff") || normalized.contains("qf") || normalized.contains("sf") {
+            return 3
+        }
+        if normalized.contains("qualification") || normalized.contains("qual") || normalized.contains("qm") {
+            return 2
+        }
+        if normalized.contains("practice") || normalized.contains("pm") || normalized.contains("pr") {
+            return 1
+        }
+        return 0
     }
 
     private func statusPriority(_ status: String) -> Int {

@@ -399,10 +399,10 @@ private struct ScheduleUpcomingMatchesSheet: View {
                                             Text(item.title).foregroundColor(.white)
                                             Spacer()
                                             Text(item.subtitle ?? "")
-                                                .foregroundColor(.white.opacity(0.88))
+                                                .foregroundColor(.white.opacity(0.96))
                                                 .lineLimit(1)
                                             Image(systemName: expandedIDs.contains(item.id) ? "chevron.up" : "chevron.down")
-                                                .foregroundColor(.white.opacity(0.9))
+                                                .foregroundColor(.white.opacity(0.96))
                                         }
                                         .font(.subheadline.weight(.semibold))
                                         .padding(.horizontal, 12)
@@ -425,11 +425,11 @@ private struct ScheduleUpcomingMatchesSheet: View {
                                             }
                                         }
                                         .font(.footnote)
-                                        .foregroundColor(.white.opacity(0.92))
+                                        .foregroundColor(.white.opacity(0.97))
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 10)
                                         .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(Color.black.opacity(0.25))
+                                        .background(Color.black.opacity(0.42))
                                     }
                                 }
                             }
