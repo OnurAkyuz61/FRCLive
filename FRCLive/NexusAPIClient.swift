@@ -173,6 +173,7 @@ final class NexusAPIClient {
         var request = URLRequest(url: url)
         request.setValue(cleaned, forHTTPHeaderField: "X-API-Key")
         request.setValue(cleaned, forHTTPHeaderField: "x-api-key")
+        request.setValue(cleaned, forHTTPHeaderField: "Nexus-Api-Key")
         request.setValue("Bearer \(cleaned)", forHTTPHeaderField: "Authorization")
 
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -336,6 +337,7 @@ final class NexusAPIClient {
             let apiKey = nexusApiKey
             request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
             request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+            request.setValue(apiKey, forHTTPHeaderField: "Nexus-Api-Key")
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
             let (data, response) = try await URLSession.shared.data(for: request)
