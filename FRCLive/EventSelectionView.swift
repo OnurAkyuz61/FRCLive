@@ -5,6 +5,7 @@ struct EventSelectionView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
+    @AppStorage("selectedEventEndDate") private var selectedEventEndDate: String = ""
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
@@ -39,7 +40,8 @@ struct EventSelectionView: View {
                                         Button {
                                             selectedEventCode = event.eventKey
                                             selectedEventName = event.name
-                                            selectedEventDate = event.date
+                                            selectedEventDate = event.startDate
+                                            selectedEventEndDate = event.endDate
                                         } label: {
                                             EventCardView(
                                                 event: event,
@@ -69,6 +71,7 @@ struct EventSelectionView: View {
                         selectedEventCode = ""
                         selectedEventName = ""
                         selectedEventDate = ""
+                        selectedEventEndDate = ""
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left")
@@ -160,10 +163,10 @@ struct EventSelectionView: View {
     }
 
     private func isEventCompleted(_ event: TBAEvent) -> Bool {
-        guard let eventDate = DateFormatter.tbaEventDate.date(from: event.date) else {
+        guard let eventEndDate = DateFormatter.tbaEventDate.date(from: event.endDate) else {
             return false
         }
-        return eventDate < Calendar.current.startOfDay(for: Date())
+        return eventEndDate < Calendar.current.startOfDay(for: Date())
     }
 }
 
@@ -182,7 +185,7 @@ private struct EventCardView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "calendar")
                         .foregroundColor(.secondary)
-                    Text(event.date)
+                    Text(dateRangeText)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -218,6 +221,13 @@ private struct EventCardView: View {
                 .fill(Color(UIColor.secondarySystemGroupedBackground))
         )
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+    }
+
+    private var dateRangeText: String {
+        if event.startDate == event.endDate {
+            return event.startDate
+        }
+        return "\(event.startDate) - \(event.endDate)"
     }
 }
 

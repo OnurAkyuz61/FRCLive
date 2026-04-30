@@ -5,6 +5,7 @@ struct DashboardView: View {
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
+    @AppStorage("selectedEventEndDate") private var selectedEventEndDate: String = ""
     @AppStorage("teamNickname") private var teamNickname: String = ""
     @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
@@ -436,7 +437,8 @@ struct DashboardView: View {
     }
 
     private var isSelectedEventCompleted: Bool {
-        guard let date = DateFormatter.tbaEventDate.date(from: selectedEventDate) else { return false }
+        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
+        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
         return date < Calendar.current.startOfDay(for: Date())
     }
 

@@ -302,10 +302,10 @@ final class TBAAPIClient {
         if teamNumber == demoTeamNumber {
             let today = Self.demoDateFormatter.string(from: Date())
             return [
-                TBAEvent(name: "Demo Active Regional", eventCode: "demoactive", eventKey: "2026demoactive", date: today, city: "Istanbul"),
-                TBAEvent(name: "Demo Marmara Regional", eventCode: "trmr", eventKey: "2026trmr", date: "2026-03-20", city: "Istanbul"),
-                TBAEvent(name: "Demo Bosphorus Regional", eventCode: "trbo", eventKey: "2026trbo", date: "2026-03-27", city: "Istanbul"),
-                TBAEvent(name: "Demo Championship", eventCode: "cmp", eventKey: "2026cmp", date: "2026-04-18", city: "Houston")
+                TBAEvent(name: "Demo Active Regional", eventCode: "demoactive", eventKey: "2026demoactive", startDate: today, endDate: today, city: "Istanbul"),
+                TBAEvent(name: "Demo Marmara Regional", eventCode: "trmr", eventKey: "2026trmr", startDate: "2026-03-20", endDate: "2026-03-22", city: "Istanbul"),
+                TBAEvent(name: "Demo Bosphorus Regional", eventCode: "trbo", eventKey: "2026trbo", startDate: "2026-03-27", endDate: "2026-03-29", city: "Istanbul"),
+                TBAEvent(name: "Demo Championship", eventCode: "cmp", eventKey: "2026cmp", startDate: "2026-04-18", endDate: "2026-04-20", city: "Houston")
             ]
         }
 

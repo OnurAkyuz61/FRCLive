@@ -7,6 +7,8 @@ struct TBAEvent: Decodable, Identifiable {
     let eventCode: String
     let eventKey: String
     let date: String
+    let startDate: String
+    let endDate: String
     let city: String?
 
     enum CodingKeys: String, CodingKey {
@@ -15,14 +17,17 @@ struct TBAEvent: Decodable, Identifiable {
         case eventKey = "key"
         case date
         case startDate = "start_date"
+        case endDate = "end_date"
         case city
     }
 
-    init(name: String, eventCode: String, eventKey: String, date: String, city: String?) {
+    init(name: String, eventCode: String, eventKey: String, startDate: String, endDate: String, city: String?) {
         self.name = name
         self.eventCode = eventCode
         self.eventKey = eventKey
-        self.date = date
+        self.startDate = startDate
+        self.endDate = endDate
+        self.date = startDate
         self.city = city
     }
 
@@ -33,11 +38,12 @@ struct TBAEvent: Decodable, Identifiable {
         eventKey = try container.decode(String.self, forKey: .eventKey)
         city = try container.decodeIfPresent(String.self, forKey: .city)
 
-        if let explicitDate = try container.decodeIfPresent(String.self, forKey: .date) {
-            date = explicitDate
-        } else {
-            date = try container.decode(String.self, forKey: .startDate)
-        }
+        startDate = (try container.decodeIfPresent(String.self, forKey: .startDate))
+            ?? (try container.decodeIfPresent(String.self, forKey: .date))
+            ?? ""
+        endDate = (try container.decodeIfPresent(String.self, forKey: .endDate))
+            ?? startDate
+        date = startDate
     }
 }
 

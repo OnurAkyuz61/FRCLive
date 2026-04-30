@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
+    @AppStorage("selectedEventEndDate") private var selectedEventEndDate: String = ""
     @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
@@ -163,6 +164,7 @@ struct SettingsView: View {
         selectedEventCode = ""
         selectedEventName = ""
         selectedEventDate = ""
+        selectedEventEndDate = ""
     }
 }
 
