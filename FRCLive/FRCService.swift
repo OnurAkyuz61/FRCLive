@@ -38,11 +38,19 @@ struct TBAEvent: Decodable, Identifiable {
         eventKey = try container.decode(String.self, forKey: .eventKey)
         city = try container.decodeIfPresent(String.self, forKey: .city)
 
-        startDate = (try container.decodeIfPresent(String.self, forKey: .startDate))
-            ?? (try container.decodeIfPresent(String.self, forKey: .date))
-            ?? ""
-        endDate = (try container.decodeIfPresent(String.self, forKey: .endDate))
-            ?? startDate
+        if let decodedStartDate = try container.decodeIfPresent(String.self, forKey: .startDate) {
+            startDate = decodedStartDate
+        } else if let decodedDate = try container.decodeIfPresent(String.self, forKey: .date) {
+            startDate = decodedDate
+        } else {
+            startDate = ""
+        }
+
+        if let decodedEndDate = try container.decodeIfPresent(String.self, forKey: .endDate) {
+            endDate = decodedEndDate
+        } else {
+            endDate = startDate
+        }
         date = startDate
     }
 }
