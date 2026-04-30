@@ -29,6 +29,29 @@ struct NexusTeamQueueSnapshot {
     let queuingStatus: NexusQueuingStatus
 }
 
+struct NexusUpcomingQueueItem: Identifiable {
+    let id: String
+    let title: String
+    let subtitle: String?
+    let estimatedQueueTime: String?
+    let scheduledStartTime: String?
+    let redAlliance: [String]
+    let blueAlliance: [String]
+    let accentAlliance: NexusAllianceAccent
+}
+
+struct NexusQueuingBoardSnapshot {
+    let divisionName: String?
+    let currentMatchOnField: String
+    let entries: [NexusUpcomingQueueItem]
+}
+
+enum NexusAllianceAccent {
+    case red
+    case blue
+    case neutral
+}
+
 private struct NexusQueuingResponse: Decodable {
     let currentMatchOnField: String?
     let entries: [NexusQueueEntry]
@@ -169,6 +192,170 @@ final class NexusAPIClient {
             estimatedStartTime: teamEntry.estimatedStartTime,
             queuingStatus: teamEntry.status
         )
+    }
+
+    func fetchQueuingBoard(eventCode: String, teamNumber: Int) async throws -> NexusQueuingBoardSnapshot {
+        if teamNumber == demoTeamNumber {
+            return NexusQueuingBoardSnapshot(
+                divisionName: "Johnson Division",
+                currentMatchOnField: "Sıralama 9",
+                entries: [
+                    NexusUpcomingQueueItem(
+                        id: "demo-1",
+                        title: "Sıralama 10",
+                        subtitle: "~16:48 gibi sıraya alınacak",
+                        estimatedQueueTime: "16:48",
+                        scheduledStartTime: "17:12",
+                        redAlliance: ["10396", "245", "9072"],
+                        blueAlliance: ["836", "9483", "1306"],
+                        accentAlliance: .blue
+                    ),
+                    NexusUpcomingQueueItem(
+                        id: "demo-2",
+                        title: "Sıralama 24",
+                        subtitle: "~18:40 gibi sıraya alınacak",
+                        estimatedQueueTime: "18:40",
+                        scheduledStartTime: nil,
+                        redAlliance: ["598", "3492", "2714"],
+                        blueAlliance: ["9483", "118", "6924"],
+                        accentAlliance: .blue
+                    ),
+                    NexusUpcomingQueueItem(
+                        id: "demo-break",
+                        title: "Öğle Arası",
+                        subtitle: "Sıralama 31 sonrasında",
+                        estimatedQueueTime: nil,
+                        scheduledStartTime: nil,
+                        redAlliance: [],
+                        blueAlliance: [],
+                        accentAlliance: .neutral
+                    ),
+                    NexusUpcomingQueueItem(
+                        id: "demo-3",
+                        title: "Sıralama 35",
+                        subtitle: "~21:49 gibi sıraya alınacak",
+                        estimatedQueueTime: "21:49",
+                        scheduledStartTime: nil,
+                        redAlliance: ["9483", "3316", "7734"],
+                        blueAlliance: ["1622", "6405", "4632"],
+                        accentAlliance: .red
+                    )
+                ]
+            )
+        }
+
+        guard let url = URL(string: "https://frc.nexus/api/v1/events/\(eventCode)/queuing") else {
+            throw NexusAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        let apiKey = nexusApiKey
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw NexusAPIClientError.invalidResponse
+        }
+
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let json else {
+            throw NexusAPIClientError.invalidResponse
+        }
+
+        let currentOnField = (json["current_match_on_field"] as? String)
+            ?? (json["current_match"] as? String)
+            ?? "-"
+        let division = (json["division_name"] as? String)
+            ?? (json["division"] as? String)
+            ?? (json["name"] as? String)
+
+        let rawEntries = (json["entries"] as? [[String: Any]])
+            ?? (json["queue"] as? [[String: Any]])
+            ?? []
+        let parsedEntries = rawEntries.enumerated().map { index, raw in
+            parseUpcomingItem(raw: raw, index: index, teamNumber: teamNumber)
+        }
+
+        return NexusQueuingBoardSnapshot(
+            divisionName: division,
+            currentMatchOnField: currentOnField,
+            entries: parsedEntries
+        )
+    }
+
+    private func parseUpcomingItem(raw: [String: Any], index: Int, teamNumber: Int) -> NexusUpcomingQueueItem {
+        let matchLabel = stringValue(raw, keys: ["match_label", "match", "next_match", "team_next_match", "title"]) ?? "Match -"
+        let queueText = stringValue(raw, keys: ["queue_text", "subtitle", "note", "status_text", "queue_status_text"])
+        let estimatedQueue = stringValue(raw, keys: ["estimated_queue_time", "estimated_time", "estimated_start_time"])
+        let scheduledStart = stringValue(raw, keys: ["scheduled_start_time", "start_time", "match_time"])
+
+        let red = teamList(raw: raw, keys: ["red_alliance", "red", "red_teams", "redAlliance"])
+        let blue = teamList(raw: raw, keys: ["blue_alliance", "blue", "blue_teams", "blueAlliance"])
+
+        let teamNumberString = String(teamNumber)
+        let accent: NexusAllianceAccent
+        if red.contains(teamNumberString) {
+            accent = .red
+        } else if blue.contains(teamNumberString) {
+            accent = .blue
+        } else if !red.isEmpty || !blue.isEmpty {
+            accent = .neutral
+        } else if matchLabel.lowercased().contains("lunch") || matchLabel.lowercased().contains("ara") {
+            accent = .neutral
+        } else {
+            accent = .blue
+        }
+
+        let subtitle = queueText ?? estimatedQueue.map { "~\($0) gibi sıraya alınacak" }
+        let id = stringValue(raw, keys: ["id", "key"]) ?? "\(matchLabel)-\(index)"
+
+        return NexusUpcomingQueueItem(
+            id: id,
+            title: matchLabel,
+            subtitle: subtitle,
+            estimatedQueueTime: estimatedQueue,
+            scheduledStartTime: scheduledStart,
+            redAlliance: red,
+            blueAlliance: blue,
+            accentAlliance: accent
+        )
+    }
+
+    private func stringValue(_ raw: [String: Any], keys: [String]) -> String? {
+        for key in keys {
+            if let value = raw[key] as? String, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return value
+            }
+            if let value = raw[key] as? Int {
+                return String(value)
+            }
+        }
+        return nil
+    }
+
+    private func teamList(raw: [String: Any], keys: [String]) -> [String] {
+        for key in keys {
+            if let items = raw[key] as? [String] {
+                return items.map { $0.replacingOccurrences(of: "frc", with: "") }
+            }
+            if let items = raw[key] as? [Int] {
+                return items.map(String.init)
+            }
+            if let itemGroups = raw[key] as? [[String: Any]] {
+                let resolved = itemGroups.compactMap { item -> String? in
+                    if let team = item["team_number"] as? Int { return String(team) }
+                    if let team = item["team"] as? Int { return String(team) }
+                    if let team = item["team_number"] as? String { return team.replacingOccurrences(of: "frc", with: "") }
+                    return nil
+                }
+                if !resolved.isEmpty {
+                    return resolved
+                }
+            }
+        }
+        return []
     }
 
     private func debugLog(_ message: String) {
