@@ -35,6 +35,7 @@ struct FRCLiveWidgetProvider: TimelineProvider {
         let teamNumber = rawTeamNumber.isEmpty ? "----" : rawTeamNumber
         let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Please enter a team number" : "Lütfen bir takım numarası girin")
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
+        let currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
         let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor")
         let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? (isEnglish ? "Just now" : "Az önce")
         return SimpleEntry(
@@ -42,6 +43,7 @@ struct FRCLiveWidgetProvider: TimelineProvider {
             teamNumber: teamNumber,
             eventName: eventName,
             nextMatch: nextMatch,
+            currentOnField: currentOnField,
             queueStatus: queueStatus,
             updatedAt: updatedAt,
             languageCode: languageCode
@@ -55,6 +57,7 @@ struct SimpleEntry: TimelineEntry {
     let teamNumber: String
     let eventName: String
     let nextMatch: String
+    let currentOnField: String
     let queueStatus: String
     let updatedAt: String
     let languageCode: String
@@ -64,6 +67,7 @@ struct SimpleEntry: TimelineEntry {
         teamNumber: "99999",
         eventName: "Demo Active Regional",
         nextMatch: "Qual 42",
+        currentOnField: "Qual 34",
         queueStatus: "Kuyruğa çağrıldı",
         updatedAt: "Az önce",
         languageCode: "tr"
@@ -195,6 +199,16 @@ struct FRCLiveWidgetsEntryView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Color.white.opacity(0.95))
                 .lineLimit(1)
+
+            HStack(spacing: 6) {
+                Image(systemName: "dot.radiowaves.left.and.right")
+                    .font(.caption2)
+                    .foregroundStyle(Color.white.opacity(0.9))
+                Text("\(isEnglish ? "On field" : "Şu an sahada"): \(entry.currentOnField)")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(Color.white.opacity(0.92))
+                    .lineLimit(1)
+            }
 
             HStack {
                 Text("\(isEnglish ? "Updated" : "Güncelleme"): \(entry.updatedAt)")
