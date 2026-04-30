@@ -33,10 +33,10 @@ struct FRCLiveWidgetProvider: TimelineProvider {
         let isEnglish = languageCode == "en"
         let rawTeamNumber = defaults.string(forKey: "widget_teamNumber") ?? defaults.string(forKey: "teamNumber") ?? ""
         let teamNumber = rawTeamNumber.isEmpty ? "----" : rawTeamNumber
-        let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Please enter a team number" : "Lutfen bir takim numarasi girin")
+        let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Please enter a team number" : "Lütfen bir takım numarası girin")
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
-        let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Waiting for team selection" : "Takim secimi bekleniyor")
-        let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? (isEnglish ? "Just now" : "Az once")
+        let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor")
+        let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? (isEnglish ? "Just now" : "Az önce")
         return SimpleEntry(
             date: Date(),
             teamNumber: teamNumber,

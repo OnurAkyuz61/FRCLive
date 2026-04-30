@@ -42,17 +42,17 @@ enum WidgetDataStore {
         let queueStatus: String
 
         if normalizedTeam.isEmpty {
-            eventName = isEnglish ? "Please enter a team number" : "Lutfen bir takim numarasi girin"
+            eventName = isEnglish ? "Please enter a team number" : "Lütfen bir takım numarası girin"
             nextMatch = "-"
-            queueStatus = isEnglish ? "Waiting for team selection" : "Takim secimi bekleniyor"
+            queueStatus = isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor"
         } else if normalizedEventCode.isEmpty {
-            eventName = isEnglish ? "Please select an event" : "Lutfen bir etkinlik secin"
+            eventName = isEnglish ? "Please select an event" : "Lütfen bir etkinlik seçin"
             nextMatch = "-"
-            queueStatus = isEnglish ? "Waiting for event selection" : "Etkinlik secimi bekleniyor"
+            queueStatus = isEnglish ? "Waiting for event selection" : "Etkinlik seçimi bekleniyor"
         } else {
-            eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Loading..." : "Yukleniyor...")
+            eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Loading..." : "Yükleniyor...")
             nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
-            queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Loading live data..." : "Canli veri yukleniyor...")
+            queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Loading live data..." : "Canlı veri yükleniyor...")
         }
 
         defaults.set(teamNumber, forKey: "widget_teamNumber")
@@ -60,7 +60,7 @@ enum WidgetDataStore {
         defaults.set(eventName, forKey: "widget_eventName")
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(queueStatus, forKey: "widget_queueStatus")
-        defaults.set(isEnglish ? "Just now" : "Az once", forKey: "widget_updatedAt")
+        defaults.set(isEnglish ? "Just now" : "Az önce", forKey: "widget_updatedAt")
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
     }
