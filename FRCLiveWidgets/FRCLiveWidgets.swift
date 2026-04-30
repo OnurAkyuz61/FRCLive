@@ -168,31 +168,44 @@ struct FRCLiveWidgetsEntryView: View {
     }
 
     private var largeWidget: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("FRCLive")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.white.opacity(0.9))
-            Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
-                .font(.headline)
-                .foregroundStyle(.white)
-            Text(entry.eventName)
-                .font(.subheadline)
-                .foregroundStyle(Color.white.opacity(0.9))
+                .foregroundStyle(Color.white.opacity(0.88))
 
-            Divider().overlay(Color.white.opacity(0.35))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(entry.eventName)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.white.opacity(0.9))
+                    .lineLimit(1)
+            }
 
-            Text(entry.nextMatch)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+            Divider().overlay(Color.white.opacity(0.28))
+
+            Text(compactNextMatch)
+                .font(.system(size: 45, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)
-            Text(entry.queueStatus)
-                .font(.headline)
-                .foregroundStyle(Color.white.opacity(0.9))
+                .minimumScaleFactor(0.6)
 
-            Spacer()
-            Text("\(isEnglish ? "Updated" : "Güncelleme"): \(entry.updatedAt)")
-                .font(.caption2)
-                .foregroundStyle(Color.white.opacity(0.75))
+            Text(compactQueueStatus)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.white.opacity(0.95))
+                .lineLimit(1)
+
+            HStack {
+                Text("\(isEnglish ? "Updated" : "Güncelleme"): \(entry.updatedAt)")
+                    .font(.caption2)
+                    .foregroundStyle(Color.white.opacity(0.78))
+                Spacer()
+                Image(systemName: "bolt.shield")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.white.opacity(0.88))
+            }
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(10)
