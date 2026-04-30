@@ -35,6 +35,7 @@ struct NexusUpcomingQueueItem: Identifiable {
     let subtitle: String?
     let estimatedQueueTime: String?
     let scheduledStartTime: String?
+    let resumeMatchNumber: String?
     let redAlliance: [String]
     let blueAlliance: [String]
     let accentAlliance: NexusAllianceAccent
@@ -248,6 +249,7 @@ final class NexusAPIClient {
                         subtitle: "16:48",
                         estimatedQueueTime: "16:48",
                         scheduledStartTime: "17:12",
+                        resumeMatchNumber: "11",
                         redAlliance: ["10396", "245", "9072"],
                         blueAlliance: ["836", "9483", "1306"],
                         accentAlliance: .blue
@@ -258,6 +260,7 @@ final class NexusAPIClient {
                         subtitle: "18:40",
                         estimatedQueueTime: "18:40",
                         scheduledStartTime: nil,
+                        resumeMatchNumber: "25",
                         redAlliance: ["598", "3492", "2714"],
                         blueAlliance: ["9483", "118", "6924"],
                         accentAlliance: .blue
@@ -268,6 +271,7 @@ final class NexusAPIClient {
                         subtitle: "Sıralama 31 sonrasında",
                         estimatedQueueTime: nil,
                         scheduledStartTime: nil,
+                        resumeMatchNumber: "31",
                         redAlliance: [],
                         blueAlliance: [],
                         accentAlliance: .neutral
@@ -278,6 +282,7 @@ final class NexusAPIClient {
                         subtitle: "21:49",
                         estimatedQueueTime: "21:49",
                         scheduledStartTime: nil,
+                        resumeMatchNumber: "36",
                         redAlliance: ["9483", "3316", "7734"],
                         blueAlliance: ["1622", "6405", "4632"],
                         accentAlliance: .red
@@ -329,6 +334,7 @@ final class NexusAPIClient {
                 subtitle: subtitle,
                 estimatedQueueTime: queueTimeText,
                 scheduledStartTime: formatMillisToTime(match.times.estimatedStartTimeMillis),
+                resumeMatchNumber: extractTrailingMatchNumber(from: match.label),
                 redAlliance: match.redTeams,
                 blueAlliance: match.blueTeams,
                 accentAlliance: accent
@@ -617,6 +623,7 @@ final class NexusAPIClient {
             subtitle: breakSubtitle(after: previous.label),
             estimatedQueueTime: nil,
             scheduledStartTime: nextStartText,
+            resumeMatchNumber: extractTrailingMatchNumber(from: next.label),
             redAlliance: [],
             blueAlliance: [],
             accentAlliance: .neutral

@@ -413,6 +413,18 @@ private struct ScheduleUpcomingMatchesSheet: View {
 
                                     if expandedIDs.contains(item.id) {
                                         VStack(alignment: .leading, spacing: 7) {
+                                            if isBreakLabel(item.title) {
+                                                if let subtitle = localizedQueueSubtitle(for: item) {
+                                                    Text("• \(subtitle)")
+                                                }
+                                                if let resume = item.resumeMatchNumber {
+                                                    let timeText = item.scheduledStartTime ?? "-"
+                                                    let line = appLanguage == .tr
+                                                        ? "• Sıraya alınma Sıralama \(resume) ile birlikte saat ~\(timeText) gibi devam edecek."
+                                                        : "• Queuing will continue with Match \(resume) at around ~\(timeText)."
+                                                    Text(line)
+                                                }
+                                            }
                                             if let t = item.estimatedQueueTime {
                                                 Label(appLanguage == .tr ? "Tahmini sıra zamanı: \(t)" : "Estimated queue time: \(t)", systemImage: "clock")
                                             }

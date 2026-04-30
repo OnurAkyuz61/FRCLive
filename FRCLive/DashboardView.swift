@@ -729,6 +729,23 @@ private struct UpcomingMatchesView: View {
 
     private func details(item: NexusUpcomingQueueItem) -> some View {
         VStack(alignment: .leading, spacing: 9) {
+            if isBreakLabel(item.title) {
+                if let subtitle = localizedQueueSubtitle(for: item) {
+                    Text("• \(subtitle)")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.97))
+                }
+                if let resume = item.resumeMatchNumber {
+                    let timeText = item.scheduledStartTime ?? "-"
+                    let line = appLanguage == .tr
+                        ? "• Sıraya alınma Sıralama \(resume) ile birlikte saat ~\(timeText) gibi devam edecek."
+                        : "• Queuing will continue with Match \(resume) at around ~\(timeText)."
+                    Text(line)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.97))
+                }
+            }
+
             if let estimatedQueueTime = item.estimatedQueueTime {
                 Label(
                     appLanguage == .tr
