@@ -161,6 +161,37 @@ final class NexusAPIClient {
         UserDefaults.standard.removeObject(forKey: Self.nexusApiKeyStorageKey)
     }
 
+    func validateNexusApiKey(_ value: String) async throws {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else {
+            throw NexusAPIClientError.unauthorized
+        }
+        guard let url = URL(string: "https://frc.nexus/api/v1/events") else {
+            throw NexusAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(cleaned, forHTTPHeaderField: "X-API-Key")
+        request.setValue(cleaned, forHTTPHeaderField: "x-api-key")
+        request.setValue("Bearer \(cleaned)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NexusAPIClientError.invalidResponse
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            return
+        case 401, 403:
+            throw NexusAPIClientError.unauthorized
+        case 502, 503, 504:
+            throw NexusAPIClientError.serviceUnavailable
+        default:
+            throw NexusAPIClientError.invalidResponse
+        }
+    }
+
     private var nexusApiKey: String {
         let stored = UserDefaults.standard.string(forKey: Self.nexusApiKeyStorageKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)

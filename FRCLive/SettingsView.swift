@@ -11,7 +11,6 @@ struct SettingsView: View {
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
-    @AppStorage(NexusAPIClient.nexusApiKeyStorageKey) private var nexusApiKeyInput: String = ""
 
     @State private var infoMessage: String?
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
@@ -40,27 +39,6 @@ struct SettingsView: View {
                         triggerTestNotification()
                     }
                     .foregroundColor(.primary)
-                }
-
-                Section(appLanguage == .tr ? "Nexus API" : "Nexus API") {
-                    TextField(
-                        appLanguage == .tr ? "Nexus API Key girin" : "Enter Nexus API Key",
-                        text: Binding(
-                            get: { nexusApiKeyInput },
-                            set: { nexusApiKeyInput = $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                        )
-                    )
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .font(.footnote.monospaced())
-
-                    Text(
-                        appLanguage == .tr
-                        ? "Boş bırakırsan uygulamadaki varsayılan Nexus key kullanılır."
-                        : "If empty, app falls back to bundled Nexus key."
-                    )
-                    .font(.caption)
-                    .foregroundColor(.secondary)
                 }
 
                 Section(L10n.text(.language, language: appLanguage)) {

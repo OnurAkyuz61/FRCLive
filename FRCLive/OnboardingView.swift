@@ -11,6 +11,7 @@ struct OnboardingView: View {
     @State private var isNexusKeyConfirmed = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @State private var isLoading = false
+    @State private var isValidatingNexusKey = false
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
     @FocusState private var isFieldFocused: Bool
@@ -281,18 +282,25 @@ struct OnboardingView: View {
                 )
 
                 HStack(spacing: 10) {
-                    Button(L10n.text(.confirm, language: appLanguage)) {
-                        let cleaned = nexusKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !cleaned.isEmpty else { return }
-                        NexusAPIClient.shared.saveNexusApiKey(cleaned)
-                        isNexusKeyConfirmed = true
+                    Button {
+                        Task { await validateAndConfirmNexusKey() }
+                    } label: {
+                        if isValidatingNexusKey {
+                            ProgressView()
+                                .tint(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                        } else {
+                            Text(L10n.text(.confirm, language: appLanguage))
+                                .font(.footnote.weight(.semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                        }
                     }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
                     .background(Color(red: 0.09, green: 0.19, blue: 0.36))
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .disabled(isValidatingNexusKey)
                 }
             }
         }
@@ -355,6 +363,28 @@ struct OnboardingView: View {
                 errorMessage = appLanguage == .tr ? "Internet baglantisi bulunamadi." : "No internet connection."
             } else {
                 errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
+            }
+            showErrorAlert = true
+        }
+    }
+
+    @MainActor
+    private func validateAndConfirmNexusKey() async {
+        let cleaned = nexusKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+
+        isValidatingNexusKey = true
+        defer { isValidatingNexusKey = false }
+
+        do {
+            try await NexusAPIClient.shared.validateNexusApiKey(cleaned)
+            NexusAPIClient.shared.saveNexusApiKey(cleaned)
+            isNexusKeyConfirmed = true
+        } catch {
+            if let nexusError = error as? NexusAPIClientError {
+                errorMessage = nexusError.errorDescription ?? L10n.text(.liveDataError, language: appLanguage)
+            } else {
+                errorMessage = L10n.text(.liveDataError, language: appLanguage)
             }
             showErrorAlert = true
         }
