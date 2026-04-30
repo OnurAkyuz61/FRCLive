@@ -396,7 +396,7 @@ private struct ScheduleUpcomingMatchesSheet: View {
                                         }
                                     } label: {
                                         HStack(spacing: 8) {
-                                            Text(item.title).foregroundColor(.white)
+                                            Text(localizedBreakTitle(item.title)).foregroundColor(.white)
                                             Spacer()
                                             Text(localizedQueueSubtitle(for: item) ?? "")
                                                 .foregroundColor(.white.opacity(0.96))
@@ -475,6 +475,20 @@ private struct ScheduleUpcomingMatchesSheet: View {
             return appLanguage == .tr ? "~\(t) gibi sıraya alınacak" : "~Queued around \(t)"
         }
         return item.subtitle
+    }
+
+    private func localizedBreakTitle(_ raw: String) -> String {
+        let n = raw.lowercased()
+        if n.contains("lunch") || n.contains("öğle") {
+            return appLanguage == .tr ? "Öğle Arası" : "Lunch Break"
+        }
+        if n.contains("day end") || n.contains("gün sonu") || n.contains("gun sonu") {
+            return appLanguage == .tr ? "Gün Sonu" : "Day End"
+        }
+        if n.contains("break") {
+            return appLanguage == .tr ? "Ara" : "Break"
+        }
+        return raw
     }
 
     private func isBreakLabel(_ label: String) -> Bool {

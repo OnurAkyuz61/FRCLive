@@ -302,7 +302,15 @@ final class NexusAPIClient {
             return includesTeam || isBreakMatch(match)
         }
 
-        let parsedEntries = teamOnlyMatches.enumerated().map { index, match in
+        var parsedEntries: [NexusUpcomingQueueItem] = []
+        var previousMatch: NexusLiveMatch?
+
+        for (index, match) in teamOnlyMatches.enumerated() {
+            if let previousMatch,
+               let breakItem = syntheticBreakItemIfNeeded(before: match, after: previousMatch, index: index) {
+                parsedEntries.append(breakItem)
+            }
+
             let accent: NexusAllianceAccent
             if match.redTeams.contains(teamNumberString) {
                 accent = .red
@@ -315,7 +323,7 @@ final class NexusAPIClient {
             let queueTimeText = formatMillisToTime(match.times.estimatedQueueTimeMillis)
             let subtitle = queueTimeText
 
-            return NexusUpcomingQueueItem(
+            parsedEntries.append(NexusUpcomingQueueItem(
                 id: "\(match.label)-\(index)",
                 title: match.label,
                 subtitle: subtitle,
@@ -324,7 +332,8 @@ final class NexusAPIClient {
                 redAlliance: match.redTeams,
                 blueAlliance: match.blueTeams,
                 accentAlliance: accent
-            )
+            ))
+            previousMatch = match
         }
 
         return NexusQueuingBoardSnapshot(
@@ -583,6 +592,41 @@ final class NexusAPIClient {
             || normalized.contains("gün sonu")
             || normalized.contains("day end")
             || normalized.contains("break")
+    }
+
+    private func syntheticBreakItemIfNeeded(before next: NexusLiveMatch, after previous: NexusLiveMatch, index: Int) -> NexusUpcomingQueueItem? {
+        let nextStart = next.times.estimatedStartTimeMillis ?? next.times.estimatedOnFieldTimeMillis
+        let prevStart = previous.times.estimatedStartTimeMillis ?? previous.times.estimatedOnFieldTimeMillis
+        guard let nextStart, let prevStart else { return nil }
+        guard nextStart > prevStart else { return nil }
+
+        let gap = nextStart - prevStart
+        let minimumBreakGap: Int64 = 45 * 60 * 1000
+        guard gap >= minimumBreakGap else { return nil }
+
+        let calendar = Calendar.current
+        let prevDate = Date(timeIntervalSince1970: TimeInterval(prevStart) / 1000.0)
+        let nextDate = Date(timeIntervalSince1970: TimeInterval(nextStart) / 1000.0)
+        let title: String
+
+        if !calendar.isDate(prevDate, inSameDayAs: nextDate) {
+            title = "Day End"
+        } else {
+            let hour = calendar.component(.hour, from: nextDate)
+            title = (11...15).contains(hour) ? "Lunch Break" : "Break"
+        }
+
+        let nextStartText = formatMillisToTime(nextStart) ?? "-"
+        return NexusUpcomingQueueItem(
+            id: "synthetic-break-\(index)-\(nextStart)",
+            title: title,
+            subtitle: "After \(previous.label)",
+            estimatedQueueTime: nil,
+            scheduledStartTime: nextStartText,
+            redAlliance: [],
+            blueAlliance: [],
+            accentAlliance: .neutral
+        )
     }
 
     private func resolveCurrentOnFieldLabel(matches: [NexusLiveMatch], nowMilliseconds: Int64) -> String? {
