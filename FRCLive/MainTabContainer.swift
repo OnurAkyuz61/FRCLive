@@ -468,7 +468,11 @@ private struct ScheduleUpcomingMatchesSheet: View {
             board = loaded
             expandedIDs = Set(loaded.entries.prefix(1).map(\.id))
         } catch {
-            errorMessage = L10n.text(.liveDataError, language: appLanguage)
+            if let nexusError = error as? NexusAPIClientError {
+                errorMessage = nexusError.errorDescription ?? L10n.text(.liveDataError, language: appLanguage)
+            } else {
+                errorMessage = L10n.text(.liveDataError, language: appLanguage)
+            }
         }
     }
 }

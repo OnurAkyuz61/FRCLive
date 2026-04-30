@@ -334,12 +334,12 @@ struct DashboardView: View {
                     liveSnapshot = nil
                 } else {
                     isMatchScheduleNotCreated = false
-                    liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
+                    liveErrorMessage = nexusErrorMessage(from: error)
                 }
             } catch {
                 eventPhase = .unknown
                 isMatchScheduleNotCreated = false
-                liveErrorMessage = L10n.text(.liveDataError, language: appLanguage)
+                liveErrorMessage = nexusErrorMessage(from: error)
             }
         }
     }
@@ -514,6 +514,13 @@ struct DashboardView: View {
             return .practice
         }
         return .unknown
+    }
+
+    private func nexusErrorMessage(from error: Error) -> String {
+        if let nexusError = error as? NexusAPIClientError {
+            return nexusError.errorDescription ?? L10n.text(.liveDataError, language: appLanguage)
+        }
+        return L10n.text(.liveDataError, language: appLanguage)
     }
 }
 
@@ -812,7 +819,11 @@ private struct UpcomingMatchesView: View {
             board = loaded
             expandedIDs = Set(loaded.entries.prefix(1).map(\.id))
         } catch {
-            errorMessage = L10n.text(.liveDataError, language: appLanguage)
+            if let nexusError = error as? NexusAPIClientError {
+                errorMessage = nexusError.errorDescription ?? L10n.text(.liveDataError, language: appLanguage)
+            } else {
+                errorMessage = L10n.text(.liveDataError, language: appLanguage)
+            }
         }
     }
 }
