@@ -153,7 +153,7 @@ struct EventSelectionView: View {
             events = allEvents.sorted { lhs, rhs in
                 let lhsDate = DateFormatter.tbaEventDate.date(from: lhs.startDate) ?? .distantFuture
                 let rhsDate = DateFormatter.tbaEventDate.date(from: rhs.startDate) ?? .distantFuture
-                if lhsDate != rhsDate { return lhsDate < rhsDate }
+                if lhsDate != rhsDate { return lhsDate > rhsDate }
                 return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
             }
             teamAvatarURL = fetchedAvatarURL?.absoluteString ?? ""
