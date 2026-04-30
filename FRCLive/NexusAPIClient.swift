@@ -119,6 +119,9 @@ enum NexusAPIClientError: LocalizedError {
     case invalidRequest
     case invalidResponse
     case teamNotFoundInQueue
+    case unauthorized
+    case eventNotFound
+    case serviceUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -126,6 +129,12 @@ enum NexusAPIClientError: LocalizedError {
             return "Canlı veri alınamadı."
         case .teamNotFoundInQueue:
             return "Sıradaki maç bulunamadı."
+        case .unauthorized:
+            return "Nexus API anahtarı geçersiz veya eksik."
+        case .eventNotFound:
+            return "Bu etkinlik için Nexus kuyruk verisi bulunamadı."
+        case .serviceUnavailable:
+            return "Nexus servisi şu anda kullanılamıyor."
         }
     }
 }
@@ -156,24 +165,8 @@ final class NexusAPIClient {
             )
         }
 
-        guard let url = URL(string: "https://frc.nexus/api/v1/events/\(eventCode)/queuing") else {
-            throw NexusAPIClientError.invalidRequest
-        }
-
-        var request = URLRequest(url: url)
-        let apiKey = nexusApiKey
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            if let httpResponse = response as? HTTPURLResponse {
-                debugLog("Queue status=\(httpResponse.statusCode) event=\(eventCode) team=\(teamNumber)")
-            }
-            throw NexusAPIClientError.invalidResponse
-        }
-        debugLog("Queue status=\(httpResponse.statusCode) event=\(eventCode) team=\(teamNumber)")
+        let (data, _, resolvedEventCode) = try await fetchQueuingPayload(eventCode: eventCode)
+        debugLog("Queue status=200 event=\(resolvedEventCode) team=\(teamNumber)")
 
         let decoded = try JSONDecoder().decode(NexusQueuingResponse.self, from: data)
         let current = decoded.currentMatchOnField ?? "-"
@@ -244,20 +237,7 @@ final class NexusAPIClient {
             )
         }
 
-        guard let url = URL(string: "https://frc.nexus/api/v1/events/\(eventCode)/queuing") else {
-            throw NexusAPIClientError.invalidRequest
-        }
-
-        var request = URLRequest(url: url)
-        let apiKey = nexusApiKey
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw NexusAPIClientError.invalidResponse
-        }
+        let (data, _, _) = try await fetchQueuingPayload(eventCode: eventCode)
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         guard let json else {
@@ -283,6 +263,65 @@ final class NexusAPIClient {
             currentMatchOnField: currentOnField,
             entries: parsedEntries
         )
+    }
+
+    private func fetchQueuingPayload(eventCode: String) async throws -> (Data, HTTPURLResponse, String) {
+        let normalizedCandidates = candidateEventCodes(from: eventCode)
+        var lastStatusCode: Int?
+
+        for candidate in normalizedCandidates {
+            guard let url = URL(string: "https://frc.nexus/api/v1/events/\(candidate)/queuing") else {
+                continue
+            }
+
+            var request = URLRequest(url: url)
+            let apiKey = nexusApiKey
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+            request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                continue
+            }
+
+            lastStatusCode = httpResponse.statusCode
+            debugLog("Queue status=\(httpResponse.statusCode) event=\(candidate)")
+
+            if httpResponse.statusCode == 200 {
+                return (data, httpResponse, candidate)
+            }
+
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                throw NexusAPIClientError.unauthorized
+            }
+        }
+
+        switch lastStatusCode {
+        case 404:
+            throw NexusAPIClientError.eventNotFound
+        case 502, 503, 504:
+            throw NexusAPIClientError.serviceUnavailable
+        default:
+            throw NexusAPIClientError.invalidResponse
+        }
+    }
+
+    private func candidateEventCodes(from eventCode: String) -> [String] {
+        var candidates: [String] = []
+        let trimmed = eventCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            candidates.append(trimmed)
+        }
+
+        if trimmed.count > 4 {
+            let dropYear = String(trimmed.dropFirst(4))
+            if !dropYear.isEmpty {
+                candidates.append(dropYear)
+            }
+        }
+
+        return Array(NSOrderedSet(array: candidates)) as? [String] ?? candidates
     }
 
     private func parseUpcomingItem(raw: [String: Any], index: Int, teamNumber: Int) -> NexusUpcomingQueueItem {
