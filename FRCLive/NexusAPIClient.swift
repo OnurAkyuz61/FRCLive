@@ -144,6 +144,9 @@ final class NexusAPIClient {
     static let nexusApiKeyStorageKey = "nexusApiKey"
     private let demoTeamNumber = 99999
     private let defaultNexusApiKey = "HfG4EGZoOR6gUdof2-gtqNU3I8E"
+    private var cachedEventsIndex: [String: String] = [:]
+    private var cachedEventsIndexDate: Date?
+    private let eventsIndexCacheTTL: TimeInterval = 300
     private init() {}
 
     func persistedNexusApiKey() -> String {
@@ -171,10 +174,7 @@ final class NexusAPIClient {
         }
 
         var request = URLRequest(url: url)
-        request.setValue(cleaned, forHTTPHeaderField: "X-API-Key")
-        request.setValue(cleaned, forHTTPHeaderField: "x-api-key")
         request.setValue(cleaned, forHTTPHeaderField: "Nexus-Api-Key")
-        request.setValue("Bearer \(cleaned)", forHTTPHeaderField: "Authorization")
 
         let (_, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -325,7 +325,8 @@ final class NexusAPIClient {
     }
 
     private func fetchQueuingPayload(eventCode: String) async throws -> (Data, HTTPURLResponse, String) {
-        let normalizedCandidates = candidateEventCodes(from: eventCode)
+        let apiKey = nexusApiKey
+        let normalizedCandidates = await resolvedEventCandidates(from: eventCode, apiKey: apiKey)
         var lastStatusCode: Int?
 
         for candidate in normalizedCandidates {
@@ -334,11 +335,7 @@ final class NexusAPIClient {
             }
 
             var request = URLRequest(url: url)
-            let apiKey = nexusApiKey
-            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
-            request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
             request.setValue(apiKey, forHTTPHeaderField: "Nexus-Api-Key")
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -365,6 +362,75 @@ final class NexusAPIClient {
         default:
             throw NexusAPIClientError.invalidResponse
         }
+    }
+
+    private func resolvedEventCandidates(from eventCode: String, apiKey: String) async -> [String] {
+        var candidates = candidateEventCodes(from: eventCode)
+
+        guard let selectedEventName = UserDefaults.standard.string(forKey: "selectedEventName")?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !selectedEventName.isEmpty else {
+            return candidates
+        }
+
+        guard let eventsIndex = try? await fetchEventsIndex(apiKey: apiKey) else {
+            return candidates
+        }
+
+        let normalizedSelected = selectedEventName.lowercased()
+        let matchedKeys = eventsIndex.compactMap { key, name -> String? in
+            let n = name.lowercased()
+            if n == normalizedSelected || n.contains(normalizedSelected) || normalizedSelected.contains(n) {
+                return key
+            }
+            return nil
+        }
+
+        candidates.append(contentsOf: matchedKeys)
+        return Array(NSOrderedSet(array: candidates)) as? [String] ?? candidates
+    }
+
+    private func fetchEventsIndex(apiKey: String) async throws -> [String: String] {
+        if let cachedDate = cachedEventsIndexDate,
+           Date().timeIntervalSince(cachedDate) < eventsIndexCacheTTL,
+           !cachedEventsIndex.isEmpty {
+            return cachedEventsIndex
+        }
+
+        guard let url = URL(string: "https://frc.nexus/api/v1/events") else {
+            throw NexusAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "Nexus-Api-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NexusAPIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                throw NexusAPIClientError.unauthorized
+            }
+            throw NexusAPIClientError.invalidResponse
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw NexusAPIClientError.invalidResponse
+        }
+
+        var resolved: [String: String] = [:]
+        for (key, value) in json {
+            guard let object = value as? [String: Any],
+                  let name = object["name"] as? String else {
+                continue
+            }
+            resolved[key] = name
+        }
+
+        cachedEventsIndex = resolved
+        cachedEventsIndexDate = Date()
+        return resolved
     }
 
     private func candidateEventCodes(from eventCode: String) -> [String] {
