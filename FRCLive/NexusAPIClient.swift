@@ -601,19 +601,13 @@ final class NexusAPIClient {
         guard nextStart > prevStart else { return nil }
 
         let gap = nextStart - prevStart
-        let minimumBreakGap: Int64 = 45 * 60 * 1000
-        guard gap >= minimumBreakGap else { return nil }
-
-        let calendar = Calendar.current
-        let prevDate = Date(timeIntervalSince1970: TimeInterval(prevStart) / 1000.0)
-        let nextDate = Date(timeIntervalSince1970: TimeInterval(nextStart) / 1000.0)
         let title: String
-
-        if !calendar.isDate(prevDate, inSameDayAs: nextDate) {
+        if gap >= 6 * 60 * 60 * 1000 {
             title = "Day End"
+        } else if gap >= 130 * 60 * 1000 && gap <= 220 * 60 * 1000 {
+            title = "Lunch Break"
         } else {
-            let hour = calendar.component(.hour, from: nextDate)
-            title = (11...15).contains(hour) ? "Lunch Break" : "Break"
+            return nil
         }
 
         let nextStartText = formatMillisToTime(nextStart) ?? "-"
