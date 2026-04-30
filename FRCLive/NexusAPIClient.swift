@@ -215,7 +215,8 @@ final class NexusAPIClient {
         let (data, _, resolvedEventCode) = try await fetchQueuingPayload(eventCode: eventCode)
         debugLog("Queue status=200 event=\(resolvedEventCode) team=\(teamNumber)")
         let liveEvent = try parseLiveEventPayload(data: data)
-        let current = liveEvent.latestMatchLabel ?? "-"
+        let currentOnField = liveEvent.matches.first(where: { $0.status.lowercased().contains("on field") })?.label
+        let current = currentOnField ?? liveEvent.latestMatchLabel ?? "-"
 
         guard let teamMatch = prioritizedMatch(for: teamNumber, matches: liveEvent.matches) else {
             return NexusTeamQueueSnapshot(
