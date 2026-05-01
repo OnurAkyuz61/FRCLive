@@ -17,7 +17,6 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
 @MainActor
 final class LiveActivityManager {
     static let shared = LiveActivityManager()
-    private var currentActivity: Activity<FRCLiveActivityAttributes>?
     private let appGroupID = "group.onurakyuz.FRCLive"
 
     private init() {}
@@ -45,15 +44,10 @@ final class LiveActivityManager {
             languageCode: languageCode
         )
 
-        if currentActivity == nil {
-            currentActivity = Activity<FRCLiveActivityAttributes>.activities.first
-        }
-
-        if let currentActivity {
-            await currentActivity.update(ActivityContent(state: state, staleDate: nil))
-        } else {
+        let activeActivities = Activity<FRCLiveActivityAttributes>.activities
+        if activeActivities.isEmpty {
             do {
-                currentActivity = try Activity<FRCLiveActivityAttributes>.request(
+                _ = try Activity<FRCLiveActivityAttributes>.request(
                     attributes: FRCLiveActivityAttributes(),
                     content: ActivityContent(state: state, staleDate: nil)
                 )
@@ -61,20 +55,24 @@ final class LiveActivityManager {
                 // Keep non-fatal, but log for easier diagnostics during development.
                 print("LiveActivity request failed: \(error.localizedDescription)")
             }
+            return
+        }
+
+        for activity in activeActivities {
+            await activity.update(ActivityContent(state: state, staleDate: nil))
         }
     }
 
     func end() async {
-        guard let currentActivity else { return }
-        await currentActivity.end(nil, dismissalPolicy: .immediate)
-        self.currentActivity = nil
+        let activeActivities = Activity<FRCLiveActivityAttributes>.activities
+        guard !activeActivities.isEmpty else { return }
+        for activity in activeActivities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
     }
 
     func refreshLanguage(_ languageCode: String) async {
-        if currentActivity == nil {
-            currentActivity = Activity<FRCLiveActivityAttributes>.activities.first
-        }
-        guard currentActivity != nil else { return }
+        guard !Activity<FRCLiveActivityAttributes>.activities.isEmpty else { return }
 
         let defaults = UserDefaults(suiteName: appGroupID) ?? UserDefaults.standard
         let isEnglish = languageCode == "en"
