@@ -675,7 +675,7 @@ private struct RankingsView: View {
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(entry.teamKey.replacingOccurrences(of: "frc", with: ""))")
                                                     .font(.headline)
-                                                Text(entry.teamName)
+                                                Text(resolvedTeamName(for: entry.teamKey, fallbackNumber: entry.teamKey.replacingOccurrences(of: "frc", with: "")))
                                                     .font(.footnote)
                                                     .foregroundColor(.secondary)
                                                     .lineLimit(1)
@@ -792,7 +792,10 @@ private struct RankingsView: View {
             awardsError = error
         }
 
-        eventTeamNameLookup = (try? await TBAAPIClient.shared.fetchEventTeamNameMap(eventCode: selectedEventCode)) ?? [:]
+        if let fetchedNameMap = try? await TBAAPIClient.shared.fetchEventTeamNameMap(eventCode: selectedEventCode),
+           !fetchedNameMap.isEmpty {
+            eventTeamNameLookup = fetchedNameMap
+        }
 
         if rankingsError != nil && awardsError != nil {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
