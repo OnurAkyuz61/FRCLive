@@ -22,6 +22,8 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
 }
 
 struct FRCLiveWidgetsLiveActivity: Widget {
+    private let islandHorizontalInset: CGFloat = 8
+
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
             let isEnglish = context.state.languageCode == "en"
@@ -83,7 +85,7 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                             .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 4)
+                    .padding(.leading, islandHorizontalInset)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing) {
@@ -96,20 +98,21 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                             .minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.trailing, 8)
+                    .padding(.trailing, islandHorizontalInset)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
                         Text(shortStatus)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
-                        Spacer()
                         Text("\(isEnglish ? "Field" : "Saha"): \(compactMatchText(context.state.currentOnField))")
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                     }
                     .font(.subheadline)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, islandHorizontalInset)
                 }
             } compactLeading: {
                 Text(context.state.teamNumber)
