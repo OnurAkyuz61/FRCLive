@@ -210,7 +210,8 @@ final class TBAAPIClient {
         guard !cleaned.isEmpty else {
             throw TBAAPIClientError.unauthorized
         }
-        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/status") else {
+        // /status endpoint returns 200 without auth. Use a protected endpoint instead.
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/team/frc1") else {
             throw TBAAPIClientError.invalidRequest
         }
 
