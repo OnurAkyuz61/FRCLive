@@ -148,7 +148,9 @@ struct DashboardView: View {
                     Image(systemName: "checkmark.circle")
                         .foregroundColor(.green)
                     Text(
-                        isMatchScheduleNotCreated
+                        isSelectedEventCompleted
+                        ? L10n.text(.allMatchesCompleted, language: appLanguage)
+                        : isMatchScheduleNotCreated
                         ? L10n.text(.matchScheduleNotCreated, language: appLanguage)
                         : L10n.text(.noUpcomingMatch, language: appLanguage)
                     )
@@ -306,6 +308,27 @@ struct DashboardView: View {
     @MainActor
     private func fetchLiveDataOnce() async {
         guard let team = Int(teamNumber), !selectedEventCode.isEmpty else { return }
+
+        if isSelectedEventCompleted {
+            liveSnapshot = nil
+            liveErrorMessage = nil
+            isMatchScheduleNotCreated = false
+
+            // Completed events should not keep live activities/alerts running from stale Nexus data.
+            await LiveActivityManager.shared.end()
+            pushWidgetSnapshot(
+                nextMatch: L10n.text(.allMatchesCompleted, language: appLanguage),
+                queueStatus: L10n.text(.queueStatusNotCalled, language: appLanguage)
+            )
+
+            if let matches = try? await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode) {
+                eventPhase = resolveEventPhase(matches: matches, snapshot: nil)
+            } else {
+                eventPhase = .unknown
+            }
+            return
+        }
+
         isLoadingLiveData = true
         defer { isLoadingLiveData = false }
 
