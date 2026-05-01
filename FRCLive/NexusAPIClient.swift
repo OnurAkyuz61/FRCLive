@@ -220,7 +220,11 @@ final class NexusAPIClient {
         let currentOnField = resolveCurrentOnFieldLabel(matches: liveEvent.matches, nowMilliseconds: nowMs)
         let current = currentOnField ?? liveEvent.latestMatchLabel ?? "-"
 
-        guard let teamMatch = prioritizedMatch(for: teamNumber, matches: liveEvent.matches) else {
+        guard let teamMatch = prioritizedMatch(
+            for: teamNumber,
+            matches: liveEvent.matches,
+            currentMatchLabel: currentOnField ?? liveEvent.latestMatchLabel
+        ) else {
             return NexusTeamQueueSnapshot(
                 currentMatchOnField: current,
                 teamNextMatch: nil,
@@ -523,13 +527,38 @@ final class NexusAPIClient {
         )
     }
 
-    private func prioritizedMatch(for teamNumber: Int, matches: [NexusLiveMatch]) -> NexusLiveMatch? {
+    private func prioritizedMatch(for teamNumber: Int, matches: [NexusLiveMatch], currentMatchLabel: String?) -> NexusLiveMatch? {
         let key = String(teamNumber)
         let teamMatches = matches.filter { $0.redTeams.contains(key) || $0.blueTeams.contains(key) }
         guard !teamMatches.isEmpty else { return nil }
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         let upcomingTeamMatches = teamMatches.filter { isUpcomingMatch($0, nowMilliseconds: nowMs) }
         let source = upcomingTeamMatches.isEmpty ? teamMatches : upcomingTeamMatches
+
+        if let currentOrder = matchOrder(from: currentMatchLabel) {
+            let forwardMatches = source.filter { match in
+                guard let order = matchOrder(from: match.label) else { return false }
+                if order.phase != currentOrder.phase {
+                    return order.phase > currentOrder.phase
+                }
+                return order.number > currentOrder.number
+            }
+
+            if let nearestForward = forwardMatches.min(by: { lhs, rhs in
+                guard let lhsOrder = matchOrder(from: lhs.label),
+                      let rhsOrder = matchOrder(from: rhs.label) else {
+                    return false
+                }
+                if lhsOrder.phase != rhsOrder.phase { return lhsOrder.phase < rhsOrder.phase }
+                if lhsOrder.number != rhsOrder.number { return lhsOrder.number < rhsOrder.number }
+
+                let lhsTime = lhs.times.estimatedQueueTimeMillis ?? lhs.times.estimatedStartTimeMillis ?? Int64.max
+                let rhsTime = rhs.times.estimatedQueueTimeMillis ?? rhs.times.estimatedStartTimeMillis ?? Int64.max
+                return lhsTime < rhsTime
+            }) {
+                return nearestForward
+            }
+        }
 
         // Prefer the nearest active match first, then by estimated queue/start times.
         return source.sorted { lhs, rhs in
@@ -541,6 +570,20 @@ final class NexusAPIClient {
             let rhsTime = rhs.times.estimatedQueueTimeMillis ?? rhs.times.estimatedStartTimeMillis ?? Int64.max
             return lhsTime < rhsTime
         }.first
+    }
+
+    private struct MatchOrder {
+        let phase: Int
+        let number: Int
+    }
+
+    private func matchOrder(from label: String?) -> MatchOrder? {
+        guard let label else { return nil }
+        let phase = phaseRank(from: label)
+        guard phase > 0 else { return nil }
+        guard let numberText = extractTrailingMatchNumber(from: label),
+              let number = Int(numberText) else { return nil }
+        return MatchOrder(phase: phase, number: number)
     }
 
     private func isUpcomingMatch(_ match: NexusLiveMatch, nowMilliseconds: Int64) -> Bool {
