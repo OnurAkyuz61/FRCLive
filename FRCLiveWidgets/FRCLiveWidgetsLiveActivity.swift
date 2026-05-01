@@ -29,13 +29,14 @@ struct FRCLiveWidgetsLiveActivity: Widget {
         ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
             let isEnglish = context.state.languageCode == "en"
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .center) {
                     Text("\(isEnglish ? "Team" : "Takım") \(context.state.teamNumber)")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 2)
                     Spacer(minLength: 10)
                     Text(context.state.eventName)
                         .font(.subheadline.weight(.semibold))
