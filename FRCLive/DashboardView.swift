@@ -411,7 +411,7 @@ struct DashboardView: View {
     }
 
     private func pushWidgetSnapshot(nextMatch: String? = nil, queueStatus: String? = nil) {
-        let updatedAt = appLanguage == .tr ? "Az önce" : "Just now"
+        let updatedAt = currentTimeLabel()
 
         WidgetDataStore.writeSnapshot(
             teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
@@ -424,6 +424,13 @@ struct DashboardView: View {
             updatedAt: updatedAt,
             languageCode: appLanguageRaw
         )
+    }
+
+    private func currentTimeLabel() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: appLanguage == .tr ? "tr_TR" : "en_US_POSIX")
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(from: Date())
     }
 
     private func statusText(_ status: NexusQueuingStatus) -> String {

@@ -27,9 +27,8 @@ enum WidgetDataStore {
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(currentOnField, forKey: "widget_currentOnField")
         defaults.set(queueStatus, forKey: "widget_queueStatus")
-        if let queueStatusCode {
-            defaults.set(queueStatusCode, forKey: "widget_queueStatusCode")
-        }
+        let resolvedStatusCode = queueStatusCode ?? inferQueueStatusCode(from: queueStatus)
+        defaults.set(resolvedStatusCode, forKey: "widget_queueStatusCode")
         defaults.set(updatedAt, forKey: "widget_updatedAt")
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
@@ -83,9 +82,42 @@ enum WidgetDataStore {
         defaults.set(currentOnField, forKey: "widget_currentOnField")
         defaults.set(queueStatus, forKey: "widget_queueStatus")
         defaults.set(queueStatusCode, forKey: "widget_queueStatusCode")
-        defaults.set(isEnglish ? "Just now" : "Az önce", forKey: "widget_updatedAt")
+        defaults.set(currentTimeLabel(localeCode: isEnglish ? "en_US_POSIX" : "tr_TR"), forKey: "widget_updatedAt")
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private static func inferQueueStatusCode(from queueStatus: String) -> String {
+        let lower = queueStatus.lowercased()
+        if lower.contains("on field") || lower.contains("sahada") {
+            return "On Field"
+        }
+        if lower.contains("called") || lower.contains("çağr") {
+            if lower.contains("not called") || lower.contains("çağrılmadı") || lower.contains("henüz") {
+                return "Not Called"
+            }
+            return "Called to Queue"
+        }
+        if lower.contains("not called") || lower.contains("henüz") {
+            return "Not Called"
+        }
+        if lower.contains("waiting for team") || lower.contains("takım seçimi bekleniyor") {
+            return "waiting_team_selection"
+        }
+        if lower.contains("waiting for event") || lower.contains("etkinlik seçimi bekleniyor") {
+            return "waiting_event_selection"
+        }
+        if lower.contains("loading live data") || lower.contains("canlı veri yükleniyor") {
+            return "loading_live_data"
+        }
+        return "Unknown"
+    }
+
+    private static func currentTimeLabel(localeCode: String) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: localeCode)
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(from: Date())
     }
 
     private static func debugLog(_ message: String) {
