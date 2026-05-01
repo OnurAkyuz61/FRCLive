@@ -429,7 +429,7 @@ struct DashboardView: View {
     private func currentTimeLabel() -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: appLanguage == .tr ? "tr_TR" : "en_US_POSIX")
-        formatter.dateFormat = "HH:mm:ss"
+        formatter.dateFormat = "HH:mm"
         return formatter.string(from: Date())
     }
 

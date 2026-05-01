@@ -116,7 +116,7 @@ enum WidgetDataStore {
     private static func currentTimeLabel(localeCode: String) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: localeCode)
-        formatter.dateFormat = "HH:mm:ss"
+        formatter.dateFormat = "HH:mm"
         return formatter.string(from: Date())
     }
 
