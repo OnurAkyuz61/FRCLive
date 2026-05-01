@@ -11,6 +11,7 @@ struct OnboardingView: View {
     @State private var isNexusKeyConfirmed = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @State private var isLoading = false
+    @State private var isValidatingTBAKey = false
     @State private var isValidatingNexusKey = false
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
@@ -215,19 +216,25 @@ struct OnboardingView: View {
                 )
 
                 HStack(spacing: 10) {
-                    Button(L10n.text(.confirm, language: appLanguage)) {
-                        let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !cleaned.isEmpty else { return }
-                        TBAAPIClient.shared.saveTBAAuthKey(cleaned)
-                        isTBAKeyConfirmed = true
-                        tbaKeyStatusMessage = nil
+                    Button {
+                        Task { await validateAndConfirmTBAKey() }
+                    } label: {
+                        if isValidatingTBAKey {
+                            ProgressView()
+                                .tint(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                        } else {
+                            Text(L10n.text(.confirm, language: appLanguage))
+                                .font(.footnote.weight(.semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                        }
                     }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
                     .background(Color(red: 0.09, green: 0.19, blue: 0.36))
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .disabled(isValidatingTBAKey)
                 }
             }
         }
@@ -361,6 +368,34 @@ struct OnboardingView: View {
                 }
             } else if let urlError = error as? URLError, urlError.code == .notConnectedToInternet {
                 errorMessage = appLanguage == .tr ? "Internet baglantisi bulunamadi." : "No internet connection."
+            } else {
+                errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
+            }
+            showErrorAlert = true
+        }
+    }
+
+    @MainActor
+    private func validateAndConfirmTBAKey() async {
+        let cleaned = tbaKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+
+        isValidatingTBAKey = true
+        defer { isValidatingTBAKey = false }
+
+        do {
+            try await TBAAPIClient.shared.validateTBAAuthKey(cleaned)
+            TBAAPIClient.shared.saveTBAAuthKey(cleaned)
+            isTBAKeyConfirmed = true
+            tbaKeyStatusMessage = nil
+        } catch {
+            if let tbaError = error as? TBAAPIClientError {
+                switch tbaError {
+                case .unauthorized:
+                    errorMessage = L10n.text(.tbaKeyInvalid, language: appLanguage)
+                default:
+                    errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
+                }
             } else {
                 errorMessage = L10n.text(.teamValidationFailed, language: appLanguage)
             }

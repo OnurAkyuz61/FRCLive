@@ -205,6 +205,33 @@ final class TBAAPIClient {
         UserDefaults.standard.removeObject(forKey: Self.tbaAuthKeyStorageKey)
     }
 
+    func validateTBAAuthKey(_ value: String) async throws {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else {
+            throw TBAAPIClientError.unauthorized
+        }
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/status") else {
+            throw TBAAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(cleaned, forHTTPHeaderField: "X-TBA-Auth-Key")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            return
+        case 401, 403:
+            throw TBAAPIClientError.unauthorized
+        default:
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+    }
+
     func fetchTeamAvatarURL(teamNumber: String) async throws -> URL? {
         if teamNumber == demoTeamNumber {
             return nil
