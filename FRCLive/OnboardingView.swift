@@ -68,13 +68,17 @@ struct OnboardingView: View {
             teamNumberInput = clamped
             let persistedKey = TBAAPIClient.shared.persistedTBAAuthKey()
             tbaKeyInput = persistedKey
-            // Require explicit confirmation each launch so stale/invalid keys are not shown as valid.
-            isTBAKeyConfirmed = false
-            tbaKeyStatusMessage = nil
+            if !persistedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                isTBAKeyConfirmed = true
+                tbaKeyStatusMessage = "Onaylandı"
+            } else {
+                isTBAKeyConfirmed = false
+                tbaKeyStatusMessage = nil
+            }
 
             let persistedNexusKey = NexusAPIClient.shared.persistedNexusApiKey()
             nexusKeyInput = persistedNexusKey
-            isNexusKeyConfirmed = false
+            isNexusKeyConfirmed = !persistedNexusKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         .alert(
             L10n.text(.alertWarningTitle, language: appLanguage),
