@@ -46,6 +46,8 @@ private enum Tab {
 private struct ScheduleView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("teamNumber") private var teamNumber: String = ""
+    @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
+    @AppStorage("selectedEventEndDate") private var selectedEventEndDate: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     @State private var matches: [TBASimpleMatch] = []
@@ -94,19 +96,45 @@ private struct ScheduleView: View {
                     .padding(.horizontal, 24)
                 } else {
                     VStack(spacing: 10) {
-                        Button {
-                            showUpcomingMatches = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "list.bullet.rectangle.portrait")
-                                Text(appLanguage == .tr ? "Yaklaşan Maçlar (Nexus)" : "Upcoming Matches (Nexus)")
-                                    .fontWeight(.semibold)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote.weight(.semibold))
+                        if !isSelectedEventCompleted {
+                            Button {
+                                showUpcomingMatches = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "list.bullet.rectangle.portrait")
+                                    Text(appLanguage == .tr ? "Yaklaşan Maçlar (Nexus)" : "Upcoming Matches (Nexus)")
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.footnote.weight(.semibold))
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 11)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(.ultraThinMaterial)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                                        )
+                                )
                             }
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
+                            .buttonStyle(.plain)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                        }
+
+                        if isSelectedEventCompleted {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundColor(.orange)
+                                Text(L10n.text(.eventCompletedBanner, language: appLanguage))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.primary)
+                                Spacer()
+                            }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 11)
                             .background(
@@ -114,15 +142,12 @@ private struct ScheduleView: View {
                                     .fill(.ultraThinMaterial)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                                            .stroke(Color.orange.opacity(0.30), lineWidth: 1)
                                     )
                             )
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                        if let queueSnapshot {
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                        } else if let queueSnapshot {
                             HStack(spacing: 8) {
                                 Image(systemName: "clock.badge.checkmark")
                                     .foregroundColor(.blue)
@@ -235,13 +260,23 @@ private struct ScheduleView: View {
             matches = allMatches.filter { match in
                 match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
             }
-            queueSnapshot = try? await NexusAPIClient.shared.fetchQueueSnapshot(
-                eventCode: selectedEventCode,
-                teamNumber: teamInt
-            )
+            if isSelectedEventCompleted {
+                queueSnapshot = nil
+            } else {
+                queueSnapshot = try? await NexusAPIClient.shared.fetchQueueSnapshot(
+                    eventCode: selectedEventCode,
+                    teamNumber: teamInt
+                )
+            }
         } catch {
             errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
         }
+    }
+
+    private var isSelectedEventCompleted: Bool {
+        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
+        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
+        return date < Calendar.current.startOfDay(for: Date())
     }
 
     private func matchTitle(_ match: TBASimpleMatch) -> String {
@@ -338,6 +373,8 @@ private struct ScheduleView: View {
 private struct ScheduleUpcomingMatchesSheet: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("teamNumber") private var teamNumber: String = ""
+    @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
+    @AppStorage("selectedEventEndDate") private var selectedEventEndDate: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @Environment(\.dismiss) private var dismiss
@@ -516,6 +553,11 @@ private struct ScheduleUpcomingMatchesSheet: View {
     @MainActor
     private func loadBoard() async {
         guard !selectedEventCode.isEmpty, let team = Int(teamNumber) else { return }
+        if isSelectedEventCompleted {
+            board = NexusQueuingBoardSnapshot(divisionName: selectedEventName, currentMatchOnField: "-", entries: [])
+            errorMessage = nil
+            return
+        }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -530,6 +572,12 @@ private struct ScheduleUpcomingMatchesSheet: View {
                 errorMessage = L10n.text(.liveDataError, language: appLanguage)
             }
         }
+    }
+
+    private var isSelectedEventCompleted: Bool {
+        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
+        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
+        return date < Calendar.current.startOfDay(for: Date())
     }
 }
 
