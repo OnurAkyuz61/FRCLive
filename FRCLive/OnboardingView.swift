@@ -18,6 +18,8 @@ struct OnboardingView: View {
     @FocusState private var isFieldFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     private let maxTeamNumberLength = 5
+    /// Solid fill avoids default Button chrome layering (visible on device dark mode).
+    private let onboardingPrimaryBlue = Color(red: 0.09, green: 0.19, blue: 0.36)
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
     var body: some View {
@@ -153,12 +155,12 @@ struct OnboardingView: View {
                 } else {
                     Text(L10n.text(.continueButton, language: appLanguage))
                         .font(.headline.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .background(Color(red: 0.09, green: 0.19, blue: 0.36))
+            .background(onboardingPrimaryBlue)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -220,21 +222,24 @@ struct OnboardingView: View {
                     Button {
                         Task { await validateAndConfirmTBAKey() }
                     } label: {
-                        if isValidatingTBAKey {
-                            ProgressView()
-                                .tint(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                        } else {
-                            Text(L10n.text(.confirm, language: appLanguage))
-                                .font(.footnote.weight(.semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                        Group {
+                            if isValidatingTBAKey {
+                                ProgressView()
+                                    .tint(.white)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                            } else {
+                                Text(L10n.text(.confirm, language: appLanguage))
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                            }
                         }
+                        .background(onboardingPrimaryBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
-                    .background(Color(red: 0.09, green: 0.19, blue: 0.36))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .buttonStyle(.plain)
                     .disabled(isValidatingTBAKey)
                 }
             }
@@ -293,21 +298,24 @@ struct OnboardingView: View {
                     Button {
                         Task { await validateAndConfirmNexusKey() }
                     } label: {
-                        if isValidatingNexusKey {
-                            ProgressView()
-                                .tint(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                        } else {
-                            Text(L10n.text(.confirm, language: appLanguage))
-                                .font(.footnote.weight(.semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                        Group {
+                            if isValidatingNexusKey {
+                                ProgressView()
+                                    .tint(.white)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                            } else {
+                                Text(L10n.text(.confirm, language: appLanguage))
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                            }
                         }
+                        .background(onboardingPrimaryBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
-                    .background(Color(red: 0.09, green: 0.19, blue: 0.36))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .buttonStyle(.plain)
                     .disabled(isValidatingNexusKey)
                 }
             }
