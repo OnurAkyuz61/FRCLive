@@ -65,11 +65,13 @@ struct DashboardView: View {
                     .foregroundColor(.primary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        UpcomingMatchesView()
-                    } label: {
-                        Image(systemName: "list.bullet.rectangle.portrait")
-                            .foregroundColor(.primary)
+                    if !isSelectedEventCompleted {
+                        NavigationLink {
+                            UpcomingMatchesView()
+                        } label: {
+                            Image(systemName: "list.bullet.rectangle.portrait")
+                                .foregroundColor(.primary)
+                        }
                     }
                 }
             }
@@ -604,6 +606,8 @@ private enum EventPhase {
 private struct UpcomingMatchesView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("teamNumber") private var teamNumber: String = ""
+    @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
+    @AppStorage("selectedEventEndDate") private var selectedEventEndDate: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
@@ -895,6 +899,11 @@ private struct UpcomingMatchesView: View {
     @MainActor
     private func loadBoard() async {
         guard !selectedEventCode.isEmpty, let team = Int(teamNumber) else { return }
+        if isSelectedEventCompleted {
+            board = NexusQueuingBoardSnapshot(divisionName: selectedEventName, currentMatchOnField: "-", entries: [])
+            errorMessage = nil
+            return
+        }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -910,5 +919,11 @@ private struct UpcomingMatchesView: View {
                 errorMessage = L10n.text(.liveDataError, language: appLanguage)
             }
         }
+    }
+
+    private var isSelectedEventCompleted: Bool {
+        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
+        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
+        return date < Calendar.current.startOfDay(for: Date())
     }
 }
