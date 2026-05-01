@@ -7,6 +7,7 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
         var eventName: String
         var nextMatch: String
         var status: String
+        var statusCode: String
         var currentOnField: String
         var estimatedStart: String
         var languageCode: String
@@ -25,6 +26,7 @@ final class LiveActivityManager {
         eventName: String,
         nextMatch: String,
         status: String,
+        statusCode: String,
         currentOnField: String,
         estimatedStart: String,
         languageCode: String
@@ -36,6 +38,7 @@ final class LiveActivityManager {
             eventName: eventName,
             nextMatch: nextMatch,
             status: status,
+            statusCode: statusCode,
             currentOnField: currentOnField,
             estimatedStart: estimatedStart,
             languageCode: languageCode

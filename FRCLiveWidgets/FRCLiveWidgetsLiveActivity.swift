@@ -15,6 +15,7 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
         var eventName: String
         var nextMatch: String
         var status: String
+        var statusCode: String
         var currentOnField: String
         var estimatedStart: String
         var languageCode: String
@@ -72,7 +73,11 @@ struct FRCLiveWidgetsLiveActivity: Widget {
         } dynamicIsland: { context in
             let isEnglish = context.state.languageCode == "en"
             let shortNext = compactMatchText(context.state.nextMatch)
-            let shortStatus = compactStatusText(context.state.status, isEnglish: isEnglish)
+            let shortStatus = compactStatusText(
+                raw: context.state.status,
+                statusCode: context.state.statusCode,
+                isEnglish: isEnglish
+            )
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading) {
@@ -150,17 +155,31 @@ struct FRCLiveWidgetsLiveActivity: Widget {
         return trimmed
     }
 
-    private func compactStatusText(_ raw: String, isEnglish: Bool) -> String {
+    private func compactStatusText(raw: String, statusCode: String, isEnglish: Bool) -> String {
+        switch statusCode.lowercased() {
+        case "not called":
+            return isEnglish ? "Not Called" : "Çağrılmadı"
+        case "called to queue", "called":
+            return isEnglish ? "Called" : "Çağrıldı"
+        case "on field":
+            return isEnglish ? "On Field" : "Sahada"
+        case "unknown":
+            return isEnglish ? "Unknown" : "Bilinmiyor"
+        default:
+            break
+        }
+
         let lower = raw.lowercased()
+        if lower.contains("not called") || lower.contains("henüz") || lower.contains("çağrılmadı") {
+            return isEnglish ? "Not Called" : "Çağrılmadı"
+        }
         if lower.contains("on field") || lower.contains("sahada") {
             return isEnglish ? "On Field" : "Sahada"
         }
         if lower.contains("called") || lower.contains("çağr") {
             return isEnglish ? "Called" : "Çağrıldı"
         }
-        if lower.contains("not called") || lower.contains("henüz") {
-            return isEnglish ? "Not Called" : "Çağrılmadı"
-        }
+
         return raw
     }
 
@@ -186,6 +205,7 @@ extension FRCLiveActivityAttributes.ContentState {
             eventName: "Demo Active Regional",
             nextMatch: "Qual 42",
             status: "Kuyruğa çağrıldı",
+            statusCode: "Called to Queue",
             currentOnField: "Qual 34",
             estimatedStart: "10 dk",
             languageCode: "tr"

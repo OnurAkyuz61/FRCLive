@@ -382,6 +382,7 @@ struct DashboardView: View {
                 eventName: eventName,
                 nextMatch: nextMatch,
                 status: status,
+                statusCode: snapshot.queuingStatus.rawValue,
                 currentOnField: snapshot.currentMatchOnField,
                 estimatedStart: estimated,
                 languageCode: appLanguageRaw
@@ -413,6 +414,13 @@ struct DashboardView: View {
     private func pushWidgetSnapshot(nextMatch: String? = nil, queueStatus: String? = nil) {
         let updatedAt = currentTimeLabel()
 
+        let resolvedStatusCode = {
+            if let queueStatus {
+                return inferQueueStatusCode(from: queueStatus)
+            }
+            return liveSnapshot?.queuingStatus.rawValue
+        }()
+
         WidgetDataStore.writeSnapshot(
             teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
             teamName: teamNickname,
@@ -420,10 +428,24 @@ struct DashboardView: View {
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "-"),
             currentOnField: liveSnapshot?.currentMatchOnField ?? "-",
             queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusNotCalled, language: appLanguage)),
-            queueStatusCode: liveSnapshot?.queuingStatus.rawValue,
+            queueStatusCode: resolvedStatusCode,
             updatedAt: updatedAt,
             languageCode: appLanguageRaw
         )
+    }
+
+    private func inferQueueStatusCode(from queueStatus: String) -> String {
+        let lower = queueStatus.lowercased()
+        if lower.contains("not called") || lower.contains("henüz") || lower.contains("çağrılmadı") {
+            return NexusQueuingStatus.notCalled.rawValue
+        }
+        if lower.contains("on field") || lower.contains("sahada") {
+            return NexusQueuingStatus.onField.rawValue
+        }
+        if lower.contains("called") || lower.contains("çağr") {
+            return NexusQueuingStatus.calledToQueue.rawValue
+        }
+        return NexusQueuingStatus.unknown.rawValue
     }
 
     private func currentTimeLabel() -> String {
