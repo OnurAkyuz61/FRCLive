@@ -415,6 +415,7 @@ struct DashboardView: View {
 
         WidgetDataStore.writeSnapshot(
             teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
+            teamName: teamNickname,
             eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "-"),
             currentOnField: liveSnapshot?.currentMatchOnField ?? "-",

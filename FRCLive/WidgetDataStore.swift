@@ -8,6 +8,7 @@ enum WidgetDataStore {
 
     static func writeSnapshot(
         teamNumber: String,
+        teamName: String,
         eventName: String,
         nextMatch: String,
         currentOnField: String,
@@ -20,6 +21,7 @@ enum WidgetDataStore {
             return
         }
         defaults.set(teamNumber, forKey: "widget_teamNumber")
+        defaults.set(teamName, forKey: "widget_teamName")
         defaults.set(eventName, forKey: "widget_eventName")
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(currentOnField, forKey: "widget_currentOnField")
@@ -43,26 +45,31 @@ enum WidgetDataStore {
         let nextMatch: String
         let currentOnField: String
         let queueStatus: String
+        let teamName: String
 
         if normalizedTeam.isEmpty {
             eventName = isEnglish ? "Please enter a team number" : "Lütfen bir takım numarası girin"
             nextMatch = "-"
             currentOnField = "-"
             queueStatus = isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor"
+            teamName = ""
         } else if normalizedEventCode.isEmpty {
             eventName = isEnglish ? "Please select an event" : "Lütfen bir etkinlik seçin"
             nextMatch = "-"
             currentOnField = "-"
             queueStatus = isEnglish ? "Waiting for event selection" : "Etkinlik seçimi bekleniyor"
+            teamName = defaults.string(forKey: "widget_teamName") ?? ""
         } else {
             eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Loading..." : "Yükleniyor...")
             nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
             currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
             queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Loading live data..." : "Canlı veri yükleniyor...")
+            teamName = defaults.string(forKey: "widget_teamName") ?? ""
         }
 
         defaults.set(teamNumber, forKey: "widget_teamNumber")
         defaults.set(teamNumber, forKey: "teamNumber")
+        defaults.set(teamName, forKey: "widget_teamName")
         defaults.set(eventName, forKey: "widget_eventName")
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(currentOnField, forKey: "widget_currentOnField")

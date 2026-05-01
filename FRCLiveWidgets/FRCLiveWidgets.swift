@@ -33,6 +33,7 @@ struct FRCLiveWidgetProvider: TimelineProvider {
         let isEnglish = languageCode == "en"
         let rawTeamNumber = defaults.string(forKey: "widget_teamNumber") ?? defaults.string(forKey: "teamNumber") ?? ""
         let teamNumber = rawTeamNumber.isEmpty ? "----" : rawTeamNumber
+        let teamName = defaults.string(forKey: "widget_teamName") ?? ""
         let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Please enter a team number" : "Lütfen bir takım numarası girin")
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
         let currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
@@ -41,6 +42,7 @@ struct FRCLiveWidgetProvider: TimelineProvider {
         return SimpleEntry(
             date: Date(),
             teamNumber: teamNumber,
+            teamName: teamName,
             eventName: eventName,
             nextMatch: nextMatch,
             currentOnField: currentOnField,
@@ -55,6 +57,7 @@ struct SimpleEntry: TimelineEntry {
     let date: Date
 
     let teamNumber: String
+    let teamName: String
     let eventName: String
     let nextMatch: String
     let currentOnField: String
@@ -65,6 +68,7 @@ struct SimpleEntry: TimelineEntry {
     static let preview = SimpleEntry(
         date: .now,
         teamNumber: "99999",
+        teamName: "Demo Robotics",
         eventName: "Demo Active Regional",
         nextMatch: "Qual 42",
         currentOnField: "Qual 34",
@@ -79,6 +83,11 @@ struct FRCLiveWidgetsEntryView: View {
     @Environment(\.widgetFamily) private var family
     private var isEnglish: Bool { entry.languageCode == "en" }
     private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
+    private var teamWithNameLine: String {
+        let name = entry.teamName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)" }
+        return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber) - \(name)"
+    }
     private var compactNextMatch: String {
         entry.nextMatch
     }
@@ -140,9 +149,11 @@ struct FRCLiveWidgetsEntryView: View {
     private var mediumWidget: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
+                Text(teamWithNameLine)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.white.opacity(0.92))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(entry.eventName)
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -175,9 +186,11 @@ struct FRCLiveWidgetsEntryView: View {
                 .foregroundStyle(Color.white.opacity(0.88))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
+                Text(teamWithNameLine)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(entry.eventName)
                     .font(.subheadline)
                     .foregroundStyle(Color.white.opacity(0.9))
