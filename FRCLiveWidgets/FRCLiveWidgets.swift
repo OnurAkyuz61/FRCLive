@@ -98,6 +98,9 @@ struct FRCLiveWidgetsEntryView: View {
     private var updatedLabelText: String {
         "\(isEnglish ? "Updated" : "Güncellendi") \(entry.updatedAt)"
     }
+    private var updatedPrefixText: String {
+        isEnglish ? "Updated" : "Güncellendi"
+    }
     private var localizedQueueStatus: String {
         switch entry.queueStatusCode.lowercased() {
         case "not called":
@@ -197,10 +200,14 @@ struct FRCLiveWidgetsEntryView: View {
                 Image(systemName: "bolt.shield")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                Text(updatedLabelText)
-                    .font(.caption2)
-                    .foregroundStyle(Color.white.opacity(0.75))
-                    .multilineTextAlignment(.trailing)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text(updatedPrefixText)
+                        .font(.caption2)
+                        .foregroundStyle(Color.white.opacity(0.75))
+                    Text(entry.updatedAt)
+                        .font(.caption2)
+                        .foregroundStyle(Color.white.opacity(0.75))
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -249,9 +256,12 @@ struct FRCLiveWidgetsEntryView: View {
             }
 
             HStack {
-                Text(updatedLabelText)
-                    .font(.caption2)
-                    .foregroundStyle(Color.white.opacity(0.78))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(updatedPrefixText)
+                    Text(entry.updatedAt)
+                }
+                .font(.caption2)
+                .foregroundStyle(Color.white.opacity(0.78))
                 Spacer()
                 Image(systemName: "bolt.shield")
                     .font(.caption.weight(.semibold))
