@@ -13,6 +13,7 @@ enum WidgetDataStore {
         nextMatch: String,
         currentOnField: String,
         queueStatus: String,
+        queueStatusCode: String? = nil,
         updatedAt: String,
         languageCode: String
     ) {
@@ -26,6 +27,9 @@ enum WidgetDataStore {
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(currentOnField, forKey: "widget_currentOnField")
         defaults.set(queueStatus, forKey: "widget_queueStatus")
+        if let queueStatusCode {
+            defaults.set(queueStatusCode, forKey: "widget_queueStatusCode")
+        }
         defaults.set(updatedAt, forKey: "widget_updatedAt")
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()
@@ -45,6 +49,7 @@ enum WidgetDataStore {
         let nextMatch: String
         let currentOnField: String
         let queueStatus: String
+        let queueStatusCode: String
         let teamName: String
 
         if normalizedTeam.isEmpty {
@@ -52,18 +57,21 @@ enum WidgetDataStore {
             nextMatch = "-"
             currentOnField = "-"
             queueStatus = isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor"
+            queueStatusCode = "waiting_team_selection"
             teamName = ""
         } else if normalizedEventCode.isEmpty {
             eventName = isEnglish ? "Please select an event" : "Lütfen bir etkinlik seçin"
             nextMatch = "-"
             currentOnField = "-"
             queueStatus = isEnglish ? "Waiting for event selection" : "Etkinlik seçimi bekleniyor"
+            queueStatusCode = "waiting_event_selection"
             teamName = defaults.string(forKey: "widget_teamName") ?? ""
         } else {
             eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Loading..." : "Yükleniyor...")
             nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
             currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
             queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Loading live data..." : "Canlı veri yükleniyor...")
+            queueStatusCode = defaults.string(forKey: "widget_queueStatusCode") ?? "loading_live_data"
             teamName = defaults.string(forKey: "widget_teamName") ?? ""
         }
 
@@ -74,6 +82,7 @@ enum WidgetDataStore {
         defaults.set(nextMatch, forKey: "widget_nextMatch")
         defaults.set(currentOnField, forKey: "widget_currentOnField")
         defaults.set(queueStatus, forKey: "widget_queueStatus")
+        defaults.set(queueStatusCode, forKey: "widget_queueStatusCode")
         defaults.set(isEnglish ? "Just now" : "Az önce", forKey: "widget_updatedAt")
         defaults.set(languageCode, forKey: "widget_languageCode")
         WidgetCenter.shared.reloadAllTimelines()

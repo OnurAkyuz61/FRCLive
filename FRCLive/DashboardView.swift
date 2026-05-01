@@ -420,6 +420,7 @@ struct DashboardView: View {
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "-"),
             currentOnField: liveSnapshot?.currentMatchOnField ?? "-",
             queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusNotCalled, language: appLanguage)),
+            queueStatusCode: liveSnapshot?.queuingStatus.rawValue,
             updatedAt: updatedAt,
             languageCode: appLanguageRaw
         )

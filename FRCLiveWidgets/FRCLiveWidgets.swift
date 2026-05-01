@@ -38,6 +38,7 @@ struct FRCLiveWidgetProvider: TimelineProvider {
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
         let currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
         let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor")
+        let queueStatusCode = defaults.string(forKey: "widget_queueStatusCode") ?? ""
         let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? (isEnglish ? "Just now" : "Az önce")
         return SimpleEntry(
             date: Date(),
@@ -47,6 +48,7 @@ struct FRCLiveWidgetProvider: TimelineProvider {
             nextMatch: nextMatch,
             currentOnField: currentOnField,
             queueStatus: queueStatus,
+            queueStatusCode: queueStatusCode,
             updatedAt: updatedAt,
             languageCode: languageCode
         )
@@ -62,6 +64,7 @@ struct SimpleEntry: TimelineEntry {
     let nextMatch: String
     let currentOnField: String
     let queueStatus: String
+    let queueStatusCode: String
     let updatedAt: String
     let languageCode: String
 
@@ -73,6 +76,7 @@ struct SimpleEntry: TimelineEntry {
         nextMatch: "Qual 42",
         currentOnField: "Qual 34",
         queueStatus: "Kuyruğa çağrıldı",
+        queueStatusCode: "Called to Queue",
         updatedAt: "Az önce",
         languageCode: "tr"
     )
@@ -91,8 +95,28 @@ struct FRCLiveWidgetsEntryView: View {
     private var compactNextMatch: String {
         entry.nextMatch
     }
+    private var localizedQueueStatus: String {
+        switch entry.queueStatusCode.lowercased() {
+        case "not called":
+            return isEnglish ? "Not Called" : "Henüz çağrılmadı"
+        case "called to queue", "called":
+            return isEnglish ? "Called to Queue" : "Kuyruğa çağrıldı"
+        case "on field":
+            return isEnglish ? "On Field" : "Sahada"
+        case "unknown":
+            return isEnglish ? "Unknown Status" : "Durum bilinmiyor"
+        case "waiting_team_selection":
+            return isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor"
+        case "waiting_event_selection":
+            return isEnglish ? "Waiting for event selection" : "Etkinlik seçimi bekleniyor"
+        case "loading_live_data":
+            return isEnglish ? "Loading live data..." : "Canlı veri yükleniyor..."
+        default:
+            return entry.queueStatus
+        }
+    }
     private var compactQueueStatus: String {
-        let status = entry.queueStatus
+        let status = localizedQueueStatus
         if status.count <= 14 { return status }
         if status.lowercased().contains("called") || status.lowercased().contains("çağr") {
             return isEnglish ? "Called" : "Çağrıldı"
@@ -161,7 +185,7 @@ struct FRCLiveWidgetsEntryView: View {
                 Text(entry.nextMatch)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.white)
-                Text(entry.queueStatus)
+                Text(localizedQueueStatus)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.white.opacity(0.9))
             }
