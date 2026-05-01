@@ -81,7 +81,11 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                             .foregroundStyle(.secondary)
                         Text(context.state.teamNumber)
                             .font(.headline)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing) {
@@ -93,18 +97,21 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, 8)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
                         Text(shortStatus)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.75)
+                            .minimumScaleFactor(0.7)
                         Spacer()
                         Text("\(isEnglish ? "Field" : "Saha"): \(compactMatchText(context.state.currentOnField))")
                             .lineLimit(1)
-                            .minimumScaleFactor(0.75)
+                            .minimumScaleFactor(0.65)
                     }
                     .font(.subheadline)
+                    .padding(.horizontal, 8)
                 }
             } compactLeading: {
                 Text(context.state.teamNumber)
