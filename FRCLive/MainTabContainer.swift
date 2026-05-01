@@ -275,7 +275,7 @@ private struct ScheduleView: View {
 
     private var isSelectedEventCompleted: Bool {
         let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
+        guard let date = DateFormatter.mainTabTBAEventDate.date(from: end) else { return false }
         return date < Calendar.current.startOfDay(for: Date())
     }
 
@@ -576,9 +576,20 @@ private struct ScheduleUpcomingMatchesSheet: View {
 
     private var isSelectedEventCompleted: Bool {
         let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
+        guard let date = DateFormatter.mainTabTBAEventDate.date(from: end) else { return false }
         return date < Calendar.current.startOfDay(for: Date())
     }
+}
+
+private extension DateFormatter {
+    static let mainTabTBAEventDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }
 
 private enum MatchSection: CaseIterable {
