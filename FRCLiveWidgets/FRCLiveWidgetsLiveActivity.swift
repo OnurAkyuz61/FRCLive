@@ -25,8 +25,6 @@ struct FRCLiveWidgetsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
             let isEnglish = context.state.languageCode == "en"
-            let shortNext = compactMatchText(context.state.nextMatch)
-            let shortStatus = compactStatusText(context.state.status, isEnglish: isEnglish)
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(isEnglish ? "Team" : "Takım") \(context.state.teamNumber)")
