@@ -418,7 +418,7 @@ struct DashboardView: View {
             if let queueStatus {
                 return inferQueueStatusCode(from: queueStatus)
             }
-            return liveSnapshot?.queuingStatus.rawValue
+            return liveSnapshot?.queuingStatus.rawValue ?? NexusQueuingStatus.unknown.rawValue
         }()
 
         WidgetDataStore.writeSnapshot(
