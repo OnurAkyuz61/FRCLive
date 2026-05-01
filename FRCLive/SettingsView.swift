@@ -160,6 +160,9 @@ struct SettingsView: View {
     }
 
     private func logout() {
+        Task {
+            await LiveActivityManager.shared.end()
+        }
         teamNumber = ""
         selectedEventCode = ""
         selectedEventName = ""

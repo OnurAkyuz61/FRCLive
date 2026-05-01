@@ -25,6 +25,8 @@ struct FRCLiveWidgetsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FRCLiveActivityAttributes.self) { context in
             let isEnglish = context.state.languageCode == "en"
+            let shortNext = compactMatchText(context.state.nextMatch)
+            let shortStatus = compactStatusText(context.state.status, isEnglish: isEnglish)
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(isEnglish ? "Team" : "Takım") \(context.state.teamNumber)")
@@ -84,17 +86,21 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                         Text(isEnglish ? "Next" : "Sıradaki")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text(context.state.nextMatch)
-                            .font(.headline)
+                        Text(shortNext)
+                            .font(.headline.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
-                        Text(context.state.status)
+                        Text(shortStatus)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                         Spacer()
-                        Text("\(isEnglish ? "Field" : "Saha"): \(context.state.currentOnField)")
+                        Text("\(isEnglish ? "Field" : "Saha"): \(compactMatchText(context.state.currentOnField))")
                             .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
                     .font(.subheadline)
                 }
@@ -102,8 +108,10 @@ struct FRCLiveWidgetsLiveActivity: Widget {
                 Text(context.state.teamNumber)
                     .font(.caption2.weight(.semibold))
             } compactTrailing: {
-                Text(context.state.nextMatch)
+                Text(shortNext)
                     .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
             } minimal: {
                 Text("FRC")
                     .font(.caption2.weight(.bold))
@@ -111,6 +119,47 @@ struct FRCLiveWidgetsLiveActivity: Widget {
             .widgetURL(URL(string: "frclive://dashboard"))
             .keylineTint(Color.blue)
         }
+    }
+
+    private func compactMatchText(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "-" }
+        let lower = trimmed.lowercased()
+        if lower.contains("qualification"), let number = trailingNumber(in: trimmed) {
+            return "Q\(number)"
+        }
+        if lower.contains("practice"), let number = trailingNumber(in: trimmed) {
+            return "P\(number)"
+        }
+        if (lower.contains("playoff") || lower.contains("final")), let number = trailingNumber(in: trimmed) {
+            return "M\(number)"
+        }
+        if trimmed.count > 14 {
+            return String(trimmed.prefix(14))
+        }
+        return trimmed
+    }
+
+    private func compactStatusText(_ raw: String, isEnglish: Bool) -> String {
+        let lower = raw.lowercased()
+        if lower.contains("on field") || lower.contains("sahada") {
+            return isEnglish ? "On Field" : "Sahada"
+        }
+        if lower.contains("called") || lower.contains("çağr") {
+            return isEnglish ? "Called" : "Çağrıldı"
+        }
+        if lower.contains("not called") || lower.contains("henüz") {
+            return isEnglish ? "Not Called" : "Çağrılmadı"
+        }
+        return raw
+    }
+
+    private func trailingNumber(in text: String) -> String? {
+        let parts = text.split(separator: " ")
+        guard let last = parts.last else { return nil }
+        let value = String(last).trimmingCharacters(in: .punctuationCharacters)
+        guard !value.isEmpty, value.allSatisfy(\.isNumber) else { return nil }
+        return value
     }
 }
 

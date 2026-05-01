@@ -31,6 +31,9 @@ struct FRCLiveApp: App {
                     selectedEventCode: selectedEventCode,
                     languageCode: appLanguageRaw
                 )
+                if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Task { await LiveActivityManager.shared.end() }
+                }
             }
             .onChange(of: selectedEventCode) { _, newValue in
                 WidgetDataStore.syncAppState(
@@ -38,6 +41,9 @@ struct FRCLiveApp: App {
                     selectedEventCode: newValue,
                     languageCode: appLanguageRaw
                 )
+                if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Task { await LiveActivityManager.shared.end() }
+                }
             }
             .onChange(of: appLanguageRaw) { _, newValue in
                 WidgetDataStore.syncAppState(
