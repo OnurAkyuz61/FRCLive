@@ -81,9 +81,6 @@ struct FRCLiveWidgetsEntryView: View {
     private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
     private var compactNextMatch: String {
         entry.nextMatch
-            .replacingOccurrences(of: "Qualification", with: "Qual")
-            .replacingOccurrences(of: "Practice", with: "Prac")
-            .replacingOccurrences(of: "Playoff", with: "PO")
     }
     private var compactQueueStatus: String {
         let status = entry.queueStatus
