@@ -95,6 +95,9 @@ struct FRCLiveWidgetsEntryView: View {
     private var compactNextMatch: String {
         entry.nextMatch
     }
+    private var updatedLabelText: String {
+        "\(isEnglish ? "Updated" : "Güncellendi") \(entry.updatedAt)"
+    }
     private var localizedQueueStatus: String {
         switch entry.queueStatusCode.lowercased() {
         case "not called":
@@ -162,7 +165,7 @@ struct FRCLiveWidgetsEntryView: View {
                 .foregroundStyle(Color.white.opacity(0.9))
                 .lineLimit(1)
             Spacer()
-            Text(entry.updatedAt)
+            Text(updatedLabelText)
                 .font(.caption2)
                 .foregroundStyle(Color.white.opacity(0.75))
         }
@@ -194,9 +197,10 @@ struct FRCLiveWidgetsEntryView: View {
                 Image(systemName: "bolt.shield")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                Text(entry.updatedAt)
+                Text(updatedLabelText)
                     .font(.caption2)
                     .foregroundStyle(Color.white.opacity(0.75))
+                    .multilineTextAlignment(.trailing)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -245,7 +249,7 @@ struct FRCLiveWidgetsEntryView: View {
             }
 
             HStack {
-                Text("\(isEnglish ? "Updated" : "Güncelleme"): \(entry.updatedAt)")
+                Text(updatedLabelText)
                     .font(.caption2)
                     .foregroundStyle(Color.white.opacity(0.78))
                 Spacer()
