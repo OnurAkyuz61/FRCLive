@@ -18,6 +18,7 @@ struct FRCLiveActivityAttributes: ActivityAttributes {
 final class LiveActivityManager {
     static let shared = LiveActivityManager()
     private var currentActivity: Activity<FRCLiveActivityAttributes>?
+    private let appGroupID = "group.onurakyuz.FRCLive"
 
     private init() {}
 
@@ -67,5 +68,33 @@ final class LiveActivityManager {
         guard let currentActivity else { return }
         await currentActivity.end(nil, dismissalPolicy: .immediate)
         self.currentActivity = nil
+    }
+
+    func refreshLanguage(_ languageCode: String) async {
+        if currentActivity == nil {
+            currentActivity = Activity<FRCLiveActivityAttributes>.activities.first
+        }
+        guard currentActivity != nil else { return }
+
+        let defaults = UserDefaults(suiteName: appGroupID) ?? UserDefaults.standard
+        let isEnglish = languageCode == "en"
+
+        let teamNumber = defaults.string(forKey: "widget_teamNumber") ?? defaults.string(forKey: "teamNumber") ?? "----"
+        let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Loading..." : "Yükleniyor...")
+        let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
+        let status = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Loading live data..." : "Canlı veri yükleniyor...")
+        let statusCode = defaults.string(forKey: "widget_queueStatusCode") ?? "Unknown"
+        let currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
+
+        await update(
+            teamNumber: teamNumber,
+            eventName: eventName,
+            nextMatch: nextMatch,
+            status: status,
+            statusCode: statusCode,
+            currentOnField: currentOnField,
+            estimatedStart: "-",
+            languageCode: languageCode
+        )
     }
 }

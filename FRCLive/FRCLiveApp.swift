@@ -51,6 +51,9 @@ struct FRCLiveApp: App {
                     selectedEventCode: selectedEventCode,
                     languageCode: newValue
                 )
+                Task {
+                    await LiveActivityManager.shared.refreshLanguage(newValue)
+                }
             }
             .preferredColorScheme(appTheme.colorScheme)
         }
