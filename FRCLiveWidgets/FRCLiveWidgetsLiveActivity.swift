@@ -71,6 +71,8 @@ struct FRCLiveWidgetsLiveActivity: Widget {
 
         } dynamicIsland: { context in
             let isEnglish = context.state.languageCode == "en"
+            let shortNext = compactMatchText(context.state.nextMatch)
+            let shortStatus = compactStatusText(context.state.status, isEnglish: isEnglish)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading) {
