@@ -473,7 +473,7 @@ struct DashboardView: View {
         if lower.contains("on field") || lower.contains("sahada") {
             return NexusQueuingStatus.onField.rawValue
         }
-        if lower.contains("called") || lower.contains("çağr") {
+        if lower.contains("called") || (lower.contains("çağr") && !lower.contains("çağrılmadı")) {
             return NexusQueuingStatus.calledToQueue.rawValue
         }
         return NexusQueuingStatus.unknown.rawValue

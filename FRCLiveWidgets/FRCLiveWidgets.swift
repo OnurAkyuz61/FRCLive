@@ -92,8 +92,23 @@ struct FRCLiveWidgetsEntryView: View {
         guard !name.isEmpty else { return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)" }
         return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber) - \(name)"
     }
+    /// App stores whatever string was last written; re-map known banners to `widget_languageCode` so TR widgets don't show stale English (or vice versa).
+    private var localizedNextMatchDisplay: String {
+        let raw = entry.nextMatch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard raw != "-", !raw.isEmpty else { return raw }
+        let lowerEN = raw.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        let lowerTR = raw.lowercased(with: Locale(identifier: "tr_TR"))
+        if lowerEN.contains("event completed") || lowerTR.contains("etkinlik tamamlandı") {
+            return isEnglish ? "Event Completed" : "Etkinlik Tamamlandı"
+        }
+        if (lowerEN.contains("all matches") && lowerEN.contains("completed")) || lowerTR.contains("tüm maçlar tamamlandı") {
+            return isEnglish ? "All matches are completed" : "Tüm maçlar tamamlandı"
+        }
+        return raw
+    }
+
     private var compactNextMatch: String {
-        entry.nextMatch
+        localizedNextMatchDisplay
     }
     private var updatedLabelText: String {
         "\(isEnglish ? "Updated" : "Güncellendi") \(entry.updatedAt)"
@@ -124,13 +139,19 @@ struct FRCLiveWidgetsEntryView: View {
     private var compactQueueStatus: String {
         let status = localizedQueueStatus
         if status.count <= 14 { return status }
-        if status.lowercased().contains("called") || status.lowercased().contains("çağr") {
+        let lower = status.lowercased(with: Locale(identifier: "tr_TR"))
+        // "Henüz çağrılmadı" contains "çağr" — check not-called before any broad "çağr" match.
+        if lower.contains("çağrılmadı") || lower.contains("not called") || (lower.contains("henüz") && lower.contains("çağrılmadı")) {
+            return isEnglish ? "Not Called" : "Çağrılmadı"
+        }
+        if lower.contains("kuyruğa") || lower.contains("called to queue") || lower.contains("çağrıldı")
+            || (lower.contains("called") && !lower.contains("not called")) || (lower.contains("çağr") && !lower.contains("çağrılmadı")) {
             return isEnglish ? "Called" : "Çağrıldı"
         }
-        if status.lowercased().contains("field") || status.lowercased().contains("saha") {
+        if lower.contains("field") || lower.contains("saha") {
             return isEnglish ? "On Field" : "Sahada"
         }
-        if status.lowercased().contains("not") || status.lowercased().contains("henüz") {
+        if lower.contains("not") || lower.contains("henüz") {
             return isEnglish ? "Not Called" : "Çağrılmadı"
         }
         return String(status.prefix(14))
@@ -188,7 +209,7 @@ struct FRCLiveWidgetsEntryView: View {
                     .font(.headline)
                     .foregroundStyle(.white)
                     .lineLimit(1)
-                Text(entry.nextMatch)
+                Text(localizedNextMatchDisplay)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.white)
                 Text(localizedQueueStatus)
