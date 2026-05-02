@@ -534,8 +534,7 @@ struct DashboardView: View {
 
     private var isSelectedEventCompleted: Bool {
         let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
-        return date < Calendar.current.startOfDay(for: Date())
+        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
     }
 
     @MainActor
@@ -990,7 +989,6 @@ private struct UpcomingMatchesView: View {
 
     private var isSelectedEventCompleted: Bool {
         let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        guard let date = DateFormatter.tbaEventDate.date(from: end) else { return false }
-        return date < Calendar.current.startOfDay(for: Date())
+        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
     }
 }

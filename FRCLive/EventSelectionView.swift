@@ -168,10 +168,7 @@ struct EventSelectionView: View {
     }
 
     private func isEventCompleted(_ event: TBAEvent) -> Bool {
-        guard let eventEndDate = DateFormatter.tbaEventDate.date(from: event.endDate) else {
-            return false
-        }
-        return eventEndDate < Calendar.current.startOfDay(for: Date())
+        TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: event.endDate)
     }
 }
 

@@ -275,8 +275,7 @@ private struct ScheduleView: View {
 
     private var isSelectedEventCompleted: Bool {
         let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        guard let date = DateFormatter.mainTabTBAEventDate.date(from: end) else { return false }
-        return date < Calendar.current.startOfDay(for: Date())
+        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
     }
 
     private func matchTitle(_ match: TBASimpleMatch) -> String {
@@ -576,8 +575,7 @@ private struct ScheduleUpcomingMatchesSheet: View {
 
     private var isSelectedEventCompleted: Bool {
         let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        guard let date = DateFormatter.mainTabTBAEventDate.date(from: end) else { return false }
-        return date < Calendar.current.startOfDay(for: Date())
+        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
     }
 }
 
