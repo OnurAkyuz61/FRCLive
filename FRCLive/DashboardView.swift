@@ -20,6 +20,8 @@ struct DashboardView: View {
     @State private var isMatchScheduleNotCreated = false
     @State private var eventPhase: EventPhase = .unknown
     @State private var pulse = false
+    /// Takımın TBA takviminde skoru olmayan (henüz oynanmamış) maçı kalmadıysa true — Nexus bazen eski “sıradaki maç” döndürebilir.
+    @State private var teamHasNoRemainingTbaMatches = false
 
     var body: some View {
         NavigationStack {
@@ -32,14 +34,16 @@ struct DashboardView: View {
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 4)
 
-                    if isSelectedEventCompleted {
+                    if shouldTreatDashboardEventAsFinished {
                         completedEventBanner
                     }
 
                     eventPhaseRow
 
                     liveMatchCard
-                    currentFieldStatusRow
+                    if !shouldTreatDashboardEventAsFinished {
+                        currentFieldStatusRow
+                    }
                     dataSourceRow
                     liveActivityStatus
 
@@ -65,7 +69,7 @@ struct DashboardView: View {
                     .foregroundColor(.primary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    if !isSelectedEventCompleted {
+                    if !shouldTreatDashboardEventAsFinished {
                         NavigationLink {
                             UpcomingMatchesView()
                         } label: {
@@ -124,7 +128,10 @@ struct DashboardView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-            } else if let snapshot = liveSnapshot, let nextMatch = snapshot.teamNextMatch, !nextMatch.isEmpty {
+            } else if !shouldTreatDashboardEventAsFinished,
+                      let snapshot = liveSnapshot,
+                      let nextMatch = snapshot.teamNextMatch,
+                      !nextMatch.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(nextMatch)
                         .font(.system(size: 34, weight: .bold, design: .rounded))
@@ -150,8 +157,8 @@ struct DashboardView: View {
                     Image(systemName: "checkmark.circle")
                         .foregroundColor(.green)
                     Text(
-                        isSelectedEventCompleted
-                        ? L10n.text(.allMatchesCompleted, language: appLanguage)
+                        shouldTreatDashboardEventAsFinished
+                        ? L10n.text(.eventCompletedBanner, language: appLanguage)
                         : isMatchScheduleNotCreated
                         ? L10n.text(.matchScheduleNotCreated, language: appLanguage)
                         : L10n.text(.noUpcomingMatch, language: appLanguage)
@@ -311,7 +318,11 @@ struct DashboardView: View {
     private func fetchLiveDataOnce() async {
         guard let team = Int(teamNumber), !selectedEventCode.isEmpty else { return }
 
-        if isSelectedEventCompleted {
+        let teamKey = "frc\(team)"
+        let allMatches = (try? await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)) ?? []
+        updateTeamScheduleCompletionState(allMatches: allMatches, teamKey: teamKey)
+
+        if shouldTreatDashboardEventAsFinished {
             liveSnapshot = nil
             liveErrorMessage = nil
             isMatchScheduleNotCreated = false
@@ -319,15 +330,11 @@ struct DashboardView: View {
             // Completed events should not keep live activities/alerts running from stale Nexus data.
             await LiveActivityManager.shared.end()
             pushWidgetSnapshot(
-                nextMatch: L10n.text(.allMatchesCompleted, language: appLanguage),
+                nextMatch: L10n.text(.eventCompletedBanner, language: appLanguage),
                 queueStatus: L10n.text(.queueStatusNotCalled, language: appLanguage)
             )
 
-            if let matches = try? await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode) {
-                eventPhase = resolveEventPhase(matches: matches, snapshot: nil)
-            } else {
-                eventPhase = .unknown
-            }
+            eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
             return
         }
 
@@ -339,34 +346,58 @@ struct DashboardView: View {
                 eventCode: selectedEventCode,
                 teamNumber: team
             )
-            await refreshEventPhase(using: snapshot)
+            await refreshEventPhase(using: snapshot, preloadedMatches: allMatches)
             liveSnapshot = snapshot
             liveErrorMessage = nil
             isMatchScheduleNotCreated = false
             await handleLiveIntegrations(with: snapshot)
         } catch {
-            do {
-                let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
-                eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
-                let teamKey = "frc\(team)"
-                let teamMatches = allMatches.filter { match in
-                    match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
-                }
+            eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
+            let teamMatches = filterTeamMatches(allMatches, teamKey: teamKey)
 
-                if allMatches.isEmpty || teamMatches.isEmpty {
-                    isMatchScheduleNotCreated = true
-                    liveErrorMessage = nil
-                    liveSnapshot = nil
-                } else {
-                    isMatchScheduleNotCreated = false
-                    liveErrorMessage = nexusErrorMessage(from: error)
-                }
-            } catch {
-                eventPhase = .unknown
+            if allMatches.isEmpty || teamMatches.isEmpty {
+                isMatchScheduleNotCreated = true
+                liveErrorMessage = nil
+                liveSnapshot = nil
+            } else {
                 isMatchScheduleNotCreated = false
                 liveErrorMessage = nexusErrorMessage(from: error)
+                liveSnapshot = nil
             }
         }
+    }
+
+    private func updateTeamScheduleCompletionState(allMatches: [TBASimpleMatch], teamKey: String) {
+        if teamNumber == "99999" {
+            teamHasNoRemainingTbaMatches = false
+            return
+        }
+        let teamMatches = filterTeamMatches(allMatches, teamKey: teamKey)
+        guard !teamMatches.isEmpty else {
+            teamHasNoRemainingTbaMatches = false
+            return
+        }
+        teamHasNoRemainingTbaMatches = !teamHasUnplayedMatch(in: teamMatches)
+    }
+
+    private func filterTeamMatches(_ matches: [TBASimpleMatch], teamKey: String) -> [TBASimpleMatch] {
+        matches.filter { match in
+            match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
+        }
+    }
+
+    /// Her iki ittifakta da skor varsa maç oynanmış sayılır (TBA simple endpoint).
+    private func teamHasUnplayedMatch(in teamMatches: [TBASimpleMatch]) -> Bool {
+        for match in teamMatches {
+            if match.alliances.red.score == nil || match.alliances.blue.score == nil {
+                return true
+            }
+        }
+        return false
+    }
+
+    private var shouldTreatDashboardEventAsFinished: Bool {
+        isSelectedEventCompleted || teamHasNoRemainingTbaMatches
     }
 
     @MainActor
@@ -508,17 +539,22 @@ struct DashboardView: View {
     }
 
     @MainActor
-    private func refreshEventPhase(using snapshot: NexusTeamQueueSnapshot?) async {
+    private func refreshEventPhase(using snapshot: NexusTeamQueueSnapshot?, preloadedMatches: [TBASimpleMatch]? = nil) async {
         guard !selectedEventCode.isEmpty else {
             eventPhase = .unknown
             return
         }
-        do {
-            let matches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
-            eventPhase = resolveEventPhase(matches: matches, snapshot: snapshot)
-        } catch {
-            eventPhase = resolveEventPhase(matches: [], snapshot: snapshot)
+        let matches: [TBASimpleMatch]
+        if let preloadedMatches {
+            matches = preloadedMatches
+        } else {
+            do {
+                matches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
+            } catch {
+                matches = []
+            }
         }
+        eventPhase = resolveEventPhase(matches: matches, snapshot: snapshot)
     }
 
     private func resolveEventPhase(matches: [TBASimpleMatch], snapshot: NexusTeamQueueSnapshot?) -> EventPhase {
