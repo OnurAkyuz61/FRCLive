@@ -20,8 +20,8 @@ This policy describes how the **FRCLive** mobile app (the “App”) handles inf
 | | |
 |---|---|
 | App name | FRCLive |
-| Developer | **[Your name or company]** |
-| Contact email | **[your-support@example.com]** |
+| Developer | Onur Akyüz |
+| Contact email | onur@onurakyuz.com |
 
 ### 2. What data does FRCLive process?
 
@@ -101,7 +101,7 @@ We may update this policy. For material changes, we aim to inform users via the 
 
 For privacy questions or requests:
 
-**Email:** **[your-support@example.com]**
+**Email:** onur@onurakyuz.com
 
 ---
 
@@ -118,8 +118,8 @@ Bu belge, **FRCLive** mobil uygulamasının (“Uygulama”) cihazınızdaki bil
 | | |
 |---|---|
 | Uygulama adı | FRCLive |
-| Geliştirici | **[Ad Soyad veya şirket adını buraya yazın]** |
-| İletişim e-postası | **[destek@alanadiniz.com]** |
+| Geliştirici | Onur Akyüz |
+| İletişim e-postası | onur@onurakyuz.com |
 
 ### 2. FRCLive ne tür veriler işler?
 
@@ -199,7 +199,7 @@ Bu metin güncellenebilir. Önemli değişikliklerde, mümkün olduğunca Uygula
 
 Gizlilik ile ilgili sorular ve talepler için:
 
-**E-posta:** **[destek e-postanızı buraya yazın]**
+**E-posta:** onur@onurakyuz.com
 
 ---
 
