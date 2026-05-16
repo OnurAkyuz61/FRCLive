@@ -59,12 +59,6 @@ struct DashboardView: View {
             .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle(L10n.text(.dashboard, language: appLanguage))
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.text(.eventSelection, language: appLanguage)) {
-                        selectedEventCode = ""
-                    }
-                    .foregroundColor(.primary)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     if !shouldTreatDashboardEventAsFinished {
                         NavigationLink {

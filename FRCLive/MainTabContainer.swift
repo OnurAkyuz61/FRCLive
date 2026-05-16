@@ -237,14 +237,6 @@ private struct ScheduleView: View {
                 }
             }
             .navigationTitle(L10n.text(.schedule, language: appLanguage))
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.text(.eventSelection, language: appLanguage)) {
-                        selectedEventCode = ""
-                    }
-                    .foregroundColor(.primary)
-                }
-            }
             .task {
                 await loadMatches()
             }

@@ -59,6 +59,27 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button {
+                        selectedEventCode = ""
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(L10n.text(.eventSelection, language: appLanguage))
+                                    .foregroundColor(.primary)
+                                if !selectedEventName.isEmpty {
+                                    Text(selectedEventName)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(2)
+                                }
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(Color.secondary.opacity(0.55))
+                        }
+                    }
+
                     Button(L10n.text(.logout, language: appLanguage), role: .destructive) {
                         logout()
                     }
@@ -85,14 +106,6 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle(L10n.text(.settings, language: appLanguage))
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.text(.eventSelection, language: appLanguage)) {
-                        selectedEventCode = ""
-                    }
-                    .foregroundColor(.primary)
-                }
-            }
         }
     }
 

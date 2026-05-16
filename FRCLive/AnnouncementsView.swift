@@ -27,12 +27,6 @@ struct AnnouncementsView: View {
             }
             .navigationTitle(L10n.text(.announcements, language: appLanguage))
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.text(.eventSelection, language: appLanguage)) {
-                        selectedEventCode = ""
-                    }
-                    .foregroundColor(.primary)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     if announcementStore.unreadCount > 0 {
                         Button(L10n.text(.markAllRead, language: appLanguage)) {
