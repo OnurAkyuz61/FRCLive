@@ -4,6 +4,8 @@ import SwiftUI
 enum NexusFeedItemKind: String, Hashable, Codable {
     case announcement
     case partsRequest
+    /// Maç programındaki `breakAfter: Alliance selection` verisinden (tüm takımlar).
+    case allianceSelection
 }
 
 /// Nexus `announcements` içindeki otomatik/manuel alt türler (API'de ayrı alan yok; metinden çıkarılır).
@@ -22,6 +24,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
     let pitAddress: String?
     /// Yalnızca `kind == .announcement` için anlamlıdır.
     let announcementSubtype: NexusAnnouncementSubtype?
+    /// İttifak seçimi: son sıralama maçı etiketi (ör. `Qualification 42`).
+    let relatedMatchLabel: String?
 
     var postedDate: Date {
         Date(timeIntervalSince1970: TimeInterval(postedTimeMillis) / 1000.0)
@@ -67,6 +71,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
 
     func categoryLabel(language: AppLanguage) -> String {
         switch kind {
+        case .allianceSelection:
+            return L10n.text(.announcementAllianceCategory, language: language)
         case .announcement:
             switch resolvedAnnouncementSubtype {
             case .general:
@@ -99,6 +105,9 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
 
     /// Parça taleplerinde takım / pit alt satırı.
     func listRowSubtitle(language: AppLanguage) -> String? {
+        if kind == .allianceSelection, let label = relatedMatchLabel, !label.isEmpty {
+            return String(format: L10n.text(.allianceSelectionAfterMatch, language: language), label)
+        }
         guard kind == .partsRequest else { return nil }
         guard let team = requestedByTeam, !team.isEmpty else { return nil }
         if let pit = pitAddress, !pit.isEmpty {
@@ -111,6 +120,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
 
     func detailTitle(language: AppLanguage) -> String {
         switch kind {
+        case .allianceSelection:
+            return L10n.text(.announcementAllianceDetailTitle, language: language)
         case .announcement:
             switch resolvedAnnouncementSubtype {
             case .general:
@@ -127,6 +138,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
 
     func notificationTypeKey() -> L10nKey {
         switch kind {
+        case .allianceSelection:
+            return .announcementAllianceNotificationTitle
         case .announcement:
             switch resolvedAnnouncementSubtype {
             case .general: return .announcementNotificationTitle
@@ -144,6 +157,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
 
     func iconName(processBlueDefault: String = "megaphone.fill") -> String {
         switch kind {
+        case .allianceSelection:
+            return "person.3.fill"
         case .announcement:
             switch resolvedAnnouncementSubtype {
             case .general:
@@ -160,6 +175,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
 
     func accentColor(processBlue: Color) -> Color {
         switch kind {
+        case .allianceSelection:
+            return Color(red: 0.48, green: 0.32, blue: 0.78)
         case .announcement:
             switch resolvedAnnouncementSubtype {
             case .general:

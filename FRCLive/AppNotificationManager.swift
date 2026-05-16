@@ -46,7 +46,8 @@ final class AppNotificationManager {
             postedTimeMillis: Int64(Date().timeIntervalSince1970 * 1000),
             requestedByTeam: nil,
             pitAddress: nil,
-            announcementSubtype: NexusFeedItem.classifyAnnouncement(message: message)
+            announcementSubtype: NexusFeedItem.classifyAnnouncement(message: message),
+            relatedMatchLabel: nil
         )
         sendFeedItemNotification(item: item, language: language)
     }

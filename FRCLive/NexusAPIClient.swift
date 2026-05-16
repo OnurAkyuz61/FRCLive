@@ -220,34 +220,50 @@ final class NexusAPIClient {
         )
     }
 
-    func fetchEventFeed(eventCode: String, teamNumber: String) async throws -> [NexusFeedItem] {
+    func fetchEventFeed(
+        eventCode: String,
+        teamNumber: String,
+        language: AppLanguage
+    ) async throws -> [NexusFeedItem] {
         if teamNumber == String(demoTeamNumber) {
-            return Self.demoEventFeed()
+            return Self.demoEventFeed(language: language)
         }
 
         let (data, _, resolvedCode) = try await fetchQueuingPayload(eventCode: eventCode)
         let liveEvent = try parseLiveEventPayload(data: data)
         let pitMap = (try? await fetchPitAddressMap(eventCode: resolvedCode)) ?? [:]
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let currentOnField = resolveCurrentOnFieldLabel(matches: liveEvent.matches, nowMilliseconds: nowMs)
+        let allianceItem = buildAllianceSelectionFeedItem(
+            matches: liveEvent.matches,
+            currentLabel: currentOnField ?? liveEvent.latestMatchLabel,
+            language: language
+        )
         return mergeEventFeed(
             announcements: liveEvent.announcements,
             partsRequests: liveEvent.partsRequests,
+            allianceSelection: allianceItem,
             pitMap: pitMap
         )
     }
 
     /// Geriye dönük isim.
-    func fetchAnnouncements(eventCode: String, teamNumber: String) async throws -> [NexusFeedItem] {
-        try await fetchEventFeed(eventCode: eventCode, teamNumber: teamNumber)
+    func fetchAnnouncements(
+        eventCode: String,
+        teamNumber: String,
+        language: AppLanguage
+    ) async throws -> [NexusFeedItem] {
+        try await fetchEventFeed(eventCode: eventCode, teamNumber: teamNumber, language: language)
     }
 
-    static func demoEventFeed(now: Date = Date()) -> [NexusFeedItem] {
+    static func demoEventFeed(now: Date = Date(), language: AppLanguage = .tr) -> [NexusFeedItem] {
         let nowMs = Int64(now.timeIntervalSince1970 * 1000)
         let hour: Int64 = 3_600_000
         let announcements: [(String, NexusAnnouncementSubtype)] = [
             ("Sürücü toplantısı saat 09:00'da ana sahada başlayacak.", .general),
-            ("A replay of Qualification 2 will be the first match played after lunch", .replay),
-            ("Alliance selection will begin on the main field once qualification matches conclude.", .allianceSelection)
+            ("A replay of Qualification 2 will be the first match played after lunch", .replay)
         ]
+        let allianceLabel = language == .en ? "Qualification 42" : "Sıralama 42"
         let parts: [(String, String, String)] = [
             ("REV absolute encoder adaptor for swerve", "2480", "A6"),
             ("375mm x 9mm HTD belt", "2472", "A5"),
@@ -262,9 +278,22 @@ final class NexusAPIClient {
                 postedTimeMillis: nowMs - Int64(index + 1) * hour,
                 requestedByTeam: nil,
                 pitAddress: nil,
-                announcementSubtype: entry.1
+                announcementSubtype: entry.1,
+                relatedMatchLabel: nil
             )
         }
+        items.append(
+            NexusFeedItem(
+                id: "demo-alliance-selection",
+                kind: .allianceSelection,
+                message: String(format: L10n.text(.allianceSelectionMessage, language: language), allianceLabel, allianceLabel),
+                postedTimeMillis: nowMs - 15 * 60 * 1000,
+                requestedByTeam: nil,
+                pitAddress: nil,
+                announcementSubtype: nil,
+                relatedMatchLabel: allianceLabel
+            )
+        )
         items += parts.enumerated().map { index, entry in
             NexusFeedItem(
                 id: "demo-parts-\(index)",
@@ -273,7 +302,8 @@ final class NexusAPIClient {
                 postedTimeMillis: nowMs - Int64(index + 1) * 45 * 60 * 1000,
                 requestedByTeam: entry.1,
                 pitAddress: entry.2,
-                announcementSubtype: nil
+                announcementSubtype: nil,
+                relatedMatchLabel: nil
             )
         }
         return items.sorted { $0.postedTimeMillis > $1.postedTimeMillis }
@@ -282,6 +312,7 @@ final class NexusAPIClient {
     private func mergeEventFeed(
         announcements: [NexusFeedItem],
         partsRequests: [NexusFeedItem],
+        allianceSelection: NexusFeedItem?,
         pitMap: [String: String]
     ) -> [NexusFeedItem] {
         let enrichedParts = partsRequests.map { item -> NexusFeedItem in
@@ -298,10 +329,103 @@ final class NexusAPIClient {
                 postedTimeMillis: item.postedTimeMillis,
                 requestedByTeam: item.requestedByTeam,
                 pitAddress: pit,
-                announcementSubtype: item.announcementSubtype
+                announcementSubtype: item.announcementSubtype,
+                relatedMatchLabel: item.relatedMatchLabel
             )
         }
-        return (announcements + enrichedParts).sorted { $0.postedTimeMillis > $1.postedTimeMillis }
+        var items = announcements + enrichedParts
+        if let allianceSelection,
+           !feedAlreadyCoversAllianceSelection(announcements, anchorLabel: allianceSelection.relatedMatchLabel) {
+            items.append(allianceSelection)
+        }
+        return items.sorted { $0.postedTimeMillis > $1.postedTimeMillis }
+    }
+
+    private func feedAlreadyCoversAllianceSelection(_ announcements: [NexusFeedItem], anchorLabel: String?) -> Bool {
+        announcements.contains { item in
+            if item.kind == .allianceSelection { return true }
+            if item.kind == .announcement, item.resolvedAnnouncementSubtype == .allianceSelection {
+                return true
+            }
+            return false
+        }
+    }
+
+    private func buildAllianceSelectionFeedItem(
+        matches: [NexusLiveMatch],
+        currentLabel: String?,
+        language: AppLanguage
+    ) -> NexusFeedItem? {
+        guard let anchor = matches.last(where: { match in
+            guard let breakAfter = match.breakAfter?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                  breakAfter == "alliance selection" else {
+                return false
+            }
+            return phaseRank(from: match.label) == 2
+        }) else {
+            return nil
+        }
+
+        guard shouldShowAllianceSelectionNotice(anchor: anchor, matches: matches, currentLabel: currentLabel) else {
+            return nil
+        }
+
+        let label = anchor.label
+        let postedTime = anchor.times.estimatedOnDeckTimeMillis
+            ?? anchor.times.estimatedOnFieldTimeMillis
+            ?? anchor.times.estimatedQueueTimeMillis
+            ?? Int64(Date().timeIntervalSince1970 * 1000)
+
+        return NexusFeedItem(
+            id: "nexus-alliance-selection-\(label)",
+            kind: .allianceSelection,
+            message: String(format: L10n.text(.allianceSelectionMessage, language: language), label, label),
+            postedTimeMillis: postedTime,
+            requestedByTeam: nil,
+            pitAddress: nil,
+            announcementSubtype: nil,
+            relatedMatchLabel: label
+        )
+    }
+
+    private func shouldShowAllianceSelectionNotice(
+        anchor: NexusLiveMatch,
+        matches: [NexusLiveMatch],
+        currentLabel: String?
+    ) -> Bool {
+        if hasPlayoffsUnderway(matches) { return false }
+
+        let anchorStatus = anchor.status.lowercased()
+        if anchorStatus.contains("on deck") || anchorStatus.contains("on field") || anchorStatus.contains("now queuing") {
+            return true
+        }
+
+        if let currentLabel {
+            if currentLabel == anchor.label { return true }
+            if let currentOrder = matchOrder(from: currentLabel),
+               let anchorOrder = matchOrder(from: anchor.label) {
+                if currentOrder.phase > anchorOrder.phase { return true }
+                if currentOrder.phase == anchorOrder.phase, currentOrder.number >= anchorOrder.number {
+                    return true
+                }
+            }
+        }
+
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let remainingQuals = matches.filter { match in
+            phaseRank(from: match.label) == 2 && isUpcomingMatch(match, nowMilliseconds: nowMs)
+        }
+        return remainingQuals.isEmpty
+    }
+
+    private func hasPlayoffsUnderway(_ matches: [NexusLiveMatch]) -> Bool {
+        matches.contains { match in
+            guard phaseRank(from: match.label) >= 3 else { return false }
+            let status = match.status.lowercased()
+            return status.contains("on field")
+                || status.contains("on deck")
+                || status.contains("now queuing")
+        }
     }
 
     private func fetchPitAddressMap(eventCode: String) async throws -> [String: String] {
@@ -724,7 +848,8 @@ final class NexusAPIClient {
             postedTimeMillis: postedTime,
             requestedByTeam: nil,
             pitAddress: nil,
-            announcementSubtype: subtype
+            announcementSubtype: subtype,
+            relatedMatchLabel: nil
         )
     }
 
@@ -741,7 +866,8 @@ final class NexusAPIClient {
             postedTimeMillis: postedTime,
             requestedByTeam: team,
             pitAddress: nil,
-            announcementSubtype: nil
+            announcementSubtype: nil,
+            relatedMatchLabel: nil
         )
     }
 
@@ -775,9 +901,12 @@ final class NexusAPIClient {
         let blueTeams = parseTeamNumbers(from: raw, key: "blueTeams")
         let timesRaw = raw["times"] as? [String: Any] ?? [:]
 
+        let breakAfter = raw["breakAfter"] as? String
+
         return NexusLiveMatch(
             label: label,
             status: status,
+            breakAfter: breakAfter,
             redTeams: redTeams,
             blueTeams: blueTeams,
             times: NexusLiveMatchTimes(
@@ -1032,6 +1161,7 @@ final class NexusAPIClient {
     private struct NexusLiveMatch {
         let label: String
         let status: String
+        let breakAfter: String?
         let redTeams: [String]
         let blueTeams: [String]
         let times: NexusLiveMatchTimes

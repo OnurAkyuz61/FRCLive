@@ -46,7 +46,8 @@ final class AnnouncementStore: ObservableObject {
         do {
             let fetched = try await NexusAPIClient.shared.fetchEventFeed(
                 eventCode: normalizedEvent,
-                teamNumber: teamNumber
+                teamNumber: teamNumber,
+                language: language
             )
             process(fetched, language: language, notify: notify)
         } catch {

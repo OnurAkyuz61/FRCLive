@@ -133,6 +133,8 @@ enum L10nKey {
     case announcementAllianceCategory
     case announcementAllianceDetailTitle
     case announcementAllianceNotificationTitle
+    case allianceSelectionAfterMatch
+    case allianceSelectionMessage
     case markAllRead
     case partsRequestCategory
     case partsRequestCategoryWithTeam
@@ -260,6 +262,8 @@ enum L10n {
             case .announcementAllianceCategory: return "İttifak seçimi"
             case .announcementAllianceDetailTitle: return "İttifak Seçimi"
             case .announcementAllianceNotificationTitle: return "İttifak Seçimi"
+            case .allianceSelectionAfterMatch: return "%@ sonrasında"
+            case .allianceSelectionMessage: return "İttifak seçimi %@ skorları yayınlandıktan 8 dakika sonra başlayacaktır.\n\nTakım temsilcilerinizi %@ öncesinde sahaya gönderin."
             case .markAllRead: return "Tümünü okundu say"
             case .partsRequestCategory: return "Parça talebi"
             case .partsRequestCategoryWithTeam: return "Parça talebi | Takım %@"
@@ -374,6 +378,8 @@ enum L10n {
             case .announcementAllianceCategory: return "Alliance selection"
             case .announcementAllianceDetailTitle: return "Alliance Selection"
             case .announcementAllianceNotificationTitle: return "Alliance Selection"
+            case .allianceSelectionAfterMatch: return "After %@"
+            case .allianceSelectionMessage: return "Alliance selection will begin 8 minutes after %@ scores are posted.\n\nSend your team representatives to the field before %@."
             case .markAllRead: return "Mark all read"
             case .partsRequestCategory: return "Parts request"
             case .partsRequestCategoryWithTeam: return "Parts request | Team %@"
