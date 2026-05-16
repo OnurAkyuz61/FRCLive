@@ -789,7 +789,7 @@ private struct UpcomingMatchesView: View {
                     .background(Color(UIColor.systemBackground))
             }
 
-            ForEach(Array(board.entries.enumerated()), id: \.element.id) { index, item in
+            ForEach(board.entries) { item in
                 VStack(spacing: 0) {
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -801,14 +801,6 @@ private struct UpcomingMatchesView: View {
                         }
                     } label: {
                         HStack(spacing: 8) {
-                            if index == 0, !isBreakLabel(item.title) {
-                                Text(appLanguage == .tr ? "Sıradaki" : "Up next")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Capsule().fill(Color.white.opacity(0.22)))
-                            }
                             Text(localizedBreakTitle(item.title))
                                 .font(.title3.weight(.medium))
                                 .foregroundColor(.white)
@@ -826,15 +818,6 @@ private struct UpcomingMatchesView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 12)
                         .background(rowBackground(for: item))
-                        .overlay(alignment: .leading) {
-                            if index == 0 {
-                                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                    .fill(Color.white.opacity(0.9))
-                                    .frame(width: 3)
-                                    .padding(.vertical, 8)
-                                    .padding(.leading, 4)
-                            }
-                        }
                     }
                     .buttonStyle(.plain)
 
