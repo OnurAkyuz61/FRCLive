@@ -301,15 +301,21 @@ final class NexusAPIClient {
         let currentOnField = resolveCurrentOnFieldLabel(matches: liveEvent.matches, nowMilliseconds: nowMs)
         let currentLabel = currentOnField ?? liveEvent.latestMatchLabel
 
-        let sessionMatches = filterQueueBoardMatches(
+        var teamOnlyMatches = teamUpcomingMatchesForBoard(
             matches: liveEvent.matches,
+            teamNumber: teamNumber,
             currentLabel: currentLabel,
             nowMilliseconds: nowMs
         )
-        let teamNumberString = String(teamNumber)
-        let teamOnlyMatches = sessionMatches.filter { match in
-            match.redTeams.contains(teamNumberString) || match.blueTeams.contains(teamNumberString)
+        if teamOnlyMatches.isEmpty,
+           let fallback = prioritizedMatch(
+            for: teamNumber,
+            matches: liveEvent.matches,
+            currentMatchLabel: currentLabel
+           ) {
+            teamOnlyMatches = [fallback]
         }
+        let teamNumberString = String(teamNumber)
 
         var parsedEntries: [NexusUpcomingQueueItem] = []
         var previousMatch: NexusLiveMatch?
@@ -353,51 +359,85 @@ final class NexusAPIClient {
         )
     }
 
-    /// Yaklaşan maç listesi: şu anki maçtan sonraki, önümüzdeki ~12 saat içindeki takım maçları.
-    private func filterQueueBoardMatches(
+    /// Takımın Nexus kuyruğundaki yaklaşan maçları (Ana sayfa / Sıradaki Maç listesi).
+    private func teamUpcomingMatchesForBoard(
         matches: [NexusLiveMatch],
+        teamNumber: Int,
         currentLabel: String?,
-        nowMilliseconds: Int64,
-        horizonMilliseconds: Int64 = 12 * 60 * 60 * 1000
+        nowMilliseconds: Int64
     ) -> [NexusLiveMatch] {
-        let horizonEnd = nowMilliseconds + horizonMilliseconds
+        let key = String(teamNumber)
+        let teamMatches = matches.filter { match in
+            !isBreakMatch(match)
+                && (match.redTeams.contains(key) || match.blueTeams.contains(key))
+        }
+        guard !teamMatches.isEmpty else { return [] }
 
-        let upcomingInHorizon = matches.filter { match in
-            guard isUpcomingMatch(match, nowMilliseconds: nowMilliseconds) else { return false }
-            guard !isBreakMatch(match) else { return false }
-            guard let time = relevantTimeMillis(for: match) else {
-                let status = match.status.lowercased()
-                return status.contains("on field")
-                    || status.contains("on deck")
-                    || status.contains("now queuing")
-                    || status.contains("queuing soon")
-            }
-            return time <= horizonEnd
+        let scheduleRelevant = teamMatches.filter { match in
+            isRelevantTeamBoardMatch(match, currentLabel: currentLabel, nowMilliseconds: nowMilliseconds)
         }
 
-        let forward: [NexusLiveMatch]
-        if let currentLabel, let currentOrder = matchOrder(from: currentLabel) {
-            forward = upcomingInHorizon.filter { match in
-                guard let order = matchOrder(from: match.label) else { return false }
-                if order.phase != currentOrder.phase {
-                    return order.phase > currentOrder.phase
-                }
-                return order.number > currentOrder.number
-            }
-        } else {
-            forward = upcomingInHorizon
-        }
+        let forward = filterForwardFromCurrent(matches: scheduleRelevant, currentLabel: currentLabel)
+        let base = forward.isEmpty ? scheduleRelevant : forward
+        return Array(sortMatchesBySchedule(base).prefix(12))
+    }
 
-        return forward.sorted { lhs, rhs in
-            let lhsTime = relevantTimeMillis(for: lhs) ?? Int64.max
-            let rhsTime = relevantTimeMillis(for: rhs) ?? Int64.max
-            if lhsTime != rhsTime { return lhsTime < rhsTime }
-            let lhsOrder = matchOrder(from: lhs.label)
-            let rhsOrder = matchOrder(from: rhs.label)
-            if let lhsOrder, let rhsOrder, lhsOrder.phase != rhsOrder.phase {
-                return lhsOrder.phase < rhsOrder.phase
+    /// Zaman damgası eski olsa bile, sahadaki maçtan sonraki takım maçlarını göster.
+    private func isRelevantTeamBoardMatch(
+        _ match: NexusLiveMatch,
+        currentLabel: String?,
+        nowMilliseconds: Int64
+    ) -> Bool {
+        if isClearlyCompletedMatch(match) { return false }
+        if isUpcomingMatch(match, nowMilliseconds: nowMilliseconds) { return true }
+        return isForwardOfCurrentField(match, currentLabel: currentLabel)
+    }
+
+    private func isClearlyCompletedMatch(_ match: NexusLiveMatch) -> Bool {
+        let status = match.status.lowercased()
+        return status.contains("completed") || status.contains("played")
+    }
+
+    private func isForwardOfCurrentField(_ match: NexusLiveMatch, currentLabel: String?) -> Bool {
+        guard let currentLabel, let currentOrder = matchOrder(from: currentLabel),
+              let order = matchOrder(from: match.label) else {
+            return false
+        }
+        if order.phase != currentOrder.phase {
+            return order.phase > currentOrder.phase
+        }
+        return order.number > currentOrder.number
+    }
+
+    private func filterForwardFromCurrent(matches: [NexusLiveMatch], currentLabel: String?) -> [NexusLiveMatch] {
+        guard let currentLabel, let currentOrder = matchOrder(from: currentLabel) else {
+            return matches
+        }
+        return matches.filter { match in
+            guard let order = matchOrder(from: match.label) else { return true }
+            if order.phase != currentOrder.phase {
+                return order.phase > currentOrder.phase
             }
-            return (lhsOrder?.number ?? 0) < (rhsOrder?.number ?? 0)
+            return order.number > currentOrder.number
+        }
+    }
+
+    private func sortMatchesBySchedule(_ matches: [NexusLiveMatch]) -> [NexusLiveMatch] {
+        matches.sorted { lhs, rhs in
+            let lhsTime = relevantTimeMillis(for: lhs)
+            let rhsTime = relevantTimeMillis(for: rhs)
+            if let lhsTime, let rhsTime, lhsTime != rhsTime {
+                return lhsTime < rhsTime
+            }
+            if let lhsTime, rhsTime == nil { return true }
+            if lhsTime == nil, let rhsTime { return false }
+
+            guard let lhsOrder = matchOrder(from: lhs.label),
+                  let rhsOrder = matchOrder(from: rhs.label) else {
+                return lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
+            }
+            if lhsOrder.phase != rhsOrder.phase { return lhsOrder.phase < rhsOrder.phase }
+            return lhsOrder.number < rhsOrder.number
         }
     }
 
@@ -569,8 +609,8 @@ final class NexusAPIClient {
             return nil
         }
         let status = (raw["status"] as? String) ?? "Unknown"
-        let redTeams = (raw["redTeams"] as? [String]) ?? []
-        let blueTeams = (raw["blueTeams"] as? [String]) ?? []
+        let redTeams = parseTeamNumbers(from: raw, key: "redTeams")
+        let blueTeams = parseTeamNumbers(from: raw, key: "blueTeams")
         let timesRaw = raw["times"] as? [String: Any] ?? [:]
 
         return NexusLiveMatch(
@@ -809,6 +849,19 @@ final class NexusAPIClient {
             return .notCalled
         }
         return .unknown
+    }
+
+    private func parseTeamNumbers(from raw: [String: Any], key: String) -> [String] {
+        if let strings = raw[key] as? [String] {
+            return strings.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        }
+        if let ints = raw[key] as? [Int] {
+            return ints.map(String.init)
+        }
+        if let numbers = raw[key] as? [NSNumber] {
+            return numbers.map(\.stringValue)
+        }
+        return []
     }
 
     private func int64Value(_ value: Any?) -> Int64? {
