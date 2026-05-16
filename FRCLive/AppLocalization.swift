@@ -73,6 +73,10 @@ enum L10nKey {
     case queueStatusCalled
     case queueStatusOnField
     case queueStatusUnknown
+    case nexusStatusQueuingSoon
+    case nexusStatusNowQueuing
+    case nexusStatusOnDeck
+    case nexusStatusOnField
     case estimatedStart
     case liveDataError
     case loadingMatches
@@ -196,6 +200,10 @@ enum L10n {
             case .queueStatusCalled: return "Kuyruğa çağrıldı"
             case .queueStatusOnField: return "Sahada"
             case .queueStatusUnknown: return "Durum bilinmiyor"
+            case .nexusStatusQueuingSoon: return "Yakında sıraya alınacak"
+            case .nexusStatusNowQueuing: return "Sıraya çağrıldı"
+            case .nexusStatusOnDeck: return "Bekleme alanında"
+            case .nexusStatusOnField: return "Sahada"
             case .estimatedStart: return "Tahmini Başlangıç"
             case .liveDataError: return "Canlı veri alınamadı."
             case .loadingMatches: return "Maçlar yükleniyor..."
@@ -306,6 +314,10 @@ enum L10n {
             case .queueStatusCalled: return "Called to Queue"
             case .queueStatusOnField: return "On Field"
             case .queueStatusUnknown: return "Unknown Status"
+            case .nexusStatusQueuingSoon: return "Queuing soon"
+            case .nexusStatusNowQueuing: return "Now queuing"
+            case .nexusStatusOnDeck: return "On deck"
+            case .nexusStatusOnField: return "On field"
             case .estimatedStart: return "Estimated Start"
             case .liveDataError: return "Could not fetch live data."
             case .loadingMatches: return "Loading matches..."

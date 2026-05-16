@@ -66,7 +66,8 @@ enum WidgetBackgroundRefreshManager {
                 eventCode: eventCode,
                 teamNumber: teamInt
             )
-            let statusText = localizedStatus(snapshot.queuingStatus, language: language)
+            let statusText = NexusQueueStatus.displayText(snapshot.queuingStatus, language: language)
+            let statusCode = NexusQueueStatus.canonicalCode(snapshot.queuingStatus)
             let nextMatch = snapshot.teamNextMatch ?? L10n.text(.noUpcomingMatch, language: language)
             let updatedAt = currentTimeLabel(language: language)
 
@@ -77,7 +78,7 @@ enum WidgetBackgroundRefreshManager {
                 nextMatch: nextMatch,
                 currentOnField: snapshot.currentMatchOnField,
                 queueStatus: statusText,
-                queueStatusCode: snapshot.queuingStatus.rawValue,
+                queueStatusCode: statusCode,
                 updatedAt: updatedAt,
                 languageCode: languageCode
             )
@@ -88,7 +89,7 @@ enum WidgetBackgroundRefreshManager {
                     eventName: eventName.isEmpty ? L10n.text(.eventNotSelected, language: language) : eventName,
                     nextMatch: nextMatch,
                     status: statusText,
-                    statusCode: snapshot.queuingStatus.rawValue,
+                    statusCode: statusCode,
                     currentOnField: snapshot.currentMatchOnField,
                     estimatedStart: snapshot.estimatedStartTime ?? "-",
                     languageCode: languageCode
@@ -137,19 +138,6 @@ enum WidgetBackgroundRefreshManager {
         Task {
             let success = await work.value
             task.setTaskCompleted(success: success)
-        }
-    }
-
-    private static func localizedStatus(_ status: NexusQueuingStatus, language: AppLanguage) -> String {
-        switch status {
-        case .notCalled:
-            return L10n.text(.queueStatusNotCalled, language: language)
-        case .calledToQueue:
-            return L10n.text(.queueStatusCalled, language: language)
-        case .onField:
-            return L10n.text(.queueStatusOnField, language: language)
-        case .unknown:
-            return L10n.text(.queueStatusUnknown, language: language)
         }
     }
 

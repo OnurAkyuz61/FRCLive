@@ -76,8 +76,8 @@ struct SimpleEntry: TimelineEntry {
         eventName: "Demo Active Regional",
         nextMatch: "Qual 42",
         currentOnField: "Qual 34",
-        queueStatus: "Kuyruğa çağrıldı",
-        queueStatusCode: "Called to Queue",
+        queueStatus: "Bekleme alanında",
+        queueStatusCode: "On deck",
         updatedAt: "Az önce",
         languageCode: "tr"
     )
@@ -119,14 +119,14 @@ struct FRCLiveWidgetsEntryView: View {
     }
     private var localizedQueueStatus: String {
         switch entry.queueStatusCode.lowercased() {
-        case "not called":
-            return isEnglish ? "Not Called" : "Henüz çağrılmadı"
-        case "called to queue", "called":
-            return isEnglish ? "Called to Queue" : "Kuyruğa çağrıldı"
+        case "queuing soon":
+            return isEnglish ? "Queuing soon" : "Yakında sıraya alınacak"
+        case "now queuing":
+            return isEnglish ? "Now queuing" : "Sıraya çağrıldı"
+        case "on deck":
+            return isEnglish ? "On deck" : "Bekleme alanında"
         case "on field":
             return isEnglish ? "On Field" : "Sahada"
-        case "unknown":
-            return isEnglish ? "Unknown Status" : "Durum bilinmiyor"
         case "waiting_team_selection":
             return isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor"
         case "waiting_event_selection":
@@ -139,23 +139,21 @@ struct FRCLiveWidgetsEntryView: View {
     }
     private var compactQueueStatus: String {
         let status = localizedQueueStatus
-        if status.count <= 14 { return status }
+        if status.count <= 18 { return status }
         let lower = status.lowercased(with: Locale(identifier: "tr_TR"))
-        // "Henüz çağrılmadı" contains "çağr" — check not-called before any broad "çağr" match.
-        if lower.contains("çağrılmadı") || lower.contains("not called") || (lower.contains("henüz") && lower.contains("çağrılmadı")) {
-            return isEnglish ? "Not Called" : "Çağrılmadı"
+        if lower.contains("bekleme") || lower.contains("on deck") {
+            return isEnglish ? "On deck" : "Beklemede"
         }
-        if lower.contains("kuyruğa") || lower.contains("called to queue") || lower.contains("çağrıldı")
-            || (lower.contains("called") && !lower.contains("not called")) || (lower.contains("çağr") && !lower.contains("çağrılmadı")) {
-            return isEnglish ? "Called" : "Çağrıldı"
+        if lower.contains("sıraya") || lower.contains("now queuing") {
+            return isEnglish ? "Queuing" : "Sıraya"
         }
-        if lower.contains("field") || lower.contains("saha") {
+        if lower.contains("yakında") || lower.contains("queuing soon") {
+            return isEnglish ? "Soon" : "Yakında"
+        }
+        if lower.contains("sahada") || lower.contains("on field") {
             return isEnglish ? "On Field" : "Sahada"
         }
-        if lower.contains("not") || lower.contains("henüz") {
-            return isEnglish ? "Not Called" : "Çağrılmadı"
-        }
-        return String(status.prefix(14))
+        return String(status.prefix(18))
     }
 
     var body: some View {

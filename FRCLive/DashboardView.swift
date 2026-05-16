@@ -136,11 +136,11 @@ struct DashboardView: View {
 
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(statusColor(snapshot.queuingStatus))
+                            .fill(NexusQueueStatus.accentColor(for: snapshot.queuingStatus))
                             .frame(width: 10, height: 10)
                             .scaleEffect(pulse ? 1.15 : 0.85)
                             .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: pulse)
-                        Text(statusText(snapshot.queuingStatus))
+                        Text(NexusQueueStatus.displayText(snapshot.queuingStatus, language: appLanguage))
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(.secondary)
                     }
@@ -328,7 +328,7 @@ struct DashboardView: View {
             await LiveActivityManager.shared.end()
             pushWidgetSnapshot(
                 nextMatch: L10n.text(.eventCompletedBanner, language: appLanguage),
-                queueStatus: L10n.text(.queueStatusNotCalled, language: appLanguage)
+                queueStatus: NexusQueueStatus.displayText(NexusQueueStatus.queuingSoon, language: appLanguage)
             )
 
             eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
@@ -407,7 +407,8 @@ struct DashboardView: View {
     @MainActor
     private func handleLiveIntegrations(with snapshot: NexusTeamQueueSnapshot) async {
         let nextMatch = snapshot.teamNextMatch ?? L10n.text(.noUpcomingMatch, language: appLanguage)
-        let status = statusText(snapshot.queuingStatus)
+        let status = NexusQueueStatus.displayText(snapshot.queuingStatus, language: appLanguage)
+        let statusCode = NexusQueueStatus.canonicalCode(snapshot.queuingStatus)
         let estimated = snapshot.estimatedStartTime ?? "-"
         let eventName = selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName
 
@@ -417,7 +418,7 @@ struct DashboardView: View {
                 eventName: eventName,
                 nextMatch: nextMatch,
                 status: status,
-                statusCode: snapshot.queuingStatus.rawValue,
+                statusCode: statusCode,
                 currentOnField: snapshot.currentMatchOnField,
                 estimatedStart: estimated,
                 languageCode: appLanguageRaw
@@ -429,13 +430,14 @@ struct DashboardView: View {
         // Keep widget in sync on every live snapshot, independent from notification settings.
         pushWidgetSnapshot(
             nextMatch: nextMatch,
-            queueStatus: status
+            queueStatus: status,
+            queueStatusCode: statusCode
         )
 
         guard notificationsEnabled else { return }
-        guard snapshot.queuingStatus == .calledToQueue || snapshot.queuingStatus == .onField else { return }
+        guard NexusQueueStatus.shouldNotify(for: snapshot.queuingStatus) else { return }
 
-        let alertKey = "\(selectedEventCode)|\(nextMatch)|\(snapshot.queuingStatus.rawValue)"
+        let alertKey = "\(selectedEventCode)|\(nextMatch)|\(statusCode)"
         guard alertKey != lastQueueAlertKey else { return }
         lastQueueAlertKey = alertKey
 
@@ -446,15 +448,16 @@ struct DashboardView: View {
         )
     }
 
-    private func pushWidgetSnapshot(nextMatch: String? = nil, queueStatus: String? = nil) {
+    private func pushWidgetSnapshot(
+        nextMatch: String? = nil,
+        queueStatus: String? = nil,
+        queueStatusCode: String? = nil
+    ) {
         let updatedAt = currentTimeLabel()
 
-        let resolvedStatusCode = {
-            if let queueStatus {
-                return inferQueueStatusCode(from: queueStatus)
-            }
-            return liveSnapshot?.queuingStatus.rawValue ?? NexusQueuingStatus.unknown.rawValue
-        }()
+        let resolvedStatusCode = queueStatusCode
+            ?? liveSnapshot.map { NexusQueueStatus.canonicalCode($0.queuingStatus) }
+            ?? NexusQueueStatus.queuingSoon
 
         WidgetDataStore.writeSnapshot(
             teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
@@ -462,25 +465,11 @@ struct DashboardView: View {
             eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "-"),
             currentOnField: liveSnapshot?.currentMatchOnField ?? "-",
-            queueStatus: queueStatus ?? (liveSnapshot.map { statusText($0.queuingStatus) } ?? L10n.text(.queueStatusNotCalled, language: appLanguage)),
+            queueStatus: queueStatus ?? (liveSnapshot.map { NexusQueueStatus.displayText($0.queuingStatus, language: appLanguage) } ?? NexusQueueStatus.displayText(NexusQueueStatus.queuingSoon, language: appLanguage)),
             queueStatusCode: resolvedStatusCode,
             updatedAt: updatedAt,
             languageCode: appLanguageRaw
         )
-    }
-
-    private func inferQueueStatusCode(from queueStatus: String) -> String {
-        let lower = queueStatus.lowercased()
-        if lower.contains("not called") || lower.contains("henüz") || lower.contains("çağrılmadı") {
-            return NexusQueuingStatus.notCalled.rawValue
-        }
-        if lower.contains("on field") || lower.contains("sahada") {
-            return NexusQueuingStatus.onField.rawValue
-        }
-        if lower.contains("called") || (lower.contains("çağr") && !lower.contains("çağrılmadı")) {
-            return NexusQueuingStatus.calledToQueue.rawValue
-        }
-        return NexusQueuingStatus.unknown.rawValue
     }
 
     private func currentTimeLabel() -> String {
@@ -488,32 +477,6 @@ struct DashboardView: View {
         formatter.locale = Locale(identifier: appLanguage == .tr ? "tr_TR" : "en_US_POSIX")
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: Date())
-    }
-
-    private func statusText(_ status: NexusQueuingStatus) -> String {
-        switch status {
-        case .notCalled:
-            return L10n.text(.queueStatusNotCalled, language: appLanguage)
-        case .calledToQueue:
-            return L10n.text(.queueStatusCalled, language: appLanguage)
-        case .onField:
-            return L10n.text(.queueStatusOnField, language: appLanguage)
-        case .unknown:
-            return L10n.text(.queueStatusUnknown, language: appLanguage)
-        }
-    }
-
-    private func statusColor(_ status: NexusQueuingStatus) -> Color {
-        switch status {
-        case .notCalled:
-            return .gray
-        case .calledToQueue:
-            return .orange
-        case .onField:
-            return .green
-        case .unknown:
-            return .secondary
-        }
     }
 
     private var dataSourceText: String {

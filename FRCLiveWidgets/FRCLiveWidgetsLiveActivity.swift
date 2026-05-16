@@ -160,27 +160,30 @@ struct FRCLiveWidgetsLiveActivity: Widget {
 
     private func compactStatusText(raw: String, statusCode: String, isEnglish: Bool) -> String {
         switch statusCode.lowercased() {
-        case "not called":
-            return isEnglish ? "Not Called" : "Çağrılmadı"
-        case "called to queue", "called":
-            return isEnglish ? "Called" : "Çağrıldı"
+        case "queuing soon":
+            return isEnglish ? "Soon" : "Yakında"
+        case "now queuing":
+            return isEnglish ? "Queuing" : "Sıraya"
+        case "on deck":
+            return isEnglish ? "On deck" : "Beklemede"
         case "on field":
             return isEnglish ? "On Field" : "Sahada"
-        case "unknown":
-            return isEnglish ? "Unknown" : "Bilinmiyor"
         default:
             break
         }
 
         let lower = raw.lowercased()
-        if lower.contains("not called") || lower.contains("henüz") || lower.contains("çağrılmadı") {
-            return isEnglish ? "Not Called" : "Çağrılmadı"
+        if lower.contains("bekleme") || lower.contains("on deck") {
+            return isEnglish ? "On deck" : "Beklemede"
         }
-        if lower.contains("on field") || lower.contains("sahada") {
+        if lower.contains("sıraya") || lower.contains("now queuing") {
+            return isEnglish ? "Queuing" : "Sıraya"
+        }
+        if lower.contains("yakında") || lower.contains("queuing soon") {
+            return isEnglish ? "Soon" : "Yakında"
+        }
+        if lower.contains("sahada") || lower.contains("on field") {
             return isEnglish ? "On Field" : "Sahada"
-        }
-        if lower.contains("called") || lower.contains("çağr") {
-            return isEnglish ? "Called" : "Çağrıldı"
         }
 
         return raw
@@ -207,8 +210,8 @@ extension FRCLiveActivityAttributes.ContentState {
             teamNumber: "99999",
             eventName: "Demo Active Regional",
             nextMatch: "Qual 42",
-            status: "Kuyruğa çağrıldı",
-            statusCode: "Called to Queue",
+            status: "Bekleme alanında",
+            statusCode: "On deck",
             currentOnField: "Qual 34",
             estimatedStart: "10 dk",
             languageCode: "tr"

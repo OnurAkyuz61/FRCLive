@@ -89,18 +89,6 @@ enum WidgetDataStore {
 
     private static func inferQueueStatusCode(from queueStatus: String) -> String {
         let lower = queueStatus.lowercased()
-        if lower.contains("on field") || lower.contains("sahada") {
-            return "On Field"
-        }
-        if lower.contains("called") || lower.contains("çağr") {
-            if lower.contains("not called") || lower.contains("çağrılmadı") || lower.contains("henüz") {
-                return "Not Called"
-            }
-            return "Called to Queue"
-        }
-        if lower.contains("not called") || lower.contains("henüz") {
-            return "Not Called"
-        }
         if lower.contains("waiting for team") || lower.contains("takım seçimi bekleniyor") {
             return "waiting_team_selection"
         }
@@ -110,7 +98,7 @@ enum WidgetDataStore {
         if lower.contains("loading live data") || lower.contains("canlı veri yükleniyor") {
             return "loading_live_data"
         }
-        return "Unknown"
+        return NexusQueueStatus.canonicalCode(queueStatus)
     }
 
     private static func currentTimeLabel(localeCode: String) -> String {

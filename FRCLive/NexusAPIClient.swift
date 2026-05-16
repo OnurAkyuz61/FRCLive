@@ -1,32 +1,11 @@
 import Foundation
 
-enum NexusQueuingStatus: String, Decodable {
-    case notCalled = "Not Called"
-    case calledToQueue = "Called to Queue"
-    case onField = "On Field"
-    case unknown = "Unknown"
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let raw = (try? container.decode(String.self)) ?? ""
-        switch raw.lowercased() {
-        case "not called":
-            self = .notCalled
-        case "called to queue", "called":
-            self = .calledToQueue
-        case "on field":
-            self = .onField
-        default:
-            self = .unknown
-        }
-    }
-}
-
 struct NexusTeamQueueSnapshot {
     let currentMatchOnField: String
     let teamNextMatch: String?
     let estimatedStartTime: String?
-    let queuingStatus: NexusQueuingStatus
+    /// Nexus `match.status` — örn. `Queuing soon`, `Now queuing`, `On deck`, `On field`
+    let queuingStatus: String
 }
 
 struct NexusUpcomingQueueItem: Identifiable {
@@ -80,7 +59,7 @@ private struct NexusQueueEntry: Decodable {
     let teamNumber: Int
     let nextMatch: String?
     let estimatedStartTime: String?
-    let status: NexusQueuingStatus
+    let status: String
 
     enum CodingKeys: String, CodingKey {
         case teamNumber = "team_number"
@@ -110,9 +89,9 @@ private struct NexusQueueEntry: Decodable {
         let fallbackEstimated = try container.decodeIfPresent(String.self, forKey: .estimatedTimeAlt)
         estimatedStartTime = primaryEstimated ?? fallbackEstimated
 
-        let primaryStatus = try container.decodeIfPresent(NexusQueuingStatus.self, forKey: .queueStatus)
-        let fallbackStatus = try container.decodeIfPresent(NexusQueuingStatus.self, forKey: .status)
-        status = primaryStatus ?? fallbackStatus ?? .unknown
+        let primaryStatus = try container.decodeIfPresent(String.self, forKey: .queueStatus)
+        let fallbackStatus = try container.decodeIfPresent(String.self, forKey: .status)
+        status = primaryStatus ?? fallbackStatus ?? ""
     }
 }
 
@@ -209,7 +188,7 @@ final class NexusAPIClient {
                 currentMatchOnField: "Qual 34",
                 teamNextMatch: "Qual 42",
                 estimatedStartTime: "10 dk",
-                queuingStatus: .calledToQueue
+                queuingStatus: NexusQueueStatus.onDeck
             )
         }
 
@@ -229,7 +208,7 @@ final class NexusAPIClient {
                 currentMatchOnField: current,
                 teamNextMatch: nil,
                 estimatedStartTime: nil,
-                queuingStatus: .unknown
+                queuingStatus: ""
             )
         }
 
@@ -237,7 +216,7 @@ final class NexusAPIClient {
             currentMatchOnField: current,
             teamNextMatch: teamMatch.label,
             estimatedStartTime: formatMillisToTime(teamMatch.times.estimatedStartTimeMillis),
-            queuingStatus: mapStatusToQueueStatus(teamMatch.status)
+            queuingStatus: teamMatch.status
         )
     }
 
@@ -1003,18 +982,6 @@ final class NexusAPIClient {
         if s.contains("now queuing") { return 2 }
         if s.contains("queuing soon") { return 3 }
         return 4
-    }
-
-    private func mapStatusToQueueStatus(_ status: String) -> NexusQueuingStatus {
-        let s = status.lowercased()
-        if s.contains("on field") { return .onField }
-        if s.contains("on deck") || s.contains("now queuing") {
-            return .calledToQueue
-        }
-        if s.contains("queuing soon") {
-            return .notCalled
-        }
-        return .unknown
     }
 
     private func parseTeamNumbers(from raw: [String: Any], key: String) -> [String] {
