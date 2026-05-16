@@ -298,17 +298,17 @@ final class NexusAPIClient {
         let (data, _, _) = try await fetchQueuingPayload(eventCode: eventCode)
         let liveEvent = try parseLiveEventPayload(data: data)
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-        let upcomingMatches = liveEvent.matches.filter { isUpcomingMatch($0, nowMilliseconds: nowMs) }
-        let minimumPhaseRank = phaseRank(from: liveEvent.latestMatchLabel ?? "")
-        let phaseFilteredMatches = upcomingMatches.filter { match in
-            let rank = phaseRank(from: match.label)
-            if minimumPhaseRank == 0 { return true }
-            return rank >= minimumPhaseRank
-        }
+        let currentOnField = resolveCurrentOnFieldLabel(matches: liveEvent.matches, nowMilliseconds: nowMs)
+        let currentLabel = currentOnField ?? liveEvent.latestMatchLabel
+
+        let sessionMatches = filterQueueBoardMatches(
+            matches: liveEvent.matches,
+            currentLabel: currentLabel,
+            nowMilliseconds: nowMs
+        )
         let teamNumberString = String(teamNumber)
-        let teamOnlyMatches = phaseFilteredMatches.filter { match in
-            let includesTeam = match.redTeams.contains(teamNumberString) || match.blueTeams.contains(teamNumberString)
-            return includesTeam || isBreakMatch(match)
+        let teamOnlyMatches = sessionMatches.filter { match in
+            match.redTeams.contains(teamNumberString) || match.blueTeams.contains(teamNumberString)
         }
 
         var parsedEntries: [NexusUpcomingQueueItem] = []
@@ -348,9 +348,69 @@ final class NexusAPIClient {
 
         return NexusQueuingBoardSnapshot(
             divisionName: liveEvent.eventName,
-            currentMatchOnField: liveEvent.latestMatchLabel ?? "-",
+            currentMatchOnField: currentLabel ?? liveEvent.latestMatchLabel ?? "-",
             entries: parsedEntries
         )
+    }
+
+    /// Yaklaşan maç listesi: şu anki maçtan sonraki, önümüzdeki ~12 saat içindeki takım maçları.
+    private func filterQueueBoardMatches(
+        matches: [NexusLiveMatch],
+        currentLabel: String?,
+        nowMilliseconds: Int64,
+        horizonMilliseconds: Int64 = 12 * 60 * 60 * 1000
+    ) -> [NexusLiveMatch] {
+        let horizonEnd = nowMilliseconds + horizonMilliseconds
+
+        let upcomingInHorizon = matches.filter { match in
+            guard isUpcomingMatch(match, nowMilliseconds: nowMilliseconds) else { return false }
+            guard !isBreakMatch(match) else { return false }
+            guard let time = relevantTimeMillis(for: match) else {
+                let status = match.status.lowercased()
+                return status.contains("on field")
+                    || status.contains("on deck")
+                    || status.contains("now queuing")
+                    || status.contains("queuing soon")
+            }
+            return time <= horizonEnd
+        }
+
+        let forward: [NexusLiveMatch]
+        if let currentLabel, let currentOrder = matchOrder(from: currentLabel) {
+            forward = upcomingInHorizon.filter { match in
+                guard let order = matchOrder(from: match.label) else { return false }
+                if order.phase != currentOrder.phase {
+                    return order.phase > currentOrder.phase
+                }
+                return order.number > currentOrder.number
+            }
+        } else {
+            forward = upcomingInHorizon
+        }
+
+        return forward.sorted { lhs, rhs in
+            let lhsTime = relevantTimeMillis(for: lhs) ?? Int64.max
+            let rhsTime = relevantTimeMillis(for: rhs) ?? Int64.max
+            if lhsTime != rhsTime { return lhsTime < rhsTime }
+            let lhsOrder = matchOrder(from: lhs.label)
+            let rhsOrder = matchOrder(from: rhs.label)
+            if let lhsOrder, let rhsOrder, lhsOrder.phase != rhsOrder.phase {
+                return lhsOrder.phase < rhsOrder.phase
+            }
+            return (lhsOrder?.number ?? 0) < (rhsOrder?.number ?? 0)
+        }
+    }
+
+    private func relevantTimeMillis(for match: NexusLiveMatch) -> Int64? {
+        match.times.estimatedQueueTimeMillis
+            ?? match.times.estimatedOnDeckTimeMillis
+            ?? match.times.estimatedOnFieldTimeMillis
+            ?? match.times.estimatedStartTimeMillis
+    }
+
+    private func localCalendarDay(for milliseconds: Int64) -> Date? {
+        let date = Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000.0)
+        return Calendar.current.startOfDay(for: date)
     }
 
     private func fetchQueuingPayload(eventCode: String) async throws -> (Data, HTTPURLResponse, String) {
@@ -652,6 +712,12 @@ final class NexusAPIClient {
         let gap = nextStart - prevStart
         let title: String
         if gap >= 6 * 60 * 60 * 1000 {
+            // Gece yarısı sonrası ertesi günün eleme maçları için yapay "Gün Sonu" satırı ekleme.
+            if let prevDay = localCalendarDay(for: prevStart),
+               let nextDay = localCalendarDay(for: nextStart),
+               prevDay != nextDay {
+                return nil
+            }
             title = "Day End"
         } else if gap >= 130 * 60 * 1000 && gap <= 220 * 60 * 1000 {
             title = "Lunch Break"

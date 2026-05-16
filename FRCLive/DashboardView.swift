@@ -705,10 +705,14 @@ private struct UpcomingMatchesView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         headerCard(board: board)
+                        if !board.currentMatchOnField.isEmpty, board.currentMatchOnField != "-" {
+                            currentOnFieldCard(label: board.currentMatchOnField)
+                        }
                         queueList(board: board)
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
                 .refreshable { await loadBoard() }
             }
@@ -744,6 +748,27 @@ private struct UpcomingMatchesView: View {
         )
     }
 
+    private func currentOnFieldCard(label: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .foregroundColor(.blue)
+            Text("\(L10n.text(.currentlyOnField, language: appLanguage)) \(label)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.blue.opacity(0.25), lineWidth: 1)
+                )
+        )
+    }
+
     private func queueList(board: NexusQueuingBoardSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(appLanguage == .tr ? "Yaklaşan maçlar" : "Upcoming matches")
@@ -764,7 +789,7 @@ private struct UpcomingMatchesView: View {
                     .background(Color(UIColor.systemBackground))
             }
 
-            ForEach(board.entries) { item in
+            ForEach(Array(board.entries.enumerated()), id: \.element.id) { index, item in
                 VStack(spacing: 0) {
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -776,6 +801,14 @@ private struct UpcomingMatchesView: View {
                         }
                     } label: {
                         HStack(spacing: 8) {
+                            if index == 0, !isBreakLabel(item.title) {
+                                Text(appLanguage == .tr ? "Sıradaki" : "Up next")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Capsule().fill(Color.white.opacity(0.22)))
+                            }
                             Text(localizedBreakTitle(item.title))
                                 .font(.title3.weight(.medium))
                                 .foregroundColor(.white)
@@ -793,6 +826,15 @@ private struct UpcomingMatchesView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 12)
                         .background(rowBackground(for: item))
+                        .overlay(alignment: .leading) {
+                            if index == 0 {
+                                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                    .fill(Color.white.opacity(0.9))
+                                    .frame(width: 3)
+                                    .padding(.vertical, 8)
+                                    .padding(.leading, 4)
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
 
@@ -961,6 +1003,7 @@ private struct UpcomingMatchesView: View {
     @MainActor
     private func loadBoard() async {
         guard !selectedEventCode.isEmpty, let team = Int(teamNumber) else { return }
+        await backfillSelectedEventEndDateIfNeeded()
         if isSelectedEventCompleted {
             board = NexusQueuingBoardSnapshot(divisionName: selectedEventName, currentMatchOnField: "-", entries: [])
             errorMessage = nil
@@ -985,5 +1028,26 @@ private struct UpcomingMatchesView: View {
 
     private var isSelectedEventCompleted: Bool {
         TBAEventCalendar.isStoredEventPastEnd(endYyyyMmDd: selectedEventEndDate)
+    }
+
+    @MainActor
+    private func backfillSelectedEventEndDateIfNeeded() async {
+        guard selectedEventEndDate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !selectedEventCode.isEmpty,
+              !teamNumber.isEmpty,
+              teamNumber != "99999" else { return }
+
+        do {
+            let events = try await TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
+            let normalizedCode = selectedEventCode.lowercased()
+            guard let event = events.first(where: {
+                $0.eventCode.lowercased() == normalizedCode || $0.eventKey.lowercased() == normalizedCode
+            }) else { return }
+
+            selectedEventEndDate = event.endDate
+            if selectedEventDate.isEmpty {
+                selectedEventDate = event.startDate
+            }
+        } catch {}
     }
 }
