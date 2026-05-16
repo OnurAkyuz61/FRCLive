@@ -2,8 +2,6 @@
 //  FRCLiveWidgets.swift
 //  FRCLiveWidgets
 //
-//  Created by Onur Akyüz on 27.04.2026.
-//
 
 import WidgetKit
 import SwiftUI
@@ -11,6 +9,8 @@ import SwiftUI
 private enum WidgetSharedKeys {
     static let appGroupID = "group.onurakyuz.FRCLive"
 }
+
+// MARK: - Timeline
 
 struct FRCLiveWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
@@ -31,26 +31,26 @@ struct FRCLiveWidgetProvider: TimelineProvider {
     private func loadEntry() -> SimpleEntry {
         let defaults = UserDefaults(suiteName: WidgetSharedKeys.appGroupID) ?? UserDefaults.standard
         let languageCode = defaults.string(forKey: "widget_languageCode") ?? "tr"
-        let isEnglish = languageCode == "en"
         let rawTeamNumber = defaults.string(forKey: "widget_teamNumber") ?? defaults.string(forKey: "teamNumber") ?? ""
-        let teamNumber = rawTeamNumber.isEmpty ? "----" : rawTeamNumber
+        let teamNumber = rawTeamNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         let teamName = defaults.string(forKey: "widget_teamName") ?? ""
-        let eventName = defaults.string(forKey: "widget_eventName") ?? (isEnglish ? "Please enter a team number" : "Lütfen bir takım numarası girin")
+        let eventName = defaults.string(forKey: "widget_eventName") ?? ""
         let nextMatch = defaults.string(forKey: "widget_nextMatch") ?? "-"
         let currentOnField = defaults.string(forKey: "widget_currentOnField") ?? "-"
-        let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? (isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor")
+        let queueStatus = defaults.string(forKey: "widget_queueStatus") ?? ""
         let queueStatusCode = defaults.string(forKey: "widget_queueStatusCode") ?? ""
-        let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? (isEnglish ? "Just now" : "Az önce")
+        let updatedAt = defaults.string(forKey: "widget_updatedAt") ?? ""
+
         return SimpleEntry(
             date: Date(),
-            teamNumber: teamNumber,
+            teamNumber: teamNumber.isEmpty ? "" : teamNumber,
             teamName: teamName,
             eventName: eventName,
             nextMatch: nextMatch,
             currentOnField: currentOnField,
             queueStatus: queueStatus,
             queueStatusCode: queueStatusCode,
-            updatedAt: updatedAt,
+            updatedAt: updatedAt.isEmpty ? (languageCode == "en" ? "Now" : "Şimdi") : updatedAt,
             languageCode: languageCode
         )
     }
@@ -58,7 +58,6 @@ struct FRCLiveWidgetProvider: TimelineProvider {
 
 struct SimpleEntry: TimelineEntry {
     let date: Date
-
     let teamNumber: String
     let teamName: String
     let eventName: String
@@ -78,46 +77,405 @@ struct SimpleEntry: TimelineEntry {
         currentOnField: "Qual 34",
         queueStatus: "Bekleme alanında",
         queueStatusCode: "On deck",
-        updatedAt: "Az önce",
+        updatedAt: "23:25",
         languageCode: "tr"
     )
+
+    static let previewNeedsTeam = SimpleEntry(
+        date: .now,
+        teamNumber: "",
+        teamName: "",
+        eventName: "",
+        nextMatch: "-",
+        currentOnField: "-",
+        queueStatus: "",
+        queueStatusCode: "waiting_team_selection",
+        updatedAt: "23:25",
+        languageCode: "tr"
+    )
+}
+
+// MARK: - Presentation
+
+private enum WidgetPresentationState {
+    case needsTeam
+    case needsEvent
+    case loading
+    case noUpcomingMatch
+    case live
 }
 
 struct FRCLiveWidgetsEntryView: View {
     var entry: FRCLiveWidgetProvider.Entry
     @Environment(\.widgetFamily) private var family
+
     private var isEnglish: Bool { entry.languageCode == "en" }
-    private var processBlue: Color { Color(red: 0/255, green: 156/255, blue: 215/255) }
-    private var teamWithNameLine: String {
-        let name = entry.teamName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)" }
-        return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber) - \(name)"
+    private var state: WidgetPresentationState { resolveState(entry) }
+
+    var body: some View {
+        Group {
+            switch family {
+            case .systemSmall:
+                smallWidget
+            case .systemLarge:
+                largeWidget
+            default:
+                mediumWidget
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(contentPadding)
     }
-    /// App stores whatever string was last written; re-map known banners to `widget_languageCode` so TR widgets don't show stale English (or vice versa).
-    private var localizedNextMatchDisplay: String {
+
+    private var contentPadding: CGFloat {
+        switch family {
+        case .systemSmall: return 10
+        case .systemLarge: return 14
+        default: return 12
+        }
+    }
+
+    // MARK: Small
+
+    private var smallWidget: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            brandCaption
+
+            switch state {
+            case .needsTeam:
+                setupIcon("person.crop.circle.badge.plus")
+                Text(L10nWidget.needsTeamTitle(isEnglish))
+                    .font(.caption.weight(.bold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+            case .needsEvent:
+                teamLineSmall
+                Text(L10nWidget.needsEventTitle(isEnglish))
+                    .font(.caption.weight(.bold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+            case .loading:
+                teamLineSmall
+                ProgressView().tint(.white).scaleEffect(0.85)
+                Text(L10nWidget.loading(isEnglish))
+                    .font(.caption2)
+                    .lineLimit(2)
+            case .noUpcomingMatch:
+                teamLineSmall
+                Text(L10nWidget.noMatchShort(isEnglish))
+                    .font(.caption.weight(.bold))
+                    .lineLimit(2)
+            case .live:
+                teamLineSmall
+                matchHeadline(compact: true)
+                Text(queueStatusLine)
+                    .font(.caption2.weight(.medium))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+
+            Spacer(minLength: 0)
+            footerCompact
+        }
+    }
+
+    // MARK: Medium
+
+    private var mediumWidget: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                brandCaption
+
+                switch state {
+                case .needsTeam:
+                    setupIcon("person.crop.circle.badge.plus", large: true)
+                    Text(L10nWidget.needsTeamTitle(isEnglish))
+                        .font(.subheadline.weight(.bold))
+                        .lineLimit(2)
+                    Text(L10nWidget.needsTeamSubtitle(isEnglish))
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.88))
+                        .lineLimit(2)
+                case .needsEvent:
+                    teamLineMedium
+                    Text(L10nWidget.needsEventTitle(isEnglish))
+                        .font(.subheadline.weight(.bold))
+                        .lineLimit(2)
+                    Text(L10nWidget.needsEventSubtitle(isEnglish))
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.88))
+                        .lineLimit(2)
+                case .loading:
+                    teamLineMedium
+                    Text(L10nWidget.loading(isEnglish))
+                        .font(.subheadline.weight(.semibold))
+                    ProgressView().tint(.white)
+                case .noUpcomingMatch:
+                    teamLineMedium
+                    Text(L10nWidget.noMatchTitle(isEnglish))
+                        .font(.headline.weight(.bold))
+                        .lineLimit(2)
+                    Text(L10nWidget.noMatchSubtitle(isEnglish))
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.88))
+                        .lineLimit(2)
+                case .live:
+                    teamLineMedium
+                    eventLine
+                    matchHeadline(compact: false)
+                    Text(queueStatusLine)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                    onFieldLine
+                }
+
+                Spacer(minLength: 0)
+                footerCompact
+            }
+
+            Spacer(minLength: 4)
+            Image(systemName: "bolt.shield")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.92))
+        }
+    }
+
+    // MARK: Large
+
+    private var largeWidget: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                brandCaption
+                Spacer()
+                Image(systemName: "bolt.shield")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            .padding(.bottom, 8)
+
+            switch state {
+            case .needsTeam:
+                largeSetupContent(
+                    icon: "person.crop.circle.badge.plus",
+                    title: L10nWidget.needsTeamTitle(isEnglish),
+                    subtitle: L10nWidget.needsTeamSubtitle(isEnglish)
+                )
+            case .needsEvent:
+                VStack(alignment: .leading, spacing: 6) {
+                    teamLineLarge
+                    Text(L10nWidget.needsEventTitle(isEnglish))
+                        .font(.title2.weight(.bold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                    Text(L10nWidget.needsEventSubtitle(isEnglish))
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.85)
+                }
+            case .loading:
+                VStack(alignment: .leading, spacing: 10) {
+                    teamLineLarge
+                    eventLine
+                    ProgressView().tint(.white).scaleEffect(1.1)
+                    Text(L10nWidget.loading(isEnglish))
+                        .font(.title3.weight(.semibold))
+                        .lineLimit(2)
+                }
+            case .noUpcomingMatch:
+                VStack(alignment: .leading, spacing: 8) {
+                    teamLineLarge
+                    eventLine
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.white.opacity(0.95))
+                    Text(L10nWidget.noMatchTitle(isEnglish))
+                        .font(.title.weight(.bold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                    Text(L10nWidget.noMatchSubtitle(isEnglish))
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.85)
+                    onFieldLine
+                }
+            case .live:
+                VStack(alignment: .leading, spacing: 8) {
+                    teamLineLarge
+                    eventLine
+                    Text(L10nWidget.nextMatchLabel(isEnglish))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.top, 2)
+                    matchHeadline(compact: false)
+                        .padding(.top, -4)
+                    Text(queueStatusLine)
+                        .font(.title3.weight(.semibold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                    onFieldLine
+                }
+            }
+
+            Spacer(minLength: 0)
+            footerLarge
+                .padding(.top, 8)
+        }
+    }
+
+    // MARK: Shared pieces
+
+    private var brandCaption: some View {
+        Text("FRCLive")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.85))
+    }
+
+    private var teamLineSmall: some View {
+        Text(teamDisplayShort)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.92))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    private var teamLineMedium: some View {
+        Text(teamDisplayLong)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.92))
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
+    }
+
+    private var teamLineLarge: some View {
+        Text(teamDisplayLong)
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(.white)
+            .lineLimit(2)
+            .minimumScaleFactor(0.7)
+    }
+
+    private var eventLine: some View {
+        Text(entry.eventName)
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.white.opacity(0.9))
+            .lineLimit(family == .systemLarge ? 2 : 1)
+            .minimumScaleFactor(0.8)
+    }
+
+    private func matchHeadline(compact: Bool) -> some View {
+        Text(displayNextMatch)
+            .font(.system(size: compact ? 22 : 38, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .lineLimit(compact ? 1 : 2)
+            .minimumScaleFactor(0.55)
+    }
+
+    private var onFieldLine: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.caption2)
+            Text("\(L10nWidget.onFieldPrefix(isEnglish)) \(displayOnField)")
+                .font(.footnote.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .foregroundStyle(.white.opacity(0.9))
+    }
+
+    private func setupIcon(_ name: String, large: Bool = false) -> some View {
+        Image(systemName: name)
+            .font(large ? .title2.weight(.semibold) : .body.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.95))
+    }
+
+    private func largeSetupContent(icon: String, title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundStyle(.white)
+            Text(title)
+                .font(.title.weight(.bold))
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
+            Text(subtitle)
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.9))
+                .lineLimit(3)
+                .minimumScaleFactor(0.85)
+        }
+    }
+
+    private var footerCompact: some View {
+        HStack {
+            Text("\(L10nWidget.updated(isEnglish)) \(entry.updatedAt)")
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.72))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var footerLarge: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(L10nWidget.updated(isEnglish))
+                Text(entry.updatedAt)
+            }
+            .font(.caption2)
+            .foregroundStyle(.white.opacity(0.75))
+            Spacer()
+        }
+    }
+
+    // MARK: Copy & data
+
+    private var teamDisplayShort: String {
+        guard !entry.teamNumber.isEmpty, entry.teamNumber != "----" else {
+            return "FRCLive"
+        }
+        return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)"
+    }
+
+    private var teamDisplayLong: String {
+        guard !entry.teamNumber.isEmpty, entry.teamNumber != "----" else {
+            return "FRCLive"
+        }
+        let name = entry.teamName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty {
+            return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)"
+        }
+        return "\(isEnglish ? "Team" : "Takım") \(entry.teamNumber) · \(name)"
+    }
+
+    private var displayNextMatch: String {
         let raw = entry.nextMatch.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard raw != "-", !raw.isEmpty else { return raw }
+        guard !raw.isEmpty, raw != "-" else {
+            return L10nWidget.noMatchShort(isEnglish)
+        }
         let lowerEN = raw.lowercased(with: Locale(identifier: "en_US_POSIX"))
         let lowerTR = raw.lowercased(with: Locale(identifier: "tr_TR"))
         if lowerEN.contains("event completed") || lowerTR.contains("etkinlik tamamlandı") {
-            return isEnglish ? "Event Completed" : "Etkinlik Tamamlandı"
+            return L10nWidget.eventDoneShort(isEnglish)
         }
-        if (lowerEN.contains("all matches") && lowerEN.contains("completed")) || lowerTR.contains("tüm maçlar tamamlandı") {
-            return isEnglish ? "All matches are completed" : "Tüm maçlar tamamlandı"
+        if (lowerEN.contains("all matches") && lowerEN.contains("completed")) || lowerTR.contains("tüm maçlar") {
+            return L10nWidget.allMatchesDoneShort(isEnglish)
         }
         return raw
     }
 
-    private var compactNextMatch: String {
-        localizedNextMatchDisplay
+    private var displayOnField: String {
+        let raw = entry.currentOnField.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty || raw == "-" {
+            return "—"
+        }
+        return raw
     }
-    private var updatedLabelText: String {
-        "\(isEnglish ? "Updated" : "Güncellendi") \(entry.updatedAt)"
-    }
-    private var updatedPrefixText: String {
-        isEnglish ? "Updated" : "Güncellendi"
-    }
-    private var localizedQueueStatus: String {
+
+    private var queueStatusLine: String {
         switch entry.queueStatusCode.lowercased() {
         case "queuing soon":
             return isEnglish ? "Queuing soon" : "Yakında sıraya alınacak"
@@ -126,173 +484,115 @@ struct FRCLiveWidgetsEntryView: View {
         case "on deck":
             return isEnglish ? "On deck" : "Bekleme alanında"
         case "on field":
-            return isEnglish ? "On Field" : "Sahada"
+            return isEnglish ? "On field" : "Sahada"
         case "waiting_team_selection":
-            return isEnglish ? "Waiting for team selection" : "Takım seçimi bekleniyor"
+            return isEnglish ? "Waiting for team" : "Takım bekleniyor"
         case "waiting_event_selection":
-            return isEnglish ? "Waiting for event selection" : "Etkinlik seçimi bekleniyor"
+            return isEnglish ? "Waiting for event" : "Etkinlik bekleniyor"
         case "loading_live_data":
-            return isEnglish ? "Loading live data..." : "Canlı veri yükleniyor..."
+            return isEnglish ? "Loading live data…" : "Canlı veri yükleniyor…"
         default:
-            return entry.queueStatus
+            let status = entry.queueStatus.trimmingCharacters(in: .whitespacesAndNewlines)
+            return status.isEmpty ? "—" : status
         }
-    }
-    private var compactQueueStatus: String {
-        let status = localizedQueueStatus
-        if status.count <= 18 { return status }
-        let lower = status.lowercased(with: Locale(identifier: "tr_TR"))
-        if lower.contains("bekleme") || lower.contains("on deck") {
-            return isEnglish ? "On deck" : "Beklemede"
-        }
-        if lower.contains("sıraya") || lower.contains("now queuing") {
-            return isEnglish ? "Queuing" : "Sıraya"
-        }
-        if lower.contains("yakında") || lower.contains("queuing soon") {
-            return isEnglish ? "Soon" : "Yakında"
-        }
-        if lower.contains("sahada") || lower.contains("on field") {
-            return isEnglish ? "On Field" : "Sahada"
-        }
-        return String(status.prefix(18))
     }
 
-    var body: some View {
-        switch family {
-        case .systemSmall:
-            smallWidget
-        case .systemMedium:
-            mediumWidget
-        case .systemLarge:
-            largeWidget
+    private func resolveState(_ entry: SimpleEntry) -> WidgetPresentationState {
+        switch entry.queueStatusCode.lowercased() {
+        case "waiting_team_selection":
+            return .needsTeam
+        case "waiting_event_selection":
+            return .needsEvent
+        case "loading_live_data":
+            return .loading
         default:
-            mediumWidget
+            break
         }
-    }
 
-    private var smallWidget: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("\(isEnglish ? "Team" : "Takım") \(entry.teamNumber)")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(Color.white.opacity(0.92))
-            Text(entry.eventName)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(Color.white.opacity(0.85))
-                .lineLimit(1)
-            Text(compactNextMatch)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.50)
-            Text(compactQueueStatus)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(Color.white.opacity(0.9))
-                .lineLimit(1)
-            Spacer()
-            Text(updatedLabelText)
-                .font(.caption2)
-                .foregroundStyle(Color.white.opacity(0.75))
+        let team = entry.teamNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        if team.isEmpty || team == "----" {
+            return .needsTeam
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(10)
-    }
 
-    private var mediumWidget: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(teamWithNameLine)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.white.opacity(0.92))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(entry.eventName)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Text(localizedNextMatchDisplay)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
-                Text(localizedQueueStatus)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.white.opacity(0.9))
+        let next = entry.nextMatch.trimmingCharacters(in: .whitespacesAndNewlines)
+        if next.isEmpty || next == "-" {
+            let lower = entry.queueStatus.lowercased()
+            if lower.contains("tamamland") || lower.contains("completed") || lower.contains("no upcoming") {
+                return .noUpcomingMatch
             }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 6) {
-                Image(systemName: "bolt.shield")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(updatedPrefixText)
-                        .font(.caption2)
-                        .foregroundStyle(Color.white.opacity(0.75))
-                    Text(entry.updatedAt)
-                        .font(.caption2)
-                        .foregroundStyle(Color.white.opacity(0.75))
-                }
+            if entry.queueStatusCode.isEmpty && entry.eventName.isEmpty {
+                return .needsEvent
             }
+            return .noUpcomingMatch
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(10)
-    }
 
-    private var largeWidget: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("FRCLive")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.white.opacity(0.88))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(teamWithNameLine)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(entry.eventName)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.white.opacity(0.9))
-                    .lineLimit(1)
-            }
-
-            Divider().overlay(Color.white.opacity(0.28))
-
-            Text(compactNextMatch)
-                .font(.system(size: 45, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-
-            Text(compactQueueStatus)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.white.opacity(0.95))
-                .lineLimit(1)
-
-            HStack(spacing: 6) {
-                Image(systemName: "dot.radiowaves.left.and.right")
-                    .font(.caption2)
-                    .foregroundStyle(Color.white.opacity(0.9))
-                Text("\(isEnglish ? "On field" : "Şu an sahada"): \(entry.currentOnField)")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(Color.white.opacity(0.92))
-                    .lineLimit(1)
-            }
-
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(updatedPrefixText)
-                    Text(entry.updatedAt)
-                }
-                .font(.caption2)
-                .foregroundStyle(Color.white.opacity(0.78))
-                Spacer()
-                Image(systemName: "bolt.shield")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.white.opacity(0.88))
-            }
-            .padding(.top, 2)
+        let lowerNext = next.lowercased()
+        if lowerNext.contains("etkinlik tamamlandı") || lowerNext.contains("event completed")
+            || lowerNext.contains("tüm maçlar") || lowerNext.contains("all matches") {
+            return .noUpcomingMatch
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(10)
+
+        return .live
     }
 }
+
+// MARK: - Widget-local strings (compact for small surfaces)
+
+private enum L10nWidget {
+    static func needsTeamTitle(_ en: Bool) -> String {
+        en ? "Enter your team number" : "Takım numaranı gir"
+    }
+
+    static func needsTeamSubtitle(_ en: Bool) -> String {
+        en ? "Open FRCLive to sign in and pick your team." : "Giriş için FRCLive uygulamasını aç."
+    }
+
+    static func needsEventTitle(_ en: Bool) -> String {
+        en ? "Select an event" : "Etkinlik seç"
+    }
+
+    static func needsEventSubtitle(_ en: Bool) -> String {
+        en ? "Choose your regional in Settings." : "Ayarlar'dan regionalını seç."
+    }
+
+    static func loading(_ en: Bool) -> String {
+        en ? "Loading live data…" : "Canlı veri yükleniyor…"
+    }
+
+    static func noMatchTitle(_ en: Bool) -> String {
+        en ? "No upcoming match" : "Sıradaki maç yok"
+    }
+
+    static func noMatchSubtitle(_ en: Bool) -> String {
+        en ? "You're caught up for now." : "Şu an için bekleyen maçın yok."
+    }
+
+    static func noMatchShort(_ en: Bool) -> String {
+        en ? "No match" : "Maç yok"
+    }
+
+    static func nextMatchLabel(_ en: Bool) -> String {
+        en ? "NEXT MATCH" : "SIRADAKİ MAÇ"
+    }
+
+    static func onFieldPrefix(_ en: Bool) -> String {
+        en ? "On field:" : "Sahada:"
+    }
+
+    static func updated(_ en: Bool) -> String {
+        en ? "Updated" : "Güncellendi"
+    }
+
+    static func eventDoneShort(_ en: Bool) -> String {
+        en ? "Event done" : "Etkinlik bitti"
+    }
+
+    static func allMatchesDoneShort(_ en: Bool) -> String {
+        en ? "All done" : "Tamamlandı"
+    }
+}
+
+// MARK: - Widget definition
 
 struct FRCLiveWidgets: Widget {
     let kind: String = "FRCLiveWidgets"
@@ -302,12 +602,12 @@ struct FRCLiveWidgets: Widget {
             if #available(iOS 17.0, *) {
                 FRCLiveWidgetsEntryView(entry: entry)
                     .containerBackground(for: .widget) {
-                        Color(red: 0/255, green: 156/255, blue: 215/255)
+                        Color(red: 0 / 255, green: 156 / 255, blue: 215 / 255)
                     }
             } else {
                 FRCLiveWidgetsEntryView(entry: entry)
                     .padding()
-                    .background()
+                    .background(Color(red: 0 / 255, green: 156 / 255, blue: 215 / 255))
             }
         }
         .configurationDisplayName("FRCLive")
@@ -316,8 +616,20 @@ struct FRCLiveWidgets: Widget {
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .systemLarge) {
+    FRCLiveWidgets()
+} timeline: {
+    SimpleEntry.previewNeedsTeam
+}
+
+#Preview(as: .systemMedium) {
     FRCLiveWidgets()
 } timeline: {
     SimpleEntry.preview
+}
+
+#Preview(as: .systemSmall) {
+    FRCLiveWidgets()
+} timeline: {
+    SimpleEntry.previewNeedsTeam
 }
