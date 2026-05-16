@@ -173,11 +173,21 @@ private struct FeedItemRowView: View {
                     .foregroundColor(accent)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(item.listRowTitle(language: language))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(isRead ? .secondary : accent)
+                        .lineLimit(1)
                     Spacer(minLength: 8)
                     Text(AnnouncementFormatters.listTime(item.postedDate, language: language))
                         .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                if let subtitle = item.listRowSubtitle(language: language) {
+                    Text(subtitle)
+                        .font(.caption.weight(.medium))
                         .foregroundColor(.secondary)
                 }
 
@@ -186,13 +196,6 @@ private struct FeedItemRowView: View {
                     .foregroundColor(isRead ? .secondary : .primary)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
-
-                Text(item.categoryLabel(language: language))
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(accent))
             }
 
             if !isRead {

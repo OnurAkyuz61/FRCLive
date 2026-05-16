@@ -87,6 +87,28 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
         }
     }
 
+    /// Liste satırı üst başlığı (bildirim türüyle aynı metinler).
+    func listRowTitle(language: AppLanguage) -> String {
+        switch kind {
+        case .announcement:
+            return categoryLabel(language: language)
+        case .partsRequest:
+            return detailTitle(language: language)
+        }
+    }
+
+    /// Parça taleplerinde takım / pit alt satırı.
+    func listRowSubtitle(language: AppLanguage) -> String? {
+        guard kind == .partsRequest else { return nil }
+        guard let team = requestedByTeam, !team.isEmpty else { return nil }
+        if let pit = pitAddress, !pit.isEmpty {
+            return language == .en
+                ? "Team \(team) • [\(pit)]"
+                : "Takım \(team) • [\(pit)]"
+        }
+        return language == .en ? "Team \(team)" : "Takım \(team)"
+    }
+
     func detailTitle(language: AppLanguage) -> String {
         switch kind {
         case .announcement:
