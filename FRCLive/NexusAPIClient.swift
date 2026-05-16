@@ -750,7 +750,7 @@ final class NexusAPIClient {
     }
 
     private func parseFeedMessage(_ raw: [String: Any], primaryKey: String, fallbacks: [String]) -> String {
-        var candidates = [primaryKey] + fallbacks
+        let candidates = [primaryKey] + fallbacks
         for key in candidates {
             if let value = raw[key] as? String {
                 let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
