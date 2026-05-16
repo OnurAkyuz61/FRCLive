@@ -1,6 +1,7 @@
+import Combine
 import Foundation
 import SwiftUI
-import UIKit
+import UserNotifications
 
 @MainActor
 final class AnnouncementStore: ObservableObject {
@@ -66,7 +67,7 @@ final class AnnouncementStore: ObservableObject {
         readIDs.formUnion(announcements.map(\.id))
         persistReadIDs()
         recomputeUnread()
-        UIApplication.shared.applicationIconBadgeNumber = 0
+        setAppBadgeCount(0)
         objectWillChange.send()
     }
 
@@ -105,7 +106,13 @@ final class AnnouncementStore: ObservableObject {
 
     private func recomputeUnread() {
         unreadCount = announcements.filter { !readIDs.contains($0.id) }.count
-        UIApplication.shared.applicationIconBadgeNumber = unreadCount
+        setAppBadgeCount(unreadCount)
+    }
+
+    private func setAppBadgeCount(_ count: Int) {
+        Task {
+            try? await UNUserNotificationCenter.current().setBadgeCount(count)
+        }
     }
 
     private func loadPersistedState(for eventCode: String) {
@@ -140,6 +147,6 @@ final class AnnouncementStore: ObservableObject {
         activeEventCode = ""
         didSeedKnownIDs = false
         errorMessage = nil
-        UIApplication.shared.applicationIconBadgeNumber = 0
+        setAppBadgeCount(0)
     }
 }
