@@ -163,6 +163,7 @@ struct SettingsView: View {
         Task {
             await LiveActivityManager.shared.end()
         }
+        AnnouncementStore.shared.resetForLogout()
         teamNumber = ""
         selectedEventCode = ""
         selectedEventName = ""

@@ -349,6 +349,12 @@ struct DashboardView: View {
             isMatchScheduleNotCreated = false
             await handleLiveIntegrations(with: snapshot)
             WidgetBackgroundRefreshManager.schedule()
+            await AnnouncementStore.shared.refresh(
+                eventCode: selectedEventCode,
+                teamNumber: teamNumber,
+                language: appLanguage,
+                notify: true
+            )
         } catch {
             eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
             let teamMatches = filterTeamMatches(allMatches, teamKey: teamKey)

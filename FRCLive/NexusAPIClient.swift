@@ -241,6 +241,35 @@ final class NexusAPIClient {
         )
     }
 
+    func fetchAnnouncements(eventCode: String, teamNumber: String) async throws -> [NexusAnnouncement] {
+        if teamNumber == String(demoTeamNumber) {
+            return Self.demoAnnouncements()
+        }
+
+        let (data, _, _) = try await fetchQueuingPayload(eventCode: eventCode)
+        let liveEvent = try parseLiveEventPayload(data: data)
+        return liveEvent.announcements
+    }
+
+    static func demoAnnouncements(now: Date = Date()) -> [NexusAnnouncement] {
+        let nowMs = Int64(now.timeIntervalSince1970 * 1000)
+        let hour: Int64 = 3_600_000
+        let samples = [
+            "Sürücü toplantısı saat 09:00'da ana sahada başlayacak.",
+            "Inspection şu anda açık — robotunuzu weigh station'a getirin.",
+            "Öğle arası sonrası sıralama maçları 13:30'da devam edecek.",
+            "Pit alanında kayıp eşya için pit admin masasına başvurun.",
+            "Qualification 24 için replay oynanacak; sıra ekranını takip edin."
+        ]
+        return samples.enumerated().map { index, message in
+            NexusAnnouncement(
+                id: "demo-announcement-\(index)",
+                message: message,
+                postedTimeMillis: nowMs - Int64(index + 1) * hour
+            )
+        }
+    }
+
     func fetchQueuingBoard(eventCode: String, teamNumber: Int) async throws -> NexusQueuingBoardSnapshot {
         if teamNumber == demoTeamNumber {
             return NexusQueuingBoardSnapshot(
@@ -596,12 +625,23 @@ final class NexusAPIClient {
         let eventName = json["eventName"] as? String
         let matchArray = json["matches"] as? [[String: Any]] ?? []
         let matches = matchArray.compactMap(parseLiveMatch)
+        let announcementArray = json["announcements"] as? [[String: Any]] ?? []
+        let announcements = announcementArray.compactMap(parseAnnouncement)
 
         return NexusLiveEventPayload(
             latestMatchLabel: latestMatchLabel,
             eventName: eventName,
-            matches: matches
+            matches: matches,
+            announcements: announcements
         )
+    }
+
+    private func parseAnnouncement(raw: [String: Any]) -> NexusAnnouncement? {
+        guard let id = raw["id"] as? String, !id.isEmpty else { return nil }
+        let message = (raw["announcement"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !message.isEmpty else { return nil }
+        let postedTime = int64Value(raw["postedTime"]) ?? 0
+        return NexusAnnouncement(id: id, message: message, postedTimeMillis: postedTime)
     }
 
     private func parseLiveMatch(raw: [String: Any]) -> NexusLiveMatch? {
@@ -885,6 +925,7 @@ final class NexusAPIClient {
         let latestMatchLabel: String?
         let eventName: String?
         let matches: [NexusLiveMatch]
+        let announcements: [NexusAnnouncement]
     }
 
     private struct NexusLiveMatch {

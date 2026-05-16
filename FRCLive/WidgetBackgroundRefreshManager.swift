@@ -95,6 +95,13 @@ enum WidgetBackgroundRefreshManager {
                 )
             }
 
+            await AnnouncementStore.shared.refresh(
+                eventCode: eventCode,
+                teamNumber: teamNumber,
+                language: language,
+                notify: true
+            )
+
             schedule()
             return true
         } catch {

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MainTabContainer: View {
+    @ObservedObject private var announcementStore = AnnouncementStore.shared
     @State private var selectedTab: Tab = .dashboard
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
@@ -25,6 +26,14 @@ struct MainTabContainer: View {
                 }
                 .tag(Tab.rankings)
 
+            AnnouncementsView()
+                .environmentObject(announcementStore)
+                .tabItem {
+                    Label(L10n.text(.announcements, language: appLanguage), systemImage: "megaphone.fill")
+                }
+                .tag(Tab.announcements)
+                .badge(announcementStore.unreadCount)
+
             SettingsView()
                 .tabItem {
                     Label(L10n.text(.settings, language: appLanguage), systemImage: "gearshape.fill")
@@ -33,6 +42,7 @@ struct MainTabContainer: View {
         }
         .tint(.black)
         .id(appLanguageRaw)
+        .environmentObject(announcementStore)
     }
 }
 
@@ -40,6 +50,7 @@ private enum Tab {
     case dashboard
     case schedule
     case rankings
+    case announcements
     case settings
 }
 

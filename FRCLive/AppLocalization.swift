@@ -116,6 +116,13 @@ enum L10nKey {
     case noTeamAwards
     case showAllAwardWinners
     case showOnlyTeamAwards
+    case announcements
+    case loadingAnnouncements
+    case noAnnouncements
+    case announcementsLoadError
+    case announcementFromEvent
+    case announcementDetailTitle
+    case markAllRead
 }
 
 enum L10n {
@@ -211,6 +218,13 @@ enum L10n {
             case .noTeamAwards: return "Takımınıza ait ödül bulunamadı."
             case .showAllAwardWinners: return "Tüm ödül alanları göster"
             case .showOnlyTeamAwards: return "Takıma dön"
+            case .announcements: return "Duyurular"
+            case .loadingAnnouncements: return "Duyurular yükleniyor..."
+            case .noAnnouncements: return "Şu an yayında duyuru yok."
+            case .announcementsLoadError: return "Duyurular yüklenemedi."
+            case .announcementFromEvent: return "Etkinlik Duyurusu"
+            case .announcementDetailTitle: return "Duyuru"
+            case .markAllRead: return "Tümünü okundu say"
             }
         case .en:
             switch key {
@@ -302,6 +316,13 @@ enum L10n {
             case .noTeamAwards: return "No awards found for your team."
             case .showAllAwardWinners: return "Show all award winners"
             case .showOnlyTeamAwards: return "Back to team"
+            case .announcements: return "Announcements"
+            case .loadingAnnouncements: return "Loading announcements..."
+            case .noAnnouncements: return "There are no active announcements."
+            case .announcementsLoadError: return "Could not load announcements."
+            case .announcementFromEvent: return "Event Announcement"
+            case .announcementDetailTitle: return "Announcement"
+            case .markAllRead: return "Mark all read"
             }
         }
     }
