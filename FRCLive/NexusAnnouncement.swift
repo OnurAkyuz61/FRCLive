@@ -96,6 +96,8 @@ struct NexusFeedItem: Identifiable, Hashable, Codable {
     /// Liste satırı üst başlığı (bildirim türüyle aynı metinler).
     func listRowTitle(language: AppLanguage) -> String {
         switch kind {
+        case .allianceSelection:
+            return detailTitle(language: language)
         case .announcement:
             return categoryLabel(language: language)
         case .partsRequest:
