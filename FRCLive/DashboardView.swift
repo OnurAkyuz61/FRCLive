@@ -453,7 +453,7 @@ struct DashboardView: View {
             ?? NexusQueueStatus.queuingSoon
 
         WidgetDataStore.writeSnapshot(
-            teamNumber: teamNumber,
+            teamNumber: teamNumber.isEmpty ? "----" : teamNumber,
             teamName: teamNickname,
             eventName: selectedEventName.isEmpty ? L10n.text(.eventNotSelected, language: appLanguage) : selectedEventName,
             nextMatch: nextMatch ?? (liveSnapshot?.teamNextMatch ?? "-"),

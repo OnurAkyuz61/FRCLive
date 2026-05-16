@@ -21,8 +21,7 @@ enum WidgetDataStore {
             debugLog("App Group unavailable in writeSnapshot.")
             return
         }
-        let normalizedTeam = teamNumber.trimmingCharacters(in: .whitespacesAndNewlines)
-        defaults.set(normalizedTeam.isEmpty ? "" : normalizedTeam, forKey: "widget_teamNumber")
+        defaults.set(teamNumber, forKey: "widget_teamNumber")
         defaults.set(teamName, forKey: "widget_teamName")
         defaults.set(eventName, forKey: "widget_eventName")
         defaults.set(nextMatch, forKey: "widget_nextMatch")
@@ -75,8 +74,8 @@ enum WidgetDataStore {
             teamName = defaults.string(forKey: "widget_teamName") ?? ""
         }
 
-        defaults.set(normalizedTeam, forKey: "widget_teamNumber")
-        defaults.set(normalizedTeam, forKey: "teamNumber")
+        defaults.set(teamNumber, forKey: "widget_teamNumber")
+        defaults.set(teamNumber, forKey: "teamNumber")
         defaults.set(teamName, forKey: "widget_teamName")
         defaults.set(eventName, forKey: "widget_eventName")
         defaults.set(nextMatch, forKey: "widget_nextMatch")
