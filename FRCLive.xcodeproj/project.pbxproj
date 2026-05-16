@@ -447,6 +447,7 @@
 				DEVELOPMENT_TEAM = 287WZ2ML8F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FRCLive/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FRCLive;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -490,6 +491,7 @@
 				DEVELOPMENT_TEAM = 287WZ2ML8F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FRCLive/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = FRCLive;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";

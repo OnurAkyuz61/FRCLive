@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct FRCLiveApp: App {
     @UIApplicationDelegateAdaptor(NotificationAppDelegate.self) private var notificationAppDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("teamNumber") private var teamNumber: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
@@ -24,6 +25,11 @@ struct FRCLiveApp: App {
                     selectedEventCode: selectedEventCode,
                     languageCode: appLanguageRaw
                 )
+                WidgetBackgroundRefreshManager.schedule()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .background else { return }
+                WidgetBackgroundRefreshManager.schedule()
             }
             .onChange(of: teamNumber) { _, newValue in
                 WidgetDataStore.syncAppState(

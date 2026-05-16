@@ -348,6 +348,7 @@ struct DashboardView: View {
             liveErrorMessage = nil
             isMatchScheduleNotCreated = false
             await handleLiveIntegrations(with: snapshot)
+            WidgetBackgroundRefreshManager.schedule()
         } catch {
             eventPhase = resolveEventPhase(matches: allMatches, snapshot: nil)
             let teamMatches = filterTeamMatches(allMatches, teamKey: teamKey)

@@ -23,7 +23,8 @@ struct FRCLiveWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> Void) {
         let entry = loadEntry()
-        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date().addingTimeInterval(900)
+        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: Date())
+            ?? Date().addingTimeInterval(5 * 60)
         completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
     }
 
