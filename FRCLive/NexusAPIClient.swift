@@ -429,8 +429,8 @@ final class NexusAPIClient {
             if let lhsTime, let rhsTime, lhsTime != rhsTime {
                 return lhsTime < rhsTime
             }
-            if let lhsTime, rhsTime == nil { return true }
-            if lhsTime == nil, let rhsTime { return false }
+            if lhsTime != nil, rhsTime == nil { return true }
+            if lhsTime == nil, rhsTime != nil { return false }
 
             guard let lhsOrder = matchOrder(from: lhs.label),
                   let rhsOrder = matchOrder(from: rhs.label) else {
