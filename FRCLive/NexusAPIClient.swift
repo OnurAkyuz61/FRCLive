@@ -264,10 +264,10 @@ final class NexusAPIClient {
     static func demoEventFeed(now: Date = Date()) -> [NexusFeedItem] {
         let nowMs = Int64(now.timeIntervalSince1970 * 1000)
         let hour: Int64 = 3_600_000
-        let announcements = [
-            "Sürücü toplantısı saat 09:00'da ana sahada başlayacak.",
-            "Inspection şu anda açık — robotunuzu weigh station'a getirin.",
-            "Öğle arası sonrası sıralama maçları 13:30'da devam edecek."
+        let announcements: [(String, NexusAnnouncementSubtype)] = [
+            ("Sürücü toplantısı saat 09:00'da ana sahada başlayacak.", .general),
+            ("A replay of Qualification 2 will be the first match played after lunch", .replay),
+            ("Alliance selection will begin on the main field once qualification matches conclude.", .allianceSelection)
         ]
         let parts: [(String, String, String)] = [
             ("REV absolute encoder adaptor for swerve", "2480", "A6"),
@@ -275,14 +275,15 @@ final class NexusAPIClient {
             ("safety side shields", "3082", "C1")
         ]
 
-        var items: [NexusFeedItem] = announcements.enumerated().map { index, message in
+        var items: [NexusFeedItem] = announcements.enumerated().map { index, entry in
             NexusFeedItem(
                 id: "demo-announcement-\(index)",
                 kind: .announcement,
-                message: message,
+                message: entry.0,
                 postedTimeMillis: nowMs - Int64(index + 1) * hour,
                 requestedByTeam: nil,
-                pitAddress: nil
+                pitAddress: nil,
+                announcementSubtype: entry.1
             )
         }
         items += parts.enumerated().map { index, entry in
@@ -292,7 +293,8 @@ final class NexusAPIClient {
                 message: entry.0,
                 postedTimeMillis: nowMs - Int64(index + 1) * 45 * 60 * 1000,
                 requestedByTeam: entry.1,
-                pitAddress: entry.2
+                pitAddress: entry.2,
+                announcementSubtype: nil
             )
         }
         return items.sorted { $0.postedTimeMillis > $1.postedTimeMillis }
@@ -316,7 +318,8 @@ final class NexusAPIClient {
                 message: item.message,
                 postedTimeMillis: item.postedTimeMillis,
                 requestedByTeam: item.requestedByTeam,
-                pitAddress: pit
+                pitAddress: pit,
+                announcementSubtype: item.announcementSubtype
             )
         }
         return (announcements + enrichedParts).sorted { $0.postedTimeMillis > $1.postedTimeMillis }
@@ -713,22 +716,25 @@ final class NexusAPIClient {
 
     private func parseAnnouncement(raw: [String: Any]) -> NexusFeedItem? {
         guard let id = raw["id"] as? String, !id.isEmpty else { return nil }
-        let message = (raw["announcement"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let message = parseFeedMessage(raw, primaryKey: "announcement", fallbacks: ["message", "text"])
         guard !message.isEmpty else { return nil }
         let postedTime = int64Value(raw["postedTime"]) ?? 0
+        let apiType = (raw["type"] as? String) ?? (raw["announcementType"] as? String)
+        let subtype = NexusFeedItem.classifyAnnouncement(message: message, apiType: apiType)
         return NexusFeedItem(
             id: id,
             kind: .announcement,
             message: message,
             postedTimeMillis: postedTime,
             requestedByTeam: nil,
-            pitAddress: nil
+            pitAddress: nil,
+            announcementSubtype: subtype
         )
     }
 
     private func parsePartsRequest(raw: [String: Any]) -> NexusFeedItem? {
         guard let id = raw["id"] as? String, !id.isEmpty else { return nil }
-        let message = (raw["parts"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let message = parseFeedMessage(raw, primaryKey: "parts", fallbacks: ["message", "text", "description"])
         guard !message.isEmpty else { return nil }
         let postedTime = int64Value(raw["postedTime"]) ?? 0
         let team = parseTeamNumberString(raw["requestedByTeam"])
@@ -738,8 +744,20 @@ final class NexusAPIClient {
             message: message,
             postedTimeMillis: postedTime,
             requestedByTeam: team,
-            pitAddress: nil
+            pitAddress: nil,
+            announcementSubtype: nil
         )
+    }
+
+    private func parseFeedMessage(_ raw: [String: Any], primaryKey: String, fallbacks: [String]) -> String {
+        var candidates = [primaryKey] + fallbacks
+        for key in candidates {
+            if let value = raw[key] as? String {
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { return trimmed }
+            }
+        }
+        return ""
     }
 
     private func parseTeamNumberString(_ value: Any?) -> String? {

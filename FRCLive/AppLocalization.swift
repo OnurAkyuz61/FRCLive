@@ -122,6 +122,13 @@ enum L10nKey {
     case announcementsLoadError
     case announcementFromEvent
     case announcementDetailTitle
+    case announcementNotificationTitle
+    case announcementReplayCategory
+    case announcementReplayDetailTitle
+    case announcementReplayNotificationTitle
+    case announcementAllianceCategory
+    case announcementAllianceDetailTitle
+    case announcementAllianceNotificationTitle
     case markAllRead
     case partsRequestCategory
     case partsRequestCategoryWithTeam
@@ -131,6 +138,15 @@ enum L10nKey {
 }
 
 enum L10n {
+    /// Bildirim başlığı: `FRCLive • [tür]`
+    static func notificationHeader(type: String) -> String {
+        "FRCLive • \(type)"
+    }
+
+    static func notificationHeader(_ key: L10nKey, language: AppLanguage) -> String {
+        notificationHeader(type: text(key, language: language))
+    }
+
     static func text(_ key: L10nKey, language: AppLanguage) -> String {
         switch language {
         case .tr:
@@ -225,16 +241,23 @@ enum L10n {
             case .showOnlyTeamAwards: return "Takıma dön"
             case .announcements: return "Duyurular"
             case .loadingAnnouncements: return "Duyurular yükleniyor..."
-            case .noAnnouncements: return "Şu an yayında duyuru yok."
+            case .noAnnouncements: return "Şu an yayında duyuru veya parça talebi yok."
             case .announcementsLoadError: return "Duyurular yüklenemedi."
             case .announcementFromEvent: return "Etkinlik Duyurusu"
             case .announcementDetailTitle: return "Duyuru"
+            case .announcementNotificationTitle: return "Etkinlik Duyurusu"
+            case .announcementReplayCategory: return "Maç tekrarı"
+            case .announcementReplayDetailTitle: return "Maç Tekrarı"
+            case .announcementReplayNotificationTitle: return "Maç Tekrarı"
+            case .announcementAllianceCategory: return "İttifak seçimi"
+            case .announcementAllianceDetailTitle: return "İttifak Seçimi"
+            case .announcementAllianceNotificationTitle: return "İttifak Seçimi"
             case .markAllRead: return "Tümünü okundu say"
             case .partsRequestCategory: return "Parça talebi"
             case .partsRequestCategoryWithTeam: return "Parça talebi | Takım %@"
             case .partsRequestCategoryWithTeamAndPit: return "Parça talebi | Takım %@ [%@]"
             case .partsRequestDetailTitle: return "Parça Talebi"
-            case .partsRequestNotificationTitle: return "FRCLive • Parça Talebi"
+            case .partsRequestNotificationTitle: return "Parça Talebi"
             }
         case .en:
             switch key {
@@ -328,16 +351,23 @@ enum L10n {
             case .showOnlyTeamAwards: return "Back to team"
             case .announcements: return "Announcements"
             case .loadingAnnouncements: return "Loading announcements..."
-            case .noAnnouncements: return "There are no active announcements."
+            case .noAnnouncements: return "There are no active announcements or parts requests."
             case .announcementsLoadError: return "Could not load announcements."
             case .announcementFromEvent: return "Event Announcement"
             case .announcementDetailTitle: return "Announcement"
+            case .announcementNotificationTitle: return "Event Announcement"
+            case .announcementReplayCategory: return "Match replay"
+            case .announcementReplayDetailTitle: return "Match Replay"
+            case .announcementReplayNotificationTitle: return "Match Replay"
+            case .announcementAllianceCategory: return "Alliance selection"
+            case .announcementAllianceDetailTitle: return "Alliance Selection"
+            case .announcementAllianceNotificationTitle: return "Alliance Selection"
             case .markAllRead: return "Mark all read"
             case .partsRequestCategory: return "Parts request"
             case .partsRequestCategoryWithTeam: return "Parts request | Team %@"
             case .partsRequestCategoryWithTeamAndPit: return "Parts request | Team %@ [%@]"
             case .partsRequestDetailTitle: return "Parts Request"
-            case .partsRequestNotificationTitle: return "FRCLive • Parts Request"
+            case .partsRequestNotificationTitle: return "Parts Request"
             }
         }
     }

@@ -440,9 +440,9 @@ struct DashboardView: View {
         lastQueueAlertKey = alertKey
 
         AppNotificationManager.shared.sendQueueStatusNotification(
-            teamNumber: teamNumber,
             nextMatch: nextMatch,
-            statusText: status
+            statusText: status,
+            language: appLanguage
         )
     }
 

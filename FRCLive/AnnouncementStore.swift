@@ -94,10 +94,8 @@ final class AnnouncementStore: ObservableObject {
         recomputeUnread()
 
         guard notify, UserDefaults.standard.bool(forKey: "notificationsEnabled") else { return }
-        let teamNumber = UserDefaults.standard.string(forKey: "teamNumber") ?? ""
         for item in sorted where newIDs.contains(item.id) {
             AppNotificationManager.shared.sendFeedItemNotification(
-                teamNumber: teamNumber,
                 item: item,
                 language: language
             )

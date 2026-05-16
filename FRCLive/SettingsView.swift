@@ -140,7 +140,9 @@ struct SettingsView: View {
 
     private func scheduleTestNotification() {
         let content = UNMutableNotificationContent()
-        content.title = appLanguage == .tr ? "FRCLive Test Bildirimi" : "FRCLive Test Notification"
+        content.title = L10n.notificationHeader(
+            type: appLanguage == .tr ? "Test" : "Test"
+        )
         content.body = appLanguage == .tr ? "Canlı takip bildirim sistemi çalışıyor." : "Live tracking notification system is working."
         content.sound = .default
 

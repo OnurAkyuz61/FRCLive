@@ -159,13 +159,8 @@ private struct FeedItemRowView: View {
     let language: AppLanguage
     let processBlue: Color
 
-    private var accent: Color {
-        item.kind == .announcement ? processBlue : Color(red: 0.42, green: 0.44, blue: 0.48)
-    }
-
-    private var iconName: String {
-        item.kind == .announcement ? "megaphone.fill" : "wrench.and.screwdriver.fill"
-    }
+    private var accent: Color { item.accentColor(processBlue: processBlue) }
+    private var iconName: String { item.iconName() }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -197,9 +192,7 @@ private struct FeedItemRowView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(
-                        Capsule().fill(item.kind == .announcement ? processBlue : accent)
-                    )
+                    .background(Capsule().fill(accent))
             }
 
             if !isRead {
@@ -235,19 +228,9 @@ struct AnnouncementDetailView: View {
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     private var processBlue: Color { Color(red: 0 / 255, green: 156 / 255, blue: 215 / 255) }
 
-    private var accent: Color {
-        item.kind == .announcement ? processBlue : Color(red: 0.42, green: 0.44, blue: 0.48)
-    }
-
-    private var detailTitle: String {
-        item.kind == .announcement
-            ? L10n.text(.announcementDetailTitle, language: appLanguage)
-            : L10n.text(.partsRequestDetailTitle, language: appLanguage)
-    }
-
-    private var iconName: String {
-        item.kind == .announcement ? "megaphone.fill" : "wrench.and.screwdriver.fill"
-    }
+    private var accent: Color { item.accentColor(processBlue: processBlue) }
+    private var detailTitle: String { item.detailTitle(language: appLanguage) }
+    private var iconName: String { item.iconName() }
 
     var body: some View {
         ScrollView {
