@@ -52,6 +52,13 @@
 			);
 			target = DCABEE322F9FF77000437534 /* FRCLiveWidgetsExtension */;
 		};
+		DCD90AB02F9F8CC000C120D3 /* Exceptions for "FRCLive" folder in "FRCLive" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DCD90A9F2F9F8CC000C120D3 /* FRCLive */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -65,6 +72,9 @@
 		};
 		DCD90AA22F9F8CC000C120D3 /* FRCLive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DCD90AB02F9F8CC000C120D3 /* Exceptions for "FRCLive" folder in "FRCLive" target */,
+			);
 			path = FRCLive;
 			sourceTree = "<group>";
 		};
