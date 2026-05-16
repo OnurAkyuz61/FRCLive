@@ -391,6 +391,7 @@ final class NexusAPIClient {
             nowMilliseconds: nowMs
         )
         if teamOnlyMatches.isEmpty,
+           currentLabel == nil || matchOrder(from: currentLabel) == nil,
            let fallback = prioritizedMatch(
             for: teamNumber,
             matches: liveEvent.matches,
@@ -461,8 +462,14 @@ final class NexusAPIClient {
         }
 
         let forward = filterForwardFromCurrent(matches: scheduleRelevant, currentLabel: currentLabel)
-        let base = forward.isEmpty ? scheduleRelevant : forward
-        return Array(sortMatchesBySchedule(base).prefix(12))
+        if !forward.isEmpty {
+            return Array(sortMatchesBySchedule(forward).prefix(12))
+        }
+        // Sıralama/playoff sahadaysa ve takımın ileri maçı yoksa pratik maçlara dönme.
+        if currentLabel != nil, matchOrder(from: currentLabel) != nil {
+            return []
+        }
+        return Array(sortMatchesBySchedule(scheduleRelevant).prefix(12))
     }
 
     /// Zaman damgası eski olsa bile, sahadaki maçtan sonraki takım maçlarını göster.
@@ -472,8 +479,18 @@ final class NexusAPIClient {
         nowMilliseconds: Int64
     ) -> Bool {
         if isClearlyCompletedMatch(match) { return false }
+        if !isAtOrAfterFieldProgress(match, currentLabel: currentLabel) { return false }
         if isUpcomingMatch(match, nowMilliseconds: nowMilliseconds) { return true }
         return isForwardOfCurrentField(match, currentLabel: currentLabel)
+    }
+
+    /// Sahadaki maçtan önceki fazları (ör. sıralama varken pratik) listeden çıkar.
+    private func isAtOrAfterFieldProgress(_ match: NexusLiveMatch, currentLabel: String?) -> Bool {
+        guard let currentLabel, let currentOrder = matchOrder(from: currentLabel),
+              let order = matchOrder(from: match.label) else {
+            return true
+        }
+        return order.phase >= currentOrder.phase
     }
 
     private func isClearlyCompletedMatch(_ match: NexusLiveMatch) -> Bool {
@@ -776,12 +793,19 @@ final class NexusAPIClient {
         let key = String(teamNumber)
         let teamMatches = matches.filter { $0.redTeams.contains(key) || $0.blueTeams.contains(key) }
         guard !teamMatches.isEmpty else { return nil }
-        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-        let upcomingTeamMatches = teamMatches.filter { isUpcomingMatch($0, nowMilliseconds: nowMs) }
-        let source = upcomingTeamMatches.isEmpty ? teamMatches : upcomingTeamMatches
 
-        if let currentOrder = matchOrder(from: currentMatchLabel) {
-            let forwardMatches = source.filter { match in
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        let currentOrder = matchOrder(from: currentMatchLabel)
+
+        let candidates = teamMatches.filter { match in
+            !isClearlyCompletedMatch(match)
+                && isAtOrAfterFieldProgress(match, currentLabel: currentMatchLabel)
+                && (isUpcomingMatch(match, nowMilliseconds: nowMs)
+                    || isForwardOfCurrentField(match, currentLabel: currentMatchLabel))
+        }
+
+        if let currentOrder {
+            let forwardMatches = candidates.filter { match in
                 guard let order = matchOrder(from: match.label) else { return false }
                 if order.phase != currentOrder.phase {
                     return order.phase > currentOrder.phase
@@ -789,32 +813,15 @@ final class NexusAPIClient {
                 return order.number > currentOrder.number
             }
 
-            if let nearestForward = forwardMatches.min(by: { lhs, rhs in
-                guard let lhsOrder = matchOrder(from: lhs.label),
-                      let rhsOrder = matchOrder(from: rhs.label) else {
-                    return false
-                }
-                if lhsOrder.phase != rhsOrder.phase { return lhsOrder.phase < rhsOrder.phase }
-                if lhsOrder.number != rhsOrder.number { return lhsOrder.number < rhsOrder.number }
-
-                let lhsTime = lhs.times.estimatedQueueTimeMillis ?? lhs.times.estimatedStartTimeMillis ?? Int64.max
-                let rhsTime = rhs.times.estimatedQueueTimeMillis ?? rhs.times.estimatedStartTimeMillis ?? Int64.max
-                return lhsTime < rhsTime
-            }) {
+            if let nearestForward = sortMatchesBySchedule(forwardMatches).first {
                 return nearestForward
             }
+            // Takımın bu fazda ileri maçı kalmadı — Practice 1'e geri sarma.
+            return nil
         }
 
-        // Prefer the nearest active match first, then by estimated queue/start times.
-        return source.sorted { lhs, rhs in
-            let lhsRank = statusPriority(lhs.status)
-            let rhsRank = statusPriority(rhs.status)
-            if lhsRank != rhsRank { return lhsRank < rhsRank }
-
-            let lhsTime = lhs.times.estimatedQueueTimeMillis ?? lhs.times.estimatedStartTimeMillis ?? Int64.max
-            let rhsTime = rhs.times.estimatedQueueTimeMillis ?? rhs.times.estimatedStartTimeMillis ?? Int64.max
-            return lhsTime < rhsTime
-        }.first
+        guard !candidates.isEmpty else { return nil }
+        return sortMatchesBySchedule(candidates).first
     }
 
     private struct MatchOrder {
