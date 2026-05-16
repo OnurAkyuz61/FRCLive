@@ -190,6 +190,13 @@ enum TBAEventCalendar {
         let todayStart = Calendar.current.startOfDay(for: now)
         return Calendar.current.compare(todayStart, to: endDayStart, toGranularity: .day) == .orderedDescending
     }
+
+    /// Onboarding’de saklanan bitiş tarihi; boşsa `false` (başlangıç tarihine düşmeyiz — çok günlü etkinliklerde yanlış “tamamlandı” olur).
+    static func isStoredEventPastEnd(endYyyyMmDd: String, now: Date = Date()) -> Bool {
+        let trimmed = endYyyyMmDd.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return isPastEndLocalCalendarDay(endYyyyMmDd: trimmed, now: now)
+    }
 }
 
 final class TBAAPIClient {

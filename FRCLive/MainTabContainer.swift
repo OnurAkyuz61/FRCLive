@@ -274,8 +274,7 @@ private struct ScheduleView: View {
     }
 
     private var isSelectedEventCompleted: Bool {
-        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
+        TBAEventCalendar.isStoredEventPastEnd(endYyyyMmDd: selectedEventEndDate)
     }
 
     private func matchTitle(_ match: TBASimpleMatch) -> String {
@@ -574,8 +573,7 @@ private struct ScheduleUpcomingMatchesSheet: View {
     }
 
     private var isSelectedEventCompleted: Bool {
-        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
+        TBAEventCalendar.isStoredEventPastEnd(endYyyyMmDd: selectedEventEndDate)
     }
 }
 

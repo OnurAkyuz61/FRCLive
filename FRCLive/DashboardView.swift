@@ -20,9 +20,6 @@ struct DashboardView: View {
     @State private var isMatchScheduleNotCreated = false
     @State private var eventPhase: EventPhase = .unknown
     @State private var pulse = false
-    /// Takımın TBA takviminde skoru olmayan (henüz oynanmamış) maçı kalmadıysa true — Nexus bazen eski “sıradaki maç” döndürebilir.
-    @State private var teamHasNoRemainingTbaMatches = false
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -319,8 +316,8 @@ struct DashboardView: View {
         guard let team = Int(teamNumber), !selectedEventCode.isEmpty else { return }
 
         let teamKey = "frc\(team)"
+        await backfillSelectedEventEndDateIfNeeded()
         let allMatches = (try? await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)) ?? []
-        updateTeamScheduleCompletionState(allMatches: allMatches, teamKey: teamKey)
 
         if shouldTreatDashboardEventAsFinished {
             liveSnapshot = nil
@@ -367,37 +364,37 @@ struct DashboardView: View {
         }
     }
 
-    private func updateTeamScheduleCompletionState(allMatches: [TBASimpleMatch], teamKey: String) {
-        if teamNumber == "99999" {
-            teamHasNoRemainingTbaMatches = false
-            return
-        }
-        let teamMatches = filterTeamMatches(allMatches, teamKey: teamKey)
-        guard !teamMatches.isEmpty else {
-            teamHasNoRemainingTbaMatches = false
-            return
-        }
-        teamHasNoRemainingTbaMatches = !teamHasUnplayedMatch(in: teamMatches)
-    }
-
     private func filterTeamMatches(_ matches: [TBASimpleMatch], teamKey: String) -> [TBASimpleMatch] {
         matches.filter { match in
             match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
         }
     }
 
-    /// Her iki ittifakta da skor varsa maç oynanmış sayılır (TBA simple endpoint).
-    private func teamHasUnplayedMatch(in teamMatches: [TBASimpleMatch]) -> Bool {
-        for match in teamMatches {
-            if match.alliances.red.score == nil || match.alliances.blue.score == nil {
-                return true
+    @MainActor
+    private func backfillSelectedEventEndDateIfNeeded() async {
+        guard selectedEventEndDate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !selectedEventCode.isEmpty,
+              !teamNumber.isEmpty,
+              teamNumber != "99999" else { return }
+
+        do {
+            let events = try await TBAAPIClient.shared.fetchTeamEvents2026(teamNumber: teamNumber)
+            let normalizedCode = selectedEventCode.lowercased()
+            guard let event = events.first(where: {
+                $0.eventCode.lowercased() == normalizedCode || $0.eventKey.lowercased() == normalizedCode
+            }) else { return }
+
+            selectedEventEndDate = event.endDate
+            if selectedEventDate.isEmpty {
+                selectedEventDate = event.startDate
             }
+        } catch {
+            // Bitiş tarihi olmadan devam et; etkinliği erken “tamamlandı” sayma.
         }
-        return false
     }
 
     private var shouldTreatDashboardEventAsFinished: Bool {
-        isSelectedEventCompleted || teamHasNoRemainingTbaMatches
+        isSelectedEventCompleted
     }
 
     @MainActor
@@ -533,8 +530,7 @@ struct DashboardView: View {
     }
 
     private var isSelectedEventCompleted: Bool {
-        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
+        TBAEventCalendar.isStoredEventPastEnd(endYyyyMmDd: selectedEventEndDate)
     }
 
     @MainActor
@@ -988,7 +984,6 @@ private struct UpcomingMatchesView: View {
     }
 
     private var isSelectedEventCompleted: Bool {
-        let end = selectedEventEndDate.isEmpty ? selectedEventDate : selectedEventEndDate
-        return TBAEventCalendar.isPastEndLocalCalendarDay(endYyyyMmDd: end)
+        TBAEventCalendar.isStoredEventPastEnd(endYyyyMmDd: selectedEventEndDate)
     }
 }
