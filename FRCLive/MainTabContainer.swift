@@ -133,8 +133,8 @@ private struct ScheduleView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+                            .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
+                            .padding(.top, FRCLiveLayout.tabContentTopPadding)
                         }
 
                         if isSelectedEventCompleted {
@@ -156,8 +156,8 @@ private struct ScheduleView: View {
                                             .stroke(Color.orange.opacity(0.30), lineWidth: 1)
                                     )
                             )
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+                            .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
+                            .padding(.top, FRCLiveLayout.tabContentTopPadding)
                         } else if let queueSnapshot {
                             HStack(spacing: 8) {
                                 Image(systemName: "clock.badge.checkmark")
@@ -181,8 +181,7 @@ private struct ScheduleView: View {
                                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                                     )
                             )
-                            .padding(.horizontal, 16)
-                            .padding(.top, 8)
+                            .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
                         }
 
                         Picker(L10n.text(.schedule, language: appLanguage), selection: $selectedSection) {
@@ -191,8 +190,8 @@ private struct ScheduleView: View {
                             Text(L10n.text(.playoff, language: appLanguage)).tag(MatchSection.playoff)
                         }
                         .pickerStyle(.segmented)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
+                        .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
+                        .padding(.top, FRCLiveLayout.tabContentTopPadding)
 
                         List(filteredMatches) { match in
                             HStack(alignment: .top, spacing: 12) {
@@ -236,7 +235,7 @@ private struct ScheduleView: View {
                     }
                 }
             }
-            .navigationTitle(L10n.text(.schedule, language: appLanguage))
+            .frcliveTabScreenTitle(L10n.text(.schedule, language: appLanguage))
             .task {
                 await loadMatches()
             }
@@ -652,8 +651,8 @@ private struct RankingsView: View {
                             Text(L10n.text(.awards, language: appLanguage)).tag(RankingsSection.awards)
                         }
                         .pickerStyle(.segmented)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
+                        .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
+                        .padding(.top, FRCLiveLayout.tabContentTopPadding)
 
                         if selectedSection == .rankings && rankings.isEmpty {
                             Text(L10n.text(.noRankings, language: appLanguage))
@@ -762,7 +761,7 @@ private struct RankingsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
-            .navigationTitle(L10n.text(.rankings, language: appLanguage))
+            .frcliveTabScreenTitle(L10n.text(.rankings, language: appLanguage))
             .task {
                 await loadRankingsAndAwards()
             }

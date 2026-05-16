@@ -25,7 +25,7 @@ struct AnnouncementsView: View {
                     announcementsList
                 }
             }
-            .navigationTitle(L10n.text(.announcements, language: appLanguage))
+            .frcliveTabScreenTitle(L10n.text(.announcements, language: appLanguage))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     if announcementStore.unreadCount > 0 {
@@ -73,8 +73,7 @@ struct AnnouncementsView: View {
                     Text(selectedEventName)
                         .font(.subheadline.weight(.medium))
                         .foregroundColor(.secondary)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 4)
+                        .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
                 }
 
                 LazyVStack(spacing: 10) {
@@ -95,8 +94,8 @@ struct AnnouncementsView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 88)
+                .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
+                .padding(.bottom, FRCLiveLayout.tabContentBottomPadding)
             }
         }
     }

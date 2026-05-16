@@ -53,11 +53,10 @@ struct DashboardView: View {
 
                     footer
                 }
-                .padding(20)
-                .padding(.bottom, 88)
+                .frcliveTabContentPadding()
             }
             .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
-            .navigationTitle(L10n.text(.dashboard, language: appLanguage))
+            .frcliveTabScreenTitle(L10n.text(.dashboard, language: appLanguage))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     if !shouldTreatDashboardEventAsFinished {

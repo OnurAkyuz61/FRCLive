@@ -105,7 +105,7 @@ struct SettingsView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color(UIColor.systemGroupedBackground))
-            .navigationTitle(L10n.text(.settings, language: appLanguage))
+            .frcliveTabScreenTitle(L10n.text(.settings, language: appLanguage))
         }
     }
 
