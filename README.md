@@ -3,7 +3,7 @@
 <table>
 <tr>
 <td align="center" width="33%">
-<img src="./FRCLive/Assets.xcassets/AppIcon.appiconset/FRC Ö.v-iOS-Dark-1024x1024@1x.png" alt="FRCLive uygulama ikonu" width="120" />
+<img src="./FRCLive/Assets.xcassets/AppIcon.appiconset/FRCLive-iOS-Default-1024x1024@1x.png" alt="FRCLive uygulama ikonu" width="120" />
 <br /><sub><b>Uygulama ikonu</b></sub>
 </td>
 <td align="center" width="33%">
