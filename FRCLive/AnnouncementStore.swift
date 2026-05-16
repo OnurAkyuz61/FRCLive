@@ -7,7 +7,7 @@ import UserNotifications
 final class AnnouncementStore: ObservableObject {
     static let shared = AnnouncementStore()
 
-    @Published private(set) var announcements: [NexusAnnouncement] = []
+    @Published private(set) var announcements: [NexusFeedItem] = []
     @Published private(set) var unreadCount: Int = 0
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
@@ -44,7 +44,7 @@ final class AnnouncementStore: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let fetched = try await NexusAPIClient.shared.fetchAnnouncements(
+            let fetched = try await NexusAPIClient.shared.fetchEventFeed(
                 eventCode: normalizedEvent,
                 teamNumber: teamNumber
             )
@@ -75,7 +75,7 @@ final class AnnouncementStore: ObservableObject {
         readIDs.contains(id)
     }
 
-    private func process(_ items: [NexusAnnouncement], language: AppLanguage, notify: Bool) {
+    private func process(_ items: [NexusFeedItem], language: AppLanguage, notify: Bool) {
         let sorted = items.sorted { $0.postedTimeMillis > $1.postedTimeMillis }
         announcements = sorted
 
@@ -96,9 +96,9 @@ final class AnnouncementStore: ObservableObject {
         guard notify, UserDefaults.standard.bool(forKey: "notificationsEnabled") else { return }
         let teamNumber = UserDefaults.standard.string(forKey: "teamNumber") ?? ""
         for item in sorted where newIDs.contains(item.id) {
-            AppNotificationManager.shared.sendAnnouncementNotification(
+            AppNotificationManager.shared.sendFeedItemNotification(
                 teamNumber: teamNumber,
-                message: item.message,
+                item: item,
                 language: language
             )
         }

@@ -87,15 +87,15 @@ struct AnnouncementsView: View {
                     ForEach(announcementStore.announcements) { item in
                         NavigationLink {
                             AnnouncementDetailView(
-                                announcement: item,
+                                item: item,
                                 eventName: selectedEventName
                             )
                         } label: {
-                            AnnouncementRowView(
-                                announcement: item,
+                            FeedItemRowView(
+                                item: item,
                                 isRead: announcementStore.isRead(item.id),
                                 language: appLanguage,
-                                accent: processBlue
+                                processBlue: processBlue
                             )
                         }
                         .buttonStyle(.plain)
@@ -153,11 +153,19 @@ struct AnnouncementsView: View {
     }
 }
 
-private struct AnnouncementRowView: View {
-    let announcement: NexusAnnouncement
+private struct FeedItemRowView: View {
+    let item: NexusFeedItem
     let isRead: Bool
     let language: AppLanguage
-    let accent: Color
+    let processBlue: Color
+
+    private var accent: Color {
+        item.kind == .announcement ? processBlue : Color(red: 0.42, green: 0.44, blue: 0.48)
+    }
+
+    private var iconName: String {
+        item.kind == .announcement ? "megaphone.fill" : "wrench.and.screwdriver.fill"
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -165,27 +173,33 @@ private struct AnnouncementRowView: View {
                 Circle()
                     .fill(accent.opacity(isRead ? 0.12 : 0.22))
                     .frame(width: 44, height: 44)
-                Image(systemName: "megaphone.fill")
+                Image(systemName: iconName)
                     .font(.body.weight(.semibold))
                     .foregroundColor(accent)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(L10n.text(.announcementFromEvent, language: language))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.primary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
                     Spacer(minLength: 8)
-                    Text(AnnouncementFormatters.listTime(announcement.postedDate, language: language))
+                    Text(AnnouncementFormatters.listTime(item.postedDate, language: language))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
-                Text(announcement.message)
+                Text(item.message)
                     .font(.subheadline)
                     .foregroundColor(isRead ? .secondary : .primary)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .multilineTextAlignment(.leading)
+
+                Text(item.categoryLabel(language: language))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule().fill(item.kind == .announcement ? processBlue : accent)
+                    )
             }
 
             if !isRead {
@@ -214,27 +228,41 @@ private struct AnnouncementRowView: View {
 
 struct AnnouncementDetailView: View {
     @EnvironmentObject private var announcementStore: AnnouncementStore
-    let announcement: NexusAnnouncement
+    let item: NexusFeedItem
     let eventName: String
 
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     private var processBlue: Color { Color(red: 0 / 255, green: 156 / 255, blue: 215 / 255) }
 
+    private var accent: Color {
+        item.kind == .announcement ? processBlue : Color(red: 0.42, green: 0.44, blue: 0.48)
+    }
+
+    private var detailTitle: String {
+        item.kind == .announcement
+            ? L10n.text(.announcementDetailTitle, language: appLanguage)
+            : L10n.text(.partsRequestDetailTitle, language: appLanguage)
+    }
+
+    private var iconName: String {
+        item.kind == .announcement ? "megaphone.fill" : "wrench.and.screwdriver.fill"
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 HStack(spacing: 10) {
-                    Image(systemName: "megaphone.fill")
+                    Image(systemName: iconName)
                         .font(.title3)
                         .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Circle().fill(processBlue))
+                        .background(Circle().fill(accent))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(L10n.text(.announcementDetailTitle, language: appLanguage))
+                        Text(detailTitle)
                             .font(.headline)
-                        Text(AnnouncementFormatters.fullDateTime(announcement.postedDate, language: appLanguage))
+                        Text(AnnouncementFormatters.fullDateTime(item.postedDate, language: appLanguage))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -247,7 +275,14 @@ struct AnnouncementDetailView: View {
                         .foregroundColor(processBlue)
                 }
 
-                Text(announcement.message)
+                Text(item.categoryLabel(language: appLanguage))
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(accent))
+
+                Text(item.message)
                     .font(.body)
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -261,10 +296,10 @@ struct AnnouncementDetailView: View {
             .padding(.bottom, 24)
         }
         .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
-        .navigationTitle(L10n.text(.announcementDetailTitle, language: appLanguage))
+        .navigationTitle(detailTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            announcementStore.markRead(announcement.id)
+            announcementStore.markRead(item.id)
         }
     }
 }

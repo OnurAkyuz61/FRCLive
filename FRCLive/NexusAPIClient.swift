@@ -241,33 +241,105 @@ final class NexusAPIClient {
         )
     }
 
-    func fetchAnnouncements(eventCode: String, teamNumber: String) async throws -> [NexusAnnouncement] {
+    func fetchEventFeed(eventCode: String, teamNumber: String) async throws -> [NexusFeedItem] {
         if teamNumber == String(demoTeamNumber) {
-            return Self.demoAnnouncements()
+            return Self.demoEventFeed()
         }
 
-        let (data, _, _) = try await fetchQueuingPayload(eventCode: eventCode)
+        let (data, _, resolvedCode) = try await fetchQueuingPayload(eventCode: eventCode)
         let liveEvent = try parseLiveEventPayload(data: data)
-        return liveEvent.announcements
+        let pitMap = (try? await fetchPitAddressMap(eventCode: resolvedCode)) ?? [:]
+        return mergeEventFeed(
+            announcements: liveEvent.announcements,
+            partsRequests: liveEvent.partsRequests,
+            pitMap: pitMap
+        )
     }
 
-    static func demoAnnouncements(now: Date = Date()) -> [NexusAnnouncement] {
+    /// Geriye dönük isim.
+    func fetchAnnouncements(eventCode: String, teamNumber: String) async throws -> [NexusFeedItem] {
+        try await fetchEventFeed(eventCode: eventCode, teamNumber: teamNumber)
+    }
+
+    static func demoEventFeed(now: Date = Date()) -> [NexusFeedItem] {
         let nowMs = Int64(now.timeIntervalSince1970 * 1000)
         let hour: Int64 = 3_600_000
-        let samples = [
+        let announcements = [
             "Sürücü toplantısı saat 09:00'da ana sahada başlayacak.",
             "Inspection şu anda açık — robotunuzu weigh station'a getirin.",
-            "Öğle arası sonrası sıralama maçları 13:30'da devam edecek.",
-            "Pit alanında kayıp eşya için pit admin masasına başvurun.",
-            "Qualification 24 için replay oynanacak; sıra ekranını takip edin."
+            "Öğle arası sonrası sıralama maçları 13:30'da devam edecek."
         ]
-        return samples.enumerated().map { index, message in
-            NexusAnnouncement(
+        let parts: [(String, String, String)] = [
+            ("REV absolute encoder adaptor for swerve", "2480", "A6"),
+            ("375mm x 9mm HTD belt", "2472", "A5"),
+            ("safety side shields", "3082", "C1")
+        ]
+
+        var items: [NexusFeedItem] = announcements.enumerated().map { index, message in
+            NexusFeedItem(
                 id: "demo-announcement-\(index)",
+                kind: .announcement,
                 message: message,
-                postedTimeMillis: nowMs - Int64(index + 1) * hour
+                postedTimeMillis: nowMs - Int64(index + 1) * hour,
+                requestedByTeam: nil,
+                pitAddress: nil
             )
         }
+        items += parts.enumerated().map { index, entry in
+            NexusFeedItem(
+                id: "demo-parts-\(index)",
+                kind: .partsRequest,
+                message: entry.0,
+                postedTimeMillis: nowMs - Int64(index + 1) * 45 * 60 * 1000,
+                requestedByTeam: entry.1,
+                pitAddress: entry.2
+            )
+        }
+        return items.sorted { $0.postedTimeMillis > $1.postedTimeMillis }
+    }
+
+    private func mergeEventFeed(
+        announcements: [NexusFeedItem],
+        partsRequests: [NexusFeedItem],
+        pitMap: [String: String]
+    ) -> [NexusFeedItem] {
+        let enrichedParts = partsRequests.map { item -> NexusFeedItem in
+            guard item.kind == .partsRequest,
+                  let team = item.requestedByTeam,
+                  item.pitAddress == nil,
+                  let pit = pitMap[team] else {
+                return item
+            }
+            return NexusFeedItem(
+                id: item.id,
+                kind: item.kind,
+                message: item.message,
+                postedTimeMillis: item.postedTimeMillis,
+                requestedByTeam: item.requestedByTeam,
+                pitAddress: pit
+            )
+        }
+        return (announcements + enrichedParts).sorted { $0.postedTimeMillis > $1.postedTimeMillis }
+    }
+
+    private func fetchPitAddressMap(eventCode: String) async throws -> [String: String] {
+        let apiKey = nexusApiKey
+        for candidate in await resolvedEventCandidates(from: eventCode, apiKey: apiKey) {
+            guard let url = URL(string: "https://frc.nexus/api/v1/event/\(candidate)/pits") else { continue }
+            var request = URLRequest(url: url)
+            request.setValue(apiKey, forHTTPHeaderField: "Nexus-Api-Key")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { continue }
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            var map: [String: String] = [:]
+            for (key, value) in json {
+                if let address = value as? String, !address.isEmpty {
+                    map[key] = address
+                }
+            }
+            if !map.isEmpty { return map }
+        }
+        return [:]
     }
 
     func fetchQueuingBoard(eventCode: String, teamNumber: Int) async throws -> NexusQueuingBoardSnapshot {
@@ -627,21 +699,57 @@ final class NexusAPIClient {
         let matches = matchArray.compactMap(parseLiveMatch)
         let announcementArray = json["announcements"] as? [[String: Any]] ?? []
         let announcements = announcementArray.compactMap(parseAnnouncement)
+        let partsArray = json["partsRequests"] as? [[String: Any]] ?? []
+        let partsRequests = partsArray.compactMap(parsePartsRequest)
 
         return NexusLiveEventPayload(
             latestMatchLabel: latestMatchLabel,
             eventName: eventName,
             matches: matches,
-            announcements: announcements
+            announcements: announcements,
+            partsRequests: partsRequests
         )
     }
 
-    private func parseAnnouncement(raw: [String: Any]) -> NexusAnnouncement? {
+    private func parseAnnouncement(raw: [String: Any]) -> NexusFeedItem? {
         guard let id = raw["id"] as? String, !id.isEmpty else { return nil }
         let message = (raw["announcement"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !message.isEmpty else { return nil }
         let postedTime = int64Value(raw["postedTime"]) ?? 0
-        return NexusAnnouncement(id: id, message: message, postedTimeMillis: postedTime)
+        return NexusFeedItem(
+            id: id,
+            kind: .announcement,
+            message: message,
+            postedTimeMillis: postedTime,
+            requestedByTeam: nil,
+            pitAddress: nil
+        )
+    }
+
+    private func parsePartsRequest(raw: [String: Any]) -> NexusFeedItem? {
+        guard let id = raw["id"] as? String, !id.isEmpty else { return nil }
+        let message = (raw["parts"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !message.isEmpty else { return nil }
+        let postedTime = int64Value(raw["postedTime"]) ?? 0
+        let team = parseTeamNumberString(raw["requestedByTeam"])
+        return NexusFeedItem(
+            id: id,
+            kind: .partsRequest,
+            message: message,
+            postedTimeMillis: postedTime,
+            requestedByTeam: team,
+            pitAddress: nil
+        )
+    }
+
+    private func parseTeamNumberString(_ value: Any?) -> String? {
+        if let string = value as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let int = value as? Int { return String(int) }
+        if let number = value as? NSNumber { return number.stringValue }
+        return nil
     }
 
     private func parseLiveMatch(raw: [String: Any]) -> NexusLiveMatch? {
@@ -925,7 +1033,8 @@ final class NexusAPIClient {
         let latestMatchLabel: String?
         let eventName: String?
         let matches: [NexusLiveMatch]
-        let announcements: [NexusAnnouncement]
+        let announcements: [NexusFeedItem]
+        let partsRequests: [NexusFeedItem]
     }
 
     private struct NexusLiveMatch {

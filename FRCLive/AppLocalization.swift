@@ -123,6 +123,11 @@ enum L10nKey {
     case announcementFromEvent
     case announcementDetailTitle
     case markAllRead
+    case partsRequestCategory
+    case partsRequestCategoryWithTeam
+    case partsRequestCategoryWithTeamAndPit
+    case partsRequestDetailTitle
+    case partsRequestNotificationTitle
 }
 
 enum L10n {
@@ -225,6 +230,11 @@ enum L10n {
             case .announcementFromEvent: return "Etkinlik Duyurusu"
             case .announcementDetailTitle: return "Duyuru"
             case .markAllRead: return "Tümünü okundu say"
+            case .partsRequestCategory: return "Parça talebi"
+            case .partsRequestCategoryWithTeam: return "Parça talebi | Takım %@"
+            case .partsRequestCategoryWithTeamAndPit: return "Parça talebi | Takım %@ [%@]"
+            case .partsRequestDetailTitle: return "Parça Talebi"
+            case .partsRequestNotificationTitle: return "FRCLive • Parça Talebi"
             }
         case .en:
             switch key {
@@ -323,6 +333,11 @@ enum L10n {
             case .announcementFromEvent: return "Event Announcement"
             case .announcementDetailTitle: return "Announcement"
             case .markAllRead: return "Mark all read"
+            case .partsRequestCategory: return "Parts request"
+            case .partsRequestCategoryWithTeam: return "Parts request | Team %@"
+            case .partsRequestCategoryWithTeamAndPit: return "Parts request | Team %@ [%@]"
+            case .partsRequestDetailTitle: return "Parts Request"
+            case .partsRequestNotificationTitle: return "FRCLive • Parts Request"
             }
         }
     }

@@ -20,20 +20,38 @@ final class AppNotificationManager {
         UNUserNotificationCenter.current().add(request)
     }
 
-    func sendAnnouncementNotification(teamNumber: String, message: String, language: AppLanguage) {
+    func sendFeedItemNotification(teamNumber: String, item: NexusFeedItem, language: AppLanguage) {
         let content = UNMutableNotificationContent()
-        let title = language == .en
-            ? "FRCLive • Event Announcement"
-            : "FRCLive • Etkinlik Duyurusu"
+        let title: String
+        switch item.kind {
+        case .announcement:
+            title = language == .en
+                ? "FRCLive • Event Announcement"
+                : "FRCLive • Etkinlik Duyurusu"
+        case .partsRequest:
+            title = L10n.text(.partsRequestNotificationTitle, language: language)
+        }
         content.title = teamNumber.isEmpty ? title : "\(title) • \(teamNumber)"
-        content.body = message
+        content.body = item.message
         content.sound = .default
 
         let request = UNNotificationRequest(
-            identifier: "announcement-\(UUID().uuidString)",
+            identifier: "feed-\(item.kind.rawValue)-\(item.id)-\(UUID().uuidString)",
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         )
         UNUserNotificationCenter.current().add(request)
+    }
+
+    func sendAnnouncementNotification(teamNumber: String, message: String, language: AppLanguage) {
+        let item = NexusFeedItem(
+            id: UUID().uuidString,
+            kind: .announcement,
+            message: message,
+            postedTimeMillis: Int64(Date().timeIntervalSince1970 * 1000),
+            requestedByTeam: nil,
+            pitAddress: nil
+        )
+        sendFeedItemNotification(teamNumber: teamNumber, item: item, language: language)
     }
 }
