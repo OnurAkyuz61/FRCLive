@@ -671,12 +671,12 @@ private struct RankingsView: View {
                                                 .frame(width: 38, alignment: .leading)
 
                                             VStack(alignment: .leading, spacing: 2) {
-                                                Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(entry.teamKey.replacingOccurrences(of: "frc", with: ""))")
-                                                    .font(.headline)
                                                 Text(resolvedTeamName(for: entry.teamKey, fallbackNumber: entry.teamKey.replacingOccurrences(of: "frc", with: "")))
+                                                    .font(.headline)
+                                                    .lineLimit(1)
+                                                Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(entry.teamKey.replacingOccurrences(of: "frc", with: ""))")
                                                     .font(.footnote)
                                                     .foregroundColor(.secondary)
-                                                    .lineLimit(1)
                                                 if isOwnTeam(entry.teamKey) {
                                                     Text("● \(L10n.text(.teamPrefix, language: appLanguage))")
                                                         .font(.caption2.weight(.semibold))
