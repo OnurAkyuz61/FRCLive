@@ -7,6 +7,17 @@ struct NexusTeamQueueSnapshot {
     let estimatedStartTime: String?
     /// Nexus `match.status` — örn. `Queuing soon`, `Now queuing`, `On deck`, `On field`
     let queuingStatus: String
+    /// Sıradaki takım maçı için Nexus zaman tahminleri (planlı yerel bildirimler).
+    let teamMatchSchedule: NexusTeamMatchSchedule?
+}
+
+struct NexusTeamMatchSchedule {
+    let matchLabel: String
+    let queuingStatus: String
+    let estimatedQueueTimeMillis: Int64?
+    let estimatedOnDeckTimeMillis: Int64?
+    let estimatedOnFieldTimeMillis: Int64?
+    let estimatedStartTimeMillis: Int64?
 }
 
 struct NexusUpcomingQueueItem: Identifiable {
@@ -189,7 +200,8 @@ final class NexusAPIClient {
                 currentMatchOnField: "Qual 34",
                 teamNextMatch: "Qual 42",
                 estimatedStartTime: "10 dk",
-                queuingStatus: NexusQueueStatus.onDeck
+                queuingStatus: NexusQueueStatus.onDeck,
+                teamMatchSchedule: nil
             )
         }
 
@@ -209,7 +221,8 @@ final class NexusAPIClient {
                 currentMatchOnField: current,
                 teamNextMatch: nil,
                 estimatedStartTime: nil,
-                queuingStatus: ""
+                queuingStatus: "",
+                teamMatchSchedule: nil
             )
         }
 
@@ -217,7 +230,19 @@ final class NexusAPIClient {
             currentMatchOnField: current,
             teamNextMatch: teamMatch.label,
             estimatedStartTime: formatMillisToTime(teamMatch.times.estimatedStartTimeMillis),
-            queuingStatus: teamMatch.status
+            queuingStatus: teamMatch.status,
+            teamMatchSchedule: teamMatchSchedule(from: teamMatch)
+        )
+    }
+
+    private func teamMatchSchedule(from match: NexusLiveMatch) -> NexusTeamMatchSchedule {
+        NexusTeamMatchSchedule(
+            matchLabel: match.label,
+            queuingStatus: match.status,
+            estimatedQueueTimeMillis: match.times.estimatedQueueTimeMillis,
+            estimatedOnDeckTimeMillis: match.times.estimatedOnDeckTimeMillis,
+            estimatedOnFieldTimeMillis: match.times.estimatedOnFieldTimeMillis,
+            estimatedStartTimeMillis: match.times.estimatedStartTimeMillis
         )
     }
 

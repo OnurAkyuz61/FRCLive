@@ -32,6 +32,8 @@ struct SettingsView: View {
                         .onChange(of: notificationsEnabled) { _, newValue in
                             if newValue {
                                 requestNotificationPermission()
+                            } else {
+                                Task { await QueueReminderScheduler.cancelAll() }
                             }
                         }
 
@@ -39,6 +41,10 @@ struct SettingsView: View {
                         triggerTestNotification()
                     }
                     .foregroundColor(.primary)
+
+                    Text(L10n.text(.notificationsBackgroundNote, language: appLanguage))
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
 
                 Section(L10n.text(.language, language: appLanguage)) {
@@ -116,6 +122,12 @@ struct SettingsView: View {
                 infoMessage = granted
                     ? L10n.text(.notificationPermissionGranted, language: appLanguage)
                     : L10n.text(.notificationPermissionDenied, language: appLanguage)
+                if granted {
+                    WidgetBackgroundRefreshManager.schedule(urgent: true)
+                    Task { @MainActor in
+                        _ = await WidgetBackgroundRefreshManager.performWidgetRefresh()
+                    }
+                }
             }
         }
     }

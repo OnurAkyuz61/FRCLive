@@ -2,10 +2,14 @@ import BackgroundTasks
 import Foundation
 import UIKit
 
-/// Arka planda Nexus'tan canlı veri çekip widget (ve isteğe bağlı Live Activity) günceller.
+/// Arka planda Nexus'tan canlı veri çekip widget, bildirim ve Live Activity günceller.
 enum WidgetBackgroundRefreshManager {
     static let taskIdentifier = "onurakyuz.FRCLive.widgetRefresh"
-    private static let refreshInterval: TimeInterval = 5 * 60
+    static let processingTaskIdentifier = "onurakyuz.FRCLive.queueProcessing"
+
+    private static var refreshInterval: TimeInterval {
+        UserDefaults.standard.bool(forKey: "notificationsEnabled") ? 2 * 60 : 5 * 60
+    }
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: taskIdentifier, using: nil) { task in
@@ -15,28 +19,60 @@ enum WidgetBackgroundRefreshManager {
             }
             handleAppRefresh(refreshTask)
         }
+
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: processingTaskIdentifier, using: nil) { task in
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            handleProcessing(processingTask)
+        }
     }
 
-    static func schedule() {
+    /// `urgent: true` — ağ geri gelince veya uygulama arka plana geçince daha erken yenileme dene.
+    static func schedule(urgent: Bool = false) {
         guard shouldScheduleBackgroundRefresh() else { return }
 
-        let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
-        request.earliestBeginDate = Date(timeIntervalSinceNow: refreshInterval)
+        let refreshRequest = BGAppRefreshTaskRequest(identifier: taskIdentifier)
+        if urgent {
+            refreshRequest.earliestBeginDate = Date(timeIntervalSinceNow: 15)
+        } else {
+            refreshRequest.earliestBeginDate = Date(timeIntervalSinceNow: refreshInterval)
+        }
 
         do {
-            try BGTaskScheduler.shared.submit(request)
+            try BGTaskScheduler.shared.submit(refreshRequest)
 #if DEBUG
-            print("[WidgetBackgroundRefresh] Scheduled next refresh (~\(Int(refreshInterval / 60)) min).")
+            print("[WidgetBackgroundRefresh] Scheduled app refresh.")
 #endif
         } catch {
 #if DEBUG
-            print("[WidgetBackgroundRefresh] Schedule failed: \(error.localizedDescription)")
+            print("[WidgetBackgroundRefresh] App refresh schedule failed: \(error.localizedDescription)")
+#endif
+        }
+
+        guard UserDefaults.standard.bool(forKey: "notificationsEnabled") else { return }
+
+        let processingRequest = BGProcessingTaskRequest(identifier: processingTaskIdentifier)
+        processingRequest.requiresNetworkConnectivity = true
+        processingRequest.requiresExternalPower = false
+        processingRequest.earliestBeginDate = Date(timeIntervalSinceNow: urgent ? 30 : 3 * 60)
+
+        do {
+            try BGTaskScheduler.shared.submit(processingRequest)
+#if DEBUG
+            print("[WidgetBackgroundRefresh] Scheduled processing refresh.")
+#endif
+        } catch {
+#if DEBUG
+            print("[WidgetBackgroundRefresh] Processing schedule failed: \(error.localizedDescription)")
 #endif
         }
     }
 
     static func cancel() {
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: taskIdentifier)
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: processingTaskIdentifier)
     }
 
     @MainActor
@@ -96,6 +132,17 @@ enum WidgetBackgroundRefreshManager {
                 )
             }
 
+            QueueNotificationCoordinator.deliverQueueUpdateIfNeeded(
+                eventCode: eventCode,
+                snapshot: snapshot,
+                language: language
+            )
+            await QueueReminderScheduler.reschedule(
+                eventCode: eventCode,
+                schedule: snapshot.teamMatchSchedule,
+                language: language
+            )
+
             await AnnouncementStore.shared.refresh(
                 eventCode: eventCode,
                 teamNumber: teamNumber,
@@ -125,6 +172,14 @@ enum WidgetBackgroundRefreshManager {
     }
 
     private static func handleAppRefresh(_ task: BGAppRefreshTask) {
+        runBackgroundTask(task)
+    }
+
+    private static func handleProcessing(_ task: BGProcessingTask) {
+        runBackgroundTask(task)
+    }
+
+    private static func runBackgroundTask(_ task: BGTask) {
         schedule()
 
         let work = Task { @MainActor in

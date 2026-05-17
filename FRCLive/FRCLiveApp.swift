@@ -28,8 +28,19 @@ struct FRCLiveApp: App {
                 WidgetBackgroundRefreshManager.schedule()
             }
             .onChange(of: scenePhase) { _, newPhase in
-                guard newPhase == .background else { return }
-                WidgetBackgroundRefreshManager.schedule()
+                switch newPhase {
+                case .background:
+                    WidgetBackgroundRefreshManager.schedule(urgent: true)
+                case .active:
+                    WidgetBackgroundRefreshManager.schedule()
+                    if UserDefaults.standard.bool(forKey: "notificationsEnabled") {
+                        Task { @MainActor in
+                            _ = await WidgetBackgroundRefreshManager.performWidgetRefresh()
+                        }
+                    }
+                default:
+                    break
+                }
             }
             .onChange(of: teamNumber) { _, newValue in
                 WidgetDataStore.syncAppState(

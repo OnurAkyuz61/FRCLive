@@ -5,6 +5,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>onurakyuz.FRCLive.widgetRefresh</string>
+		<string>onurakyuz.FRCLive.queueProcessing</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

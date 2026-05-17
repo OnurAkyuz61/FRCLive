@@ -59,6 +59,7 @@ enum L10nKey {
     case eventNotSelected
     case liveActivitiesToggle
     case notificationsToggle
+    case notificationsBackgroundNote
     case testNotification
     case logout
     case language
@@ -188,6 +189,7 @@ enum L10n {
             case .eventNotSelected: return "Etkinlik seçilmedi"
             case .liveActivitiesToggle: return "Canlı Etkinlikleri (Live Activities) Aç"
             case .notificationsToggle: return "Bildirimleri İzin Ver"
+            case .notificationsBackgroundNote: return "Uygulama kapalıyken Nexus tahmin saatlerine göre bildirim planlanır. Sıra aniden değişirse uygulamayı bir kez açmak veya interneti açmak güncellemeyi hızlandırır."
             case .testNotification: return "Bildirimi Test Et"
             case .logout: return "Çıkış Yap"
             case .language: return "Dil"
@@ -304,6 +306,7 @@ enum L10n {
             case .eventNotSelected: return "No event selected"
             case .liveActivitiesToggle: return "Enable Live Activities"
             case .notificationsToggle: return "Allow Notifications"
+            case .notificationsBackgroundNote: return "When the app is closed, alerts are scheduled from Nexus time estimates. Open the app once or reconnect to refresh if the queue changes suddenly."
             case .testNotification: return "Send Test Notification"
             case .logout: return "Log Out"
             case .language: return "Language"

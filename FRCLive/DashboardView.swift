@@ -11,7 +11,6 @@ struct DashboardView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
-    @AppStorage("lastQueueAlertKey") private var lastQueueAlertKey: String = ""
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     @State private var liveSnapshot: NexusTeamQueueSnapshot?
@@ -427,16 +426,14 @@ struct DashboardView: View {
             queueStatusCode: statusCode
         )
 
-        guard notificationsEnabled else { return }
-        guard NexusQueueStatus.shouldNotify(for: snapshot.queuingStatus) else { return }
-
-        let alertKey = "\(selectedEventCode)|\(nextMatch)|\(statusCode)"
-        guard alertKey != lastQueueAlertKey else { return }
-        lastQueueAlertKey = alertKey
-
-        AppNotificationManager.shared.sendQueueStatusNotification(
-            nextMatch: nextMatch,
-            statusText: status,
+        QueueNotificationCoordinator.deliverQueueUpdateIfNeeded(
+            eventCode: selectedEventCode,
+            snapshot: snapshot,
+            language: appLanguage
+        )
+        await QueueReminderScheduler.reschedule(
+            eventCode: selectedEventCode,
+            schedule: snapshot.teamMatchSchedule,
             language: appLanguage
         )
     }

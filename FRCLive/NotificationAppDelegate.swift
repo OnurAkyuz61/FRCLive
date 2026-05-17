@@ -10,11 +10,12 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate, UNUserNoti
         UNUserNotificationCenter.current().delegate = self
         WidgetBackgroundRefreshManager.register()
         WidgetBackgroundRefreshManager.schedule()
+        BackgroundNetworkRefresh.shared.start()
         return true
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        WidgetBackgroundRefreshManager.schedule()
+        WidgetBackgroundRefreshManager.schedule(urgent: true)
     }
 
     func application(
