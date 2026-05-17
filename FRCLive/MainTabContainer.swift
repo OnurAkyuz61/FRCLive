@@ -218,28 +218,7 @@ private struct ScheduleView: View {
 
                         Group {
                             if selectedSection == .alliance {
-                                if alliances.isEmpty {
-                                    VStack {
-                                        Spacer(minLength: 48)
-                                        Text(L10n.text(.noAlliances, language: appLanguage))
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                            .multilineTextAlignment(.center)
-                                            .padding(.horizontal, 24)
-                                        Spacer()
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                } else {
-                                    List(alliances) { alliance in
-                                        allianceRow(alliance)
-                                            .listRowBackground(
-                                                alliance.isWinner
-                                                    ? Color.yellow.opacity(0.14)
-                                                    : Color.clear
-                                            )
-                                    }
-                                    .listStyle(.insetGrouped)
-                                }
+                                alliancesContent
                             } else {
                                 List(filteredMatches) { match in
                             HStack(alignment: .top, spacing: 12) {
@@ -372,40 +351,185 @@ private struct ScheduleView: View {
         return String(format: format, locale: Locale(identifier: "en_US_POSIX"), alliance.id)
     }
 
-    private func allianceRow(_ alliance: TBAPlayoffAlliance) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Text(allianceDisplayName(alliance))
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    if alliance.isWinner {
-                        Text("🏆")
-                            .font(.title3)
+    @ViewBuilder
+    private var alliancesContent: some View {
+        if alliances.isEmpty {
+            VStack(spacing: 14) {
+                Spacer(minLength: 40)
+                Image(systemName: "person.3.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(red: 0.48, green: 0.32, blue: 0.78), Color(red: 0.35, green: 0.55, blue: 0.85)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Text(L10n.text(.noAlliances, language: appLanguage))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(alliances) { alliance in
+                        allianceCard(alliance)
                     }
                 }
-
-                allianceTeamNumbersRow(alliance)
+                .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
+                .padding(.bottom, FRCLiveLayout.tabContentBottomPadding)
             }
-            Spacer(minLength: 0)
         }
-        .padding(.vertical, 6)
     }
 
-    private func allianceTeamNumbersRow(_ alliance: TBAPlayoffAlliance) -> some View {
-        HStack(spacing: 4) {
-            ForEach(Array(alliance.teamNumbers.enumerated()), id: \.offset) { index, number in
-                if index > 0 {
-                    Text("·")
-                        .foregroundColor(.secondary)
+    private func allianceCard(_ alliance: TBAPlayoffAlliance) -> some View {
+        let includesOurTeam = alliance.teamNumbers.contains(teamNumber)
+
+        HStack(alignment: .top, spacing: 14) {
+            allianceNumberBadge(alliance)
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .center, spacing: 8) {
+                    Text(allianceDisplayName(alliance))
+                        .font(.headline.weight(.bold))
+                        .foregroundColor(.primary)
+
+                    if alliance.isWinner {
+                        HStack(spacing: 4) {
+                            Text("🏆")
+                            Text(L10n.text(.allianceWinner, language: appLanguage))
+                                .font(.caption.weight(.bold))
+                        }
+                        .foregroundColor(Color(red: 0.55, green: 0.38, blue: 0.05))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.yellow.opacity(0.45), Color.orange.opacity(0.22)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        )
+                    }
+
+                    if includesOurTeam {
+                        Text("TEAM")
+                            .font(.caption2.weight(.bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(Color.yellow.opacity(0.92))
+                            .clipShape(Capsule())
+                    }
+
+                    Spacer(minLength: 0)
                 }
-                Text(number)
-                    .font(.subheadline)
-                    .fontWeight(index == 0 ? .semibold : .regular)
-                    .underline(index == 0)
-                    .foregroundColor(number == teamNumber ? .blue : .primary)
+
+                allianceTeamChips(alliance)
             }
         }
+        .padding(14)
+        .background(allianceCardBackground(isWinner: alliance.isWinner))
+    }
+
+    private func allianceNumberBadge(_ alliance: TBAPlayoffAlliance) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    alliance.isWinner
+                        ? LinearGradient(
+                            colors: [Color(red: 0.95, green: 0.78, blue: 0.18), Color(red: 0.82, green: 0.58, blue: 0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(
+                            colors: [Color(red: 0.52, green: 0.34, blue: 0.82), Color(red: 0.32, green: 0.22, blue: 0.58)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                )
+                .frame(width: 46, height: 46)
+                .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
+
+            Text("\(alliance.id)")
+                .font(.headline.weight(.bold))
+                .foregroundColor(.white)
+        }
+    }
+
+    private func allianceCardBackground(isWinner: Bool) -> some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(
+                        isWinner
+                            ? LinearGradient(
+                                colors: [Color.yellow.opacity(0.75), Color.orange.opacity(0.35)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [Color.black.opacity(0.08), Color.black.opacity(0.04)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                        lineWidth: isWinner ? 1.5 : 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(isWinner ? 0.08 : 0.04), radius: isWinner ? 10 : 6, x: 0, y: 3)
+    }
+
+    private func allianceTeamChips(_ alliance: TBAPlayoffAlliance) -> some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 78), spacing: 8)],
+            alignment: .leading,
+            spacing: 8
+        ) {
+            ForEach(alliance.teamNumbers, id: \.self) { number in
+                allianceTeamChip(
+                    number: number,
+                    isCaptain: number == alliance.captainNumber,
+                    isOurs: number == teamNumber
+                )
+            }
+        }
+    }
+
+    private func allianceTeamChip(number: String, isCaptain: Bool, isOurs: Bool) -> some View {
+        HStack(spacing: 5) {
+            if isCaptain {
+                Image(systemName: "star.fill")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            }
+            Text(number)
+                .font(.subheadline.weight(isCaptain ? .bold : .semibold))
+                .foregroundColor(isOurs ? Color.blue : .primary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            Capsule(style: .continuous)
+                .fill(isOurs ? Color.blue.opacity(0.12) : Color(UIColor.secondarySystemGroupedBackground))
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .stroke(
+                    isOurs
+                        ? Color.blue.opacity(0.35)
+                        : (isCaptain ? Color.orange.opacity(0.45) : Color.black.opacity(0.06)),
+                    lineWidth: 1
+                )
+        )
     }
 
     private var filteredMatches: [TBASimpleMatch] {

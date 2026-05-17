@@ -108,6 +108,8 @@ enum L10nKey {
     case alliances
     case allianceNameFormat
     case noAlliances
+    case allianceWinner
+    case allianceCaptain
     case playoffStarted
     case playoffNotStarted
     case eventPhase
@@ -243,6 +245,8 @@ enum L10n {
             case .alliances: return "İttifak"
             case .allianceNameFormat: return "İttifak %d"
             case .noAlliances: return "İttifak listesi henüz yayınlanmadı."
+            case .allianceWinner: return "Kazanan"
+            case .allianceCaptain: return "Kaptan"
             case .playoffStarted: return "Playoff: Başladı"
             case .playoffNotStarted: return "Playoff: Henüz başlamadı"
             case .eventPhase: return "Etkinlik Aşaması"
@@ -365,6 +369,8 @@ enum L10n {
             case .alliances: return "Alliance"
             case .allianceNameFormat: return "Alliance %d"
             case .noAlliances: return "Alliance list is not published yet."
+            case .allianceWinner: return "Winner"
+            case .allianceCaptain: return "Captain"
             case .playoffStarted: return "Playoff: Started"
             case .playoffNotStarted: return "Playoff: Not started yet"
             case .eventPhase: return "Event Phase"
