@@ -3,6 +3,8 @@ import UserNotifications
 
 struct SettingsView: View {
     @AppStorage("teamNumber") private var teamNumber: String = ""
+    @AppStorage("teamNickname") private var teamNickname: String = ""
+    @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("selectedEventName") private var selectedEventName: String = ""
     @AppStorage("selectedEventDate") private var selectedEventDate: String = ""
@@ -187,10 +189,16 @@ struct SettingsView: View {
     }
 
     private func logout() {
+        let previousTeam = teamNumber
         Task {
             await LiveActivityManager.shared.end()
         }
         AnnouncementStore.shared.resetForLogout()
+        if !previousTeam.isEmpty {
+            TBAAPIClient.shared.clearCachedTeamAvatar(teamNumber: previousTeam)
+        }
+        teamAvatarURL = ""
+        teamNickname = ""
         teamNumber = ""
         selectedEventCode = ""
         selectedEventName = ""

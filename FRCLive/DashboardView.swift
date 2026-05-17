@@ -70,7 +70,11 @@ struct DashboardView: View {
             }
             .task {
                 pushWidgetSnapshot()
+                await loadTeamAvatarIfNeeded()
                 await startLivePolling()
+            }
+            .task(id: teamNumber) {
+                await loadTeamAvatarIfNeeded()
             }
         }
     }
@@ -289,6 +293,24 @@ struct DashboardView: View {
                         .stroke(Color.orange.opacity(0.35), lineWidth: 1)
                 )
         )
+    }
+
+    @MainActor
+    private func loadTeamAvatarIfNeeded() async {
+        let cleaned = teamNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty, cleaned != "99999" else { return }
+
+        if let existing = URL(string: teamAvatarURL), !teamAvatarURL.isEmpty {
+            if existing.isFileURL, FileManager.default.fileExists(atPath: existing.path) {
+                return
+            }
+            if existing.scheme?.hasPrefix("http") == true {
+                return
+            }
+        }
+
+        guard let url = try? await TBAAPIClient.shared.fetchTeamAvatarURL(teamNumber: cleaned) else { return }
+        teamAvatarURL = url.absoluteString
     }
 
     @MainActor

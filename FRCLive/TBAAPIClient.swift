@@ -271,6 +271,7 @@ final class TBAAPIClient {
         }
     }
 
+    /// TBA `/team/frc{n}/media/{year}` — avatar (base64 veya URL) döner; yoksa nil.
     func fetchTeamAvatarURL(teamNumber: String) async throws -> URL? {
         if teamNumber == demoTeamNumber {
             return nil
@@ -281,47 +282,139 @@ final class TBAAPIClient {
             throw TBAAPIClientError.unauthorized
         }
 
-        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/team/frc\(teamNumber)/media/2026") else {
+        for year in mediaYearsToTry() {
+            if let url = try await fetchTeamAvatarURL(teamNumber: teamNumber, year: year, authKey: cleanedKey) {
+                return url
+            }
+        }
+        return nil
+    }
+
+    func clearCachedTeamAvatar(teamNumber: String) {
+        let file = cachedAvatarFileURL(teamNumber: teamNumber)
+        try? FileManager.default.removeItem(at: file)
+    }
+
+    private func mediaYearsToTry() -> [Int] {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        return Array(Set([currentYear, 2026, 2025])).sorted(by: >)
+    }
+
+    private func fetchTeamAvatarURL(teamNumber: String, year: Int, authKey: String) async throws -> URL? {
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/team/frc\(teamNumber)/media/\(year)") else {
             throw TBAAPIClientError.invalidRequest
         }
 
         var request = URLRequest(url: url)
-        request.setValue(cleanedKey, forHTTPHeaderField: "X-TBA-Auth-Key")
+        request.setValue(authKey, forHTTPHeaderField: "X-TBA-Auth-Key")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TBAAPIClientError.failedToLoadEvents
         }
-        debugLog("Team media status=\(httpResponse.statusCode) team=\(teamNumber)")
+        debugLog("Team media status=\(httpResponse.statusCode) team=\(teamNumber) year=\(year)")
 
         switch httpResponse.statusCode {
         case 200:
-            guard
-                let json = try JSONSerialization.jsonObject(with: data) as? [[String: Any]]
-            else {
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
                 return nil
             }
-
-            for item in json {
-                let mediaType = (item["type"] as? String)?.lowercased() ?? ""
-                let details = item["details"] as? [String: Any]
-                let directURL = details?["url"] as? String
-                let imageURL = details?["image_url"] as? String
-                let avatarURL = details?["avatar_url"] as? String
-
-                if let candidate = directURL ?? imageURL ?? avatarURL, let url = URL(string: candidate) {
-                    if mediaType.contains("avatar") || mediaType.contains("png") || mediaType.contains("imgur") {
-                        return url
-                    }
-                }
-            }
-            return nil
+            return parseTeamAvatarURL(from: json, teamNumber: teamNumber)
         case 401, 403:
             throw TBAAPIClientError.unauthorized
         case 404:
-            throw TBAAPIClientError.invalidTeam
+            return nil
         default:
             throw TBAAPIClientError.failedToLoadEvents
+        }
+    }
+
+    private func parseTeamAvatarURL(from items: [[String: Any]], teamNumber: String) -> URL? {
+        if let avatar = items.first(where: { ($0["type"] as? String)?.lowercased() == "avatar" }),
+           let url = avatarMediaURL(from: avatar, teamNumber: teamNumber) {
+            return url
+        }
+
+        for item in items {
+            let mediaType = (item["type"] as? String)?.lowercased() ?? ""
+            if mediaType == "avatar", let url = avatarMediaURL(from: item, teamNumber: teamNumber) {
+                return url
+            }
+        }
+
+        for item in items {
+            if let url = avatarMediaURL(from: item, teamNumber: teamNumber) {
+                return url
+            }
+        }
+        return nil
+    }
+
+    private func avatarMediaURL(from item: [String: Any], teamNumber: String) -> URL? {
+        let details = item["details"] as? [String: Any]
+
+        if let base64 = details?["base64Image"] as? String,
+           let cached = writeCachedAvatarPNG(teamNumber: teamNumber, base64: base64) {
+            return cached
+        }
+
+        if let imageURL = details?["image_url"] as? String,
+           let url = absoluteMediaURL(imageURL) {
+            return url
+        }
+
+        if let localURL = details?["local_image_url"] as? String,
+           let url = absoluteMediaURL(localURL) {
+            return url
+        }
+
+        for key in ["url", "avatar_url"] {
+            if let raw = details?[key] as? String, let url = absoluteMediaURL(raw) {
+                return url
+            }
+        }
+
+        if let viewURL = item["view_url"] as? String, let url = absoluteMediaURL(viewURL) {
+            return url
+        }
+
+        return nil
+    }
+
+    private func absoluteMediaURL(_ raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
+            return URL(string: trimmed)
+        }
+        if trimmed.hasPrefix("//") {
+            return URL(string: "https:\(trimmed)")
+        }
+        if trimmed.hasPrefix("/") {
+            return URL(string: "https://www.thebluealliance.com\(trimmed)")
+        }
+        return URL(string: trimmed)
+    }
+
+    private func cachedAvatarFileURL(teamNumber: String) -> URL {
+        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return directory.appendingPathComponent("frclive-avatar-\(teamNumber).png")
+    }
+
+    private func writeCachedAvatarPNG(teamNumber: String, base64: String) -> URL? {
+        let cleaned = base64
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n", with: "")
+        guard let data = Data(base64Encoded: cleaned), !data.isEmpty else { return nil }
+
+        let fileURL = cachedAvatarFileURL(teamNumber: teamNumber)
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            return fileURL
+        } catch {
+            debugLog("Avatar cache write failed team=\(teamNumber): \(error.localizedDescription)")
+            return nil
         }
     }
 

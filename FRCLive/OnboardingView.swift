@@ -3,6 +3,8 @@ import WebKit
 
 struct OnboardingView: View {
     @AppStorage("teamNumber") private var storedTeamNumber: String = ""
+    @AppStorage("teamNickname") private var teamNickname: String = ""
+    @AppStorage("teamAvatarURL") private var teamAvatarURL: String = ""
     @State private var teamNumberInput: String = ""
     @State private var tbaKeyInput: String = ""
     @State private var tbaKeyStatusMessage: String?
@@ -364,7 +366,14 @@ struct OnboardingView: View {
         defer { isLoading = false }
 
         do {
-            _ = try await TBAAPIClient.shared.fetchTeamProfile(teamNumber: cleaned)
+            async let profile = TBAAPIClient.shared.fetchTeamProfile(teamNumber: cleaned)
+            async let avatarURL = TBAAPIClient.shared.fetchTeamAvatarURL(teamNumber: cleaned)
+            let (fetchedProfile, fetchedAvatarURL) = try await (profile, avatarURL)
+
+            if let nickname = fetchedProfile.nickname, !nickname.isEmpty {
+                teamNickname = nickname
+            }
+            teamAvatarURL = fetchedAvatarURL?.absoluteString ?? ""
             storedTeamNumber = cleaned
             isFieldFocused = false
         } catch {
