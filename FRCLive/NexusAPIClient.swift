@@ -919,6 +919,21 @@ final class NexusAPIClient {
         )
     }
 
+    /// Takım şu an sahada oynanan maçtaysa o maçı döndür (Nexus “Sahada” davranışı).
+    private func teamMatchAtCurrentField(
+        teamMatches: [NexusLiveMatch],
+        currentMatchLabel: String?
+    ) -> NexusLiveMatch? {
+        guard let currentMatchLabel, let currentOrder = matchOrder(from: currentMatchLabel) else {
+            return nil
+        }
+        return teamMatches.first { match in
+            guard !isClearlyCompletedMatch(match),
+                  let order = matchOrder(from: match.label) else { return false }
+            return order.phase == currentOrder.phase && order.number == currentOrder.number
+        }
+    }
+
     private func prioritizedMatch(for teamNumber: Int, matches: [NexusLiveMatch], currentMatchLabel: String?) -> NexusLiveMatch? {
         let key = String(teamNumber)
         let teamMatches = matches.filter { $0.redTeams.contains(key) || $0.blueTeams.contains(key) }
@@ -926,6 +941,10 @@ final class NexusAPIClient {
 
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         let currentOrder = matchOrder(from: currentMatchLabel)
+
+        if let playingNow = teamMatchAtCurrentField(teamMatches: teamMatches, currentMatchLabel: currentMatchLabel) {
+            return playingNow
+        }
 
         let candidates = teamMatches.filter { match in
             !isClearlyCompletedMatch(match)
@@ -1002,7 +1021,8 @@ final class NexusAPIClient {
         if normalized.contains("final") || normalized.contains("playoff") || normalized.contains("qf") || normalized.contains("sf") {
             return 3
         }
-        if normalized.contains("qualification") || normalized.contains("qual") || normalized.contains("qm") {
+        if normalized.contains("qualification") || normalized.contains("qual") || normalized.contains("qm")
+            || normalized.contains("sıralama") || normalized.contains("siralama") {
             return 2
         }
         if normalized.contains("practice") || normalized.contains("pm") || normalized.contains("pr") {
