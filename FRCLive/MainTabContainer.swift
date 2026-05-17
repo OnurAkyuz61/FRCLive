@@ -114,7 +114,7 @@ private struct ScheduleView: View {
                         }
                     }
                     .padding(.horizontal, 24)
-                } else if matches.isEmpty {
+                } else if matches.isEmpty && alliances.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "checkmark.circle")
                             .font(.title2)
@@ -306,25 +306,33 @@ private struct ScheduleView: View {
         errorMessage = nil
         defer { isLoading = false }
 
+        alliances = (try? await TBAAPIClient.shared.fetchEventAlliances(eventCode: selectedEventCode)) ?? []
+
         do {
-            async let allMatchesTask = TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
-            let allMatches = try await allMatchesTask
-            let loadedAlliances = (try? await TBAAPIClient.shared.fetchEventAlliances(eventCode: selectedEventCode)) ?? []
+            let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
             let teamKey = "frc\(teamInt)"
             matches = allMatches.filter { match in
                 match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
             }
-            alliances = loadedAlliances
-            if isSelectedEventCompleted {
-                queueSnapshot = nil
-            } else {
-                queueSnapshot = try? await NexusAPIClient.shared.fetchQueueSnapshot(
-                    eventCode: selectedEventCode,
-                    teamNumber: teamInt
-                )
-            }
         } catch {
-            errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
+            matches = []
+            if alliances.isEmpty {
+                errorMessage = L10n.text(.invalidTeamOrEvents, language: appLanguage)
+                return
+            }
+        }
+
+        if matches.isEmpty && alliances.isEmpty {
+            errorMessage = nil
+        }
+
+        if isSelectedEventCompleted {
+            queueSnapshot = nil
+        } else {
+            queueSnapshot = try? await NexusAPIClient.shared.fetchQueueSnapshot(
+                eventCode: selectedEventCode,
+                teamNumber: teamInt
+            )
         }
     }
 
@@ -360,7 +368,8 @@ private struct ScheduleView: View {
     }
 
     private func allianceDisplayName(_ alliance: TBAPlayoffAlliance) -> String {
-        String(format: L10n.text(.allianceNameFormat, language: appLanguage), alliance.id)
+        let format = L10n.text(.allianceNameFormat, language: appLanguage)
+        return String(format: format, locale: Locale(identifier: "en_US_POSIX"), alliance.id)
     }
 
     private func allianceRow(_ alliance: TBAPlayoffAlliance) -> some View {
