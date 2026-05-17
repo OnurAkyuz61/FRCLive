@@ -389,7 +389,7 @@ private struct ScheduleView: View {
     private func allianceCard(_ alliance: TBAPlayoffAlliance) -> some View {
         let includesOurTeam = alliance.teamNumbers.contains(teamNumber)
 
-        HStack(alignment: .top, spacing: 14) {
+        return HStack(alignment: .top, spacing: 14) {
             allianceNumberBadge(alliance)
 
             VStack(alignment: .leading, spacing: 12) {
