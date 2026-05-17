@@ -20,6 +20,7 @@ FRCLive hız kesmeden gelişmeye devam ediyor! Sürüm 1.0.3 ile turnuva heyecan
 - **Daha temiz arayüz:** Sayfa tasarımları ve geçişler daha akıcı hale getirildi. "Etkinlik seçimi" butonu kalabalığı önlemek için Ayarlar menüsüne taşındı.
 - **Sıralama listesi:** Takım adı üstte, takım numarası altta gösterilir.
 - **Dynamic Island:** Final maçları artık "M1" yerine "Final 1" gibi okunaklı etiketlerle görünür.
+- **Ayarlar — sürüm bilgisi:** "Powered by Onur Akyüz" yazısının üstünde **FRCLive Versiyon 1.0.3** (İngilizce: FRCLive Version 1.0.3) gösterilir; sürüm numarası uygulama paketinden okunur.
 
 ### Hata düzeltmeleri
 
@@ -46,6 +47,7 @@ FRCLive keeps getting better! Version 1.0.3 brings new ways to follow your event
 - Cleaner UI; event selection moved to Settings.
 - Rankings list shows team name above team number.
 - Dynamic Island shows "Final 1" instead of abbreviated "M1".
+- Settings footer shows **FRCLive Version 1.0.3** above the "Powered by Onur Akyüz" link (version read from the app bundle).
 
 **Fixes**
 - Next match no longer incorrectly shows "Practice 1" after qualifications end.

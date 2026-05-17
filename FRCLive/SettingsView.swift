@@ -102,19 +102,27 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    HStack {
-                        Spacer()
+                    VStack(spacing: 8) {
+                        Text(appVersionLabel)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
                         Link(L10n.text(.poweredBy, language: appLanguage), destination: URL(string: "https://onurakyuz.com")!)
                             .font(.footnote)
                             .foregroundColor(.secondary)
-                        Spacer()
                     }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .scrollContentBackground(.hidden)
             .background(Color(UIColor.systemGroupedBackground))
             .frcliveTabScreenTitle(L10n.text(.settings, language: appLanguage))
         }
+    }
+
+    private var appVersionLabel: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.3"
+        let format = L10n.text(.appVersionFormat, language: appLanguage)
+        return String(format: format, locale: Locale(identifier: "en_US_POSIX"), version)
     }
 
     private func requestNotificationPermission() {

@@ -43,6 +43,7 @@ enum L10nKey {
     case mustConfirmNexus
     case teamValidationFailed
     case poweredBy
+    case appVersionFormat
     case eventSelection
     case teamSelection
     case loadingEvents
@@ -180,6 +181,7 @@ enum L10n {
             case .mustConfirmNexus: return "Devam etmek için önce Nexus API Key onaylanmalı."
             case .teamValidationFailed: return "Takım doğrulanamadı. Lütfen bilgileri kontrol edin."
             case .poweredBy: return "Powered by Onur Akyüz"
+            case .appVersionFormat: return "FRCLive Versiyon %@"
             case .eventSelection: return "Etkinlik Seçimi"
             case .teamSelection: return "Takım Seçimi"
             case .loadingEvents: return "Etkinlikler yükleniyor..."
@@ -304,6 +306,7 @@ enum L10n {
             case .mustConfirmNexus: return "Please confirm Nexus API Key before continuing."
             case .teamValidationFailed: return "Team validation failed. Please check your details."
             case .poweredBy: return "Powered by Onur Akyüz"
+            case .appVersionFormat: return "FRCLive Version %@"
             case .eventSelection: return "Event Selection"
             case .teamSelection: return "Team Selection"
             case .loadingEvents: return "Loading events..."
