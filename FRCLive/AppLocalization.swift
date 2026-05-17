@@ -105,6 +105,9 @@ enum L10nKey {
     case practice
     case qualification
     case playoff
+    case alliances
+    case allianceNameFormat
+    case noAlliances
     case playoffStarted
     case playoffNotStarted
     case eventPhase
@@ -237,6 +240,9 @@ enum L10n {
             case .practice: return "Pratik"
             case .qualification: return "Sıralama"
             case .playoff: return "Playoff"
+            case .alliances: return "İttifak"
+            case .allianceNameFormat: return "İttifak %@"
+            case .noAlliances: return "İttifak listesi henüz yayınlanmadı."
             case .playoffStarted: return "Playoff: Başladı"
             case .playoffNotStarted: return "Playoff: Henüz başlamadı"
             case .eventPhase: return "Etkinlik Aşaması"
@@ -356,6 +362,9 @@ enum L10n {
             case .practice: return "Practice"
             case .qualification: return "Qualification"
             case .playoff: return "Playoff"
+            case .alliances: return "Alliance"
+            case .allianceNameFormat: return "Alliance %@"
+            case .noAlliances: return "Alliance list is not published yet."
             case .playoffStarted: return "Playoff: Started"
             case .playoffNotStarted: return "Playoff: Not started yet"
             case .eventPhase: return "Event Phase"

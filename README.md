@@ -50,6 +50,7 @@
 11. [Gizlilik ve güvenlik](#gizlilik-ve-güvenlik)
 12. [Sorun giderme](#sorun-giderme)
 13. [Lisans ve iletişim](#lisans-ve-iletişim)
+14. [Sürüm notları](#sürüm-notları)
 
 ---
 
@@ -190,6 +191,12 @@ Ayarlar’dan bildirim izni verildiğinde, sıra durumu **çağrıldı / sahada*
 | Nexus verisi yok | Etkinlik kodunun Nexus’ta mevcut olduğundan ve anahtarın geçerli olduğundan emin olun; `frc.nexus` dokümantasyonuna bakın. |
 | TBA 401 | Anahtarı [TBA hesap](https://www.thebluealliance.com/account) sayfasından yenileyin. |
 | Live Activity takılı kaldı | Ayarlardan çıkış veya canlı etkinlikleri kapatıp tekrar açmayı deneyin. |
+
+---
+
+## Sürüm notları
+
+Güncel sürüm ve App Store metinleri için [CHANGELOG.md](./CHANGELOG.md) dosyasına bakın.
 
 ---
 

@@ -84,6 +84,7 @@ private struct ScheduleView: View {
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
     @State private var matches: [TBASimpleMatch] = []
+    @State private var alliances: [TBAPlayoffAlliance] = []
     @State private var queueSnapshot: NexusTeamQueueSnapshot?
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -207,15 +208,40 @@ private struct ScheduleView: View {
                         }
 
                         Picker(L10n.text(.schedule, language: appLanguage), selection: $selectedSection) {
-                            Text(L10n.text(.practice, language: appLanguage)).tag(MatchSection.practice)
                             Text(L10n.text(.qualification, language: appLanguage)).tag(MatchSection.qualification)
                             Text(L10n.text(.playoff, language: appLanguage)).tag(MatchSection.playoff)
+                            Text(L10n.text(.alliances, language: appLanguage)).tag(MatchSection.alliance)
                         }
                         .pickerStyle(.segmented)
                         .padding(.horizontal, FRCLiveLayout.tabContentHorizontalPadding)
                         .padding(.top, FRCLiveLayout.tabContentTopPadding)
 
-                        List(filteredMatches) { match in
+                        Group {
+                            if selectedSection == .alliance {
+                                if alliances.isEmpty {
+                                    VStack {
+                                        Spacer(minLength: 48)
+                                        Text(L10n.text(.noAlliances, language: appLanguage))
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal, 24)
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                } else {
+                                    List(alliances) { alliance in
+                                        allianceRow(alliance)
+                                            .listRowBackground(
+                                                alliance.isWinner
+                                                    ? Color.yellow.opacity(0.14)
+                                                    : Color.clear
+                                            )
+                                    }
+                                    .listStyle(.insetGrouped)
+                                }
+                            } else {
+                                List(filteredMatches) { match in
                             HStack(alignment: .top, spacing: 12) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack(spacing: 8) {
@@ -252,7 +278,9 @@ private struct ScheduleView: View {
                             }
                             .padding(.vertical, 4)
                         }
-                        .listStyle(.insetGrouped)
+                                .listStyle(.insetGrouped)
+                            }
+                        }
                         .refreshable { await loadMatches() }
                     }
                 }
@@ -279,11 +307,14 @@ private struct ScheduleView: View {
         defer { isLoading = false }
 
         do {
-            let allMatches = try await TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
+            async let allMatchesTask = TBAAPIClient.shared.fetchEventMatches(eventCode: selectedEventCode)
+            let allMatches = try await allMatchesTask
+            let loadedAlliances = (try? await TBAAPIClient.shared.fetchEventAlliances(eventCode: selectedEventCode)) ?? []
             let teamKey = "frc\(teamInt)"
             matches = allMatches.filter { match in
                 match.alliances.red.teamKeys.contains(teamKey) || match.alliances.blue.teamKeys.contains(teamKey)
             }
+            alliances = loadedAlliances
             if isSelectedEventCompleted {
                 queueSnapshot = nil
             } else {
@@ -326,6 +357,46 @@ private struct ScheduleView: View {
                 return key == currentTeamKey ? "⭐\(team)" : team
             }
             .joined(separator: ", ")
+    }
+
+    private func allianceDisplayName(_ alliance: TBAPlayoffAlliance) -> String {
+        String(format: L10n.text(.allianceNameFormat, language: appLanguage), alliance.id)
+    }
+
+    private func allianceRow(_ alliance: TBAPlayoffAlliance) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Text(allianceDisplayName(alliance))
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    if alliance.isWinner {
+                        Text("🏆")
+                            .font(.title3)
+                    }
+                }
+
+                allianceTeamNumbersRow(alliance)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func allianceTeamNumbersRow(_ alliance: TBAPlayoffAlliance) -> some View {
+        HStack(spacing: 4) {
+            ForEach(Array(alliance.teamNumbers.enumerated()), id: \.offset) { index, number in
+                if index > 0 {
+                    Text("·")
+                        .foregroundColor(.secondary)
+                }
+                Text(number)
+                    .font(.subheadline)
+                    .fontWeight(index == 0 ? .semibold : .regular)
+                    .underline(index == 0)
+                    .foregroundColor(number == teamNumber ? .blue : .primary)
+            }
+        }
     }
 
     private var filteredMatches: [TBASimpleMatch] {
@@ -613,18 +684,18 @@ private extension DateFormatter {
 }
 
 private enum MatchSection: CaseIterable {
-    case practice
     case qualification
     case playoff
+    case alliance
 
     func includes(compLevel: String) -> Bool {
         switch self {
-        case .practice:
-            return compLevel == "pm" || compLevel == "pr"
         case .qualification:
             return compLevel == "qm"
         case .playoff:
             return compLevel == "ef" || compLevel == "qf" || compLevel == "sf" || compLevel == "f"
+        case .alliance:
+            return false
         }
     }
 }

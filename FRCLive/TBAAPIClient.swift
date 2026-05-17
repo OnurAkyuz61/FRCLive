@@ -112,6 +112,14 @@ struct TBAAwardRecipient: Decodable {
     }
 }
 
+struct TBAPlayoffAlliance: Identifiable {
+    let id: Int
+    let name: String
+    let teamNumbers: [String]
+    let captainNumber: String?
+    let isWinner: Bool
+}
+
 struct TBAAward: Decodable, Identifiable {
     var id: String { "\(name)-\(awardType)" }
 
@@ -599,6 +607,45 @@ final class TBAAPIClient {
         }
     }
 
+    func fetchEventAlliances(eventCode: String) async throws -> [TBAPlayoffAlliance] {
+        let eventKey = normalizedEventKey(from: eventCode)
+        if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
+            return demoAlliances()
+        }
+
+        let cleanedKey = tbaAuthKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedKey.isEmpty else {
+            throw TBAAPIClientError.unauthorized
+        }
+
+        guard let url = URL(string: "https://www.thebluealliance.com/api/v3/event/\(eventKey)/alliances") else {
+            throw TBAAPIClientError.invalidRequest
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(cleanedKey, forHTTPHeaderField: "X-TBA-Auth-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+        debugLog("Event alliances status=\(httpResponse.statusCode) event=\(eventKey)")
+
+        switch httpResponse.statusCode {
+        case 200:
+            guard let raw = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+                return []
+            }
+            return parsePlayoffAlliances(raw)
+        case 401, 403:
+            throw TBAAPIClientError.unauthorized
+        case 404:
+            return []
+        default:
+            throw TBAAPIClientError.failedToLoadEvents
+        }
+    }
+
     func fetchEventAwards(eventCode: String) async throws -> [TBAAward] {
         let eventKey = normalizedEventKey(from: eventCode)
         if (UserDefaults.standard.string(forKey: "teamNumber") ?? "") == demoTeamNumber {
@@ -673,6 +720,48 @@ final class TBAAPIClient {
         }
 
         return try await fetchEventTeamNames(eventKey: eventKey, authKey: cleanedKey)
+    }
+
+    private func parsePlayoffAlliances(_ raw: [[String: Any]]) -> [TBAPlayoffAlliance] {
+        raw.enumerated().compactMap { index, item in
+            let picks = (item["picks"] as? [String]) ?? []
+            let teamNumbers = picks.map { $0.replacingOccurrences(of: "frc", with: "") }
+            guard !teamNumbers.isEmpty else { return nil }
+
+            let apiName = (item["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let displayName = normalizedAllianceName(apiName, index: index + 1)
+
+            let statusRaw = (item["status"] as? [String: Any])?["status"] as? String
+            let isWinner = statusRaw?.lowercased() == "won"
+
+            return TBAPlayoffAlliance(
+                id: index + 1,
+                name: displayName,
+                teamNumbers: teamNumbers,
+                captainNumber: teamNumbers.first,
+                isWinner: isWinner
+            )
+        }
+    }
+
+    private func normalizedAllianceName(_ apiName: String, index: Int) -> String {
+        if apiName.isEmpty {
+            return "Alliance \(index)"
+        }
+        let lower = apiName.lowercased()
+        if lower.hasPrefix("alliance") || lower.hasPrefix("ittifak") {
+            return apiName
+        }
+        return apiName
+    }
+
+    private func demoAlliances() -> [TBAPlayoffAlliance] {
+        [
+            TBAPlayoffAlliance(id: 1, name: "Alliance 1", teamNumbers: ["8159", "9025", "11300"], captainNumber: "8159", isWinner: true),
+            TBAPlayoffAlliance(id: 2, name: "Alliance 2", teamNumbers: ["6431", "8859", "8182"], captainNumber: "6431", isWinner: false),
+            TBAPlayoffAlliance(id: 3, name: "Alliance 3", teamNumbers: ["9473", "4972", "6402"], captainNumber: "9473", isWinner: false),
+            TBAPlayoffAlliance(id: 4, name: "Alliance 4", teamNumbers: ["6228", "10243", "8263", "9132"], captainNumber: "6228", isWinner: false)
+        ]
     }
 
     private func demoMatches(for eventCode: String) -> [TBASimpleMatch] {
