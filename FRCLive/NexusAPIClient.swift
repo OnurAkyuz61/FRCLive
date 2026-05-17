@@ -429,11 +429,9 @@ final class NexusAPIClient {
         if let currentLabel {
             if currentLabel == anchor.label { return true }
             if let currentOrder = matchOrder(from: currentLabel),
-               let anchorOrder = matchOrder(from: anchor.label) {
-                if currentOrder.phase > anchorOrder.phase { return true }
-                if currentOrder.phase == anchorOrder.phase, currentOrder.number >= anchorOrder.number {
-                    return true
-                }
+               let anchorOrder = matchOrder(from: anchor.label),
+               currentOrder >= anchorOrder {
+                return true
             }
         }
 
@@ -640,7 +638,7 @@ final class NexusAPIClient {
               let order = matchOrder(from: match.label) else {
             return true
         }
-        return order.phase >= currentOrder.phase
+        return order >= currentOrder
     }
 
     private func isClearlyCompletedMatch(_ match: NexusLiveMatch) -> Bool {
@@ -653,10 +651,7 @@ final class NexusAPIClient {
               let order = matchOrder(from: match.label) else {
             return false
         }
-        if order.phase != currentOrder.phase {
-            return order.phase > currentOrder.phase
-        }
-        return order.number > currentOrder.number
+        return order > currentOrder
     }
 
     private func filterForwardFromCurrent(matches: [NexusLiveMatch], currentLabel: String?) -> [NexusLiveMatch] {
@@ -665,10 +660,7 @@ final class NexusAPIClient {
         }
         return matches.filter { match in
             guard let order = matchOrder(from: match.label) else { return true }
-            if order.phase != currentOrder.phase {
-                return order.phase > currentOrder.phase
-            }
-            return order.number > currentOrder.number
+            return order > currentOrder
         }
     }
 
@@ -686,8 +678,7 @@ final class NexusAPIClient {
                   let rhsOrder = matchOrder(from: rhs.label) else {
                 return lhs.label.localizedCaseInsensitiveCompare(rhs.label) == .orderedAscending
             }
-            if lhsOrder.phase != rhsOrder.phase { return lhsOrder.phase < rhsOrder.phase }
-            return lhsOrder.number < rhsOrder.number
+            return lhsOrder < rhsOrder
         }
     }
 
@@ -955,7 +946,7 @@ final class NexusAPIClient {
         return teamMatches.first { match in
             guard !isClearlyCompletedMatch(match),
                   let order = matchOrder(from: match.label) else { return false }
-            return order.phase == currentOrder.phase && order.number == currentOrder.number
+            return order == currentOrder
         }
     }
 
@@ -981,10 +972,7 @@ final class NexusAPIClient {
         if let currentOrder {
             let forwardMatches = candidates.filter { match in
                 guard let order = matchOrder(from: match.label) else { return false }
-                if order.phase != currentOrder.phase {
-                    return order.phase > currentOrder.phase
-                }
-                return order.number > currentOrder.number
+                return order > currentOrder
             }
 
             if let nearestForward = sortMatchesBySchedule(forwardMatches).first {
@@ -998,18 +986,43 @@ final class NexusAPIClient {
         return sortMatchesBySchedule(candidates).first
     }
 
-    private struct MatchOrder {
+    /// Maç sırası: sıralama < eleme (Playoff N) < QF < SF < Final.
+    private struct MatchOrder: Comparable {
         let phase: Int
+        /// Eleme içi tur: 0 = Playoff N, 1 = QF, 2 = SF, 3 = Final
+        let round: Int
         let number: Int
+
+        static func < (lhs: MatchOrder, rhs: MatchOrder) -> Bool {
+            if lhs.phase != rhs.phase { return lhs.phase < rhs.phase }
+            if lhs.round != rhs.round { return lhs.round < rhs.round }
+            return lhs.number < rhs.number
+        }
     }
 
     private func matchOrder(from label: String?) -> MatchOrder? {
         guard let label else { return nil }
         let phase = phaseRank(from: label)
         guard phase > 0 else { return nil }
-        guard let numberText = extractTrailingMatchNumber(from: label),
-              let number = Int(numberText) else { return nil }
-        return MatchOrder(phase: phase, number: number)
+        let round = phase >= 3 ? eliminationRound(from: label) : 0
+        let number = Int(extractTrailingMatchNumber(from: label) ?? "") ?? 0
+        return MatchOrder(phase: phase, round: round, number: number)
+    }
+
+    private func eliminationRound(from label: String) -> Int {
+        let normalized = label.lowercased()
+        if normalized.contains("semifinal") || normalized.contains("semi-final")
+            || normalized.range(of: #"\bsf[\s-]?"#, options: .regularExpression) != nil {
+            return 2
+        }
+        if normalized.contains("quarterfinal") || normalized.contains("quarter-final")
+            || normalized.range(of: #"\bqf[\s-]?"#, options: .regularExpression) != nil {
+            return 1
+        }
+        if normalized.range(of: #"\bfinal\b"#, options: .regularExpression) != nil {
+            return 3
+        }
+        return 0
     }
 
     private func isUpcomingMatch(_ match: NexusLiveMatch, nowMilliseconds: Int64) -> Bool {
