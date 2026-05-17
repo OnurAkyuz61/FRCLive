@@ -2,7 +2,9 @@ import SwiftUI
 
 struct MainTabContainer: View {
     @ObservedObject private var announcementStore = AnnouncementStore.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: Tab = .dashboard
+    @State private var showNotificationBackgroundTip = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
 
@@ -43,6 +45,26 @@ struct MainTabContainer: View {
         .tint(.black)
         .id(appLanguageRaw)
         .environmentObject(announcementStore)
+        .onAppear {
+            presentNotificationBackgroundTip()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            presentNotificationBackgroundTip()
+        }
+        .alert(
+            L10n.text(.notificationBackgroundTipTitle, language: appLanguage),
+            isPresented: $showNotificationBackgroundTip
+        ) {
+            Button(L10n.text(.alertOk, language: appLanguage), role: .cancel) {}
+        } message: {
+            Text(L10n.text(.notificationBackgroundTipMessage, language: appLanguage))
+        }
+    }
+
+    private func presentNotificationBackgroundTip() {
+        selectedTab = .dashboard
+        showNotificationBackgroundTip = true
     }
 }
 

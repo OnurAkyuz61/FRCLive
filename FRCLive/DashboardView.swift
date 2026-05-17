@@ -11,10 +11,8 @@ struct DashboardView: View {
     @AppStorage("selectedEventCode") private var selectedEventCode: String = ""
     @AppStorage("liveActivitiesEnabled") private var liveActivitiesEnabled = true
     @AppStorage("notificationsEnabled") private var notificationsEnabled = false
-    @AppStorage("hasSeenDashboardNotificationTip") private var hasSeenDashboardNotificationTip = false
     @AppStorage("appLanguage") private var appLanguageRaw: String = AppLanguage.tr.rawValue
     private var appLanguage: AppLanguage { AppLanguage(rawValue: appLanguageRaw) ?? .tr }
-    @State private var showNotificationBackgroundTip = false
     @State private var liveSnapshot: NexusTeamQueueSnapshot?
     @State private var isLoadingLiveData = false
     @State private var liveErrorMessage: String?
@@ -77,21 +75,6 @@ struct DashboardView: View {
             }
             .task(id: teamNumber) {
                 await loadTeamAvatarIfNeeded()
-            }
-            .onAppear {
-                if !hasSeenDashboardNotificationTip {
-                    showNotificationBackgroundTip = true
-                }
-            }
-            .alert(
-                L10n.text(.notificationBackgroundTipTitle, language: appLanguage),
-                isPresented: $showNotificationBackgroundTip
-            ) {
-                Button(L10n.text(.alertOk, language: appLanguage)) {
-                    hasSeenDashboardNotificationTip = true
-                }
-            } message: {
-                Text(L10n.text(.notificationBackgroundTipMessage, language: appLanguage))
             }
         }
     }
