@@ -60,6 +60,8 @@ enum L10nKey {
     case liveActivitiesToggle
     case notificationsToggle
     case notificationsBackgroundNote
+    case notificationBackgroundTipTitle
+    case notificationBackgroundTipMessage
     case testNotification
     case logout
     case language
@@ -190,6 +192,8 @@ enum L10n {
             case .liveActivitiesToggle: return "Canlı Etkinlikleri (Live Activities) Aç"
             case .notificationsToggle: return "Bildirimleri İzin Ver"
             case .notificationsBackgroundNote: return "Uygulama kapalıyken Nexus tahmin saatlerine göre bildirim planlanır. Sıra aniden değişirse uygulamayı bir kez açmak veya interneti açmak güncellemeyi hızlandırır."
+            case .notificationBackgroundTipTitle: return "Bildirimler"
+            case .notificationBackgroundTipMessage: return "Sıra ve duyuru bildirimlerinin zamanında gelmesi için FRCLive'ı etkinlik boyunca arka planda açık tutmanızı öneririz. Uygulamayı kaydırıp bırakabilirsiniz; üstten tamamen kapatırsanız uyarılar gecikebilir veya kaçırılabilir."
             case .testNotification: return "Bildirimi Test Et"
             case .logout: return "Çıkış Yap"
             case .language: return "Dil"
@@ -307,6 +311,8 @@ enum L10n {
             case .liveActivitiesToggle: return "Enable Live Activities"
             case .notificationsToggle: return "Allow Notifications"
             case .notificationsBackgroundNote: return "When the app is closed, alerts are scheduled from Nexus time estimates. Open the app once or reconnect to refresh if the queue changes suddenly."
+            case .notificationBackgroundTipTitle: return "Notifications"
+            case .notificationBackgroundTipMessage: return "For queue and announcement alerts to arrive on time, keep FRCLive open in the background during the event. You can switch to other apps—just avoid force-quitting FRCLive from the app switcher, or alerts may be delayed or missed."
             case .testNotification: return "Send Test Notification"
             case .logout: return "Log Out"
             case .language: return "Language"
