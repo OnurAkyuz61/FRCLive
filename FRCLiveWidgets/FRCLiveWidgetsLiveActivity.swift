@@ -149,7 +149,17 @@ struct FRCLiveWidgetsLiveActivity: Widget {
         if lower.contains("practice"), let number = trailingNumber(in: trimmed) {
             return "P\(number)"
         }
-        if (lower.contains("playoff") || lower.contains("final")), let number = trailingNumber(in: trimmed) {
+        if lower.contains("semifinal") || lower.contains("semi-final"), let number = trailingNumber(in: trimmed) {
+            return "SF\(number)"
+        }
+        if lower.contains("quarterfinal") || lower.contains("quarter-final"), let number = trailingNumber(in: trimmed) {
+            return "QF\(number)"
+        }
+        if lower.range(of: #"\bfinal\b"#, options: .regularExpression) != nil,
+           let number = trailingNumber(in: trimmed) {
+            return "Final \(number)"
+        }
+        if lower.contains("playoff"), let number = trailingNumber(in: trimmed) {
             return "M\(number)"
         }
         if trimmed.count > 14 {
