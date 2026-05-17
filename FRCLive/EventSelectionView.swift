@@ -101,19 +101,21 @@ struct EventSelectionView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(teamName)
-                .font(.largeTitle.bold())
-                .foregroundColor(.primary)
-                .lineLimit(2)
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(teamName)
+                    .font(.largeTitle.bold())
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
 
-            HStack(spacing: 10) {
                 Text("\(L10n.text(.teamPrefix, language: appLanguage)) \(teamNumber)")
                     .font(.title3)
                     .foregroundColor(.secondary)
-
-                TeamAvatarView(avatarURLString: teamAvatarURL, size: 34)
             }
+
+            Spacer(minLength: 8)
+
+            TeamAvatarView(avatarURLString: teamAvatarURL, size: 76)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

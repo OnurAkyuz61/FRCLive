@@ -90,7 +90,7 @@ struct DashboardView: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
-            TeamAvatarView(avatarURLString: teamAvatarURL, size: 46)
+            TeamAvatarView(avatarURLString: teamAvatarURL, size: 58)
         }
         .padding(14)
         .background(
